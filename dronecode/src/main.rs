@@ -33,8 +33,8 @@ fn main() -> ! {
         // created here. Since that means that there's only one reference to HEAP_MEMORY,
         // this is safe.
         //
-        // As soon as the first driver (led driver) is initialized, the red led turns on.
-        // That's also the last thing that's turned off. If the red led stays on and your
+        // As soon as the first driver (led driver) is initialized, the yellow led turns on.
+        // That's also the last thing that's turned off. If the yellow led stays on and your
         // program doesn't run, you know that the boot procedure has failed.
         initialize(unsafe { &mut HEAP_MEMORY }, true);
     }
@@ -70,7 +70,7 @@ fn alloc_error(layout: Layout) -> ! {
     // UART. However, if UART is not initialized, it won't attempt
     // to allocate the message.
     //
-    // instead, to signal this, we turn the yellow light on too
+    // instead, to signal this, we turn the green light on too
     // (together with blinking red of the panic)
     Green.on();
 
