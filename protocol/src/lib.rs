@@ -164,8 +164,6 @@ impl Packet {
 
 #[cfg(test)]
 mod tests {
-    use serde::__private::de;
-
     use super::*;
 
     #[test]
