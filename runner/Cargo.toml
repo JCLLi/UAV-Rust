@@ -12,3 +12,4 @@ forced-target = "x86_64-unknown-linux-gnu"
 [dependencies]
 tudelft-serial-upload = "1"
 serial2 = "0.1.7"
+termion = "2.0.1"

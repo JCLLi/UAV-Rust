@@ -21,3 +21,7 @@ The `dronecode` will run on your drone, and contains an example on how to write 
 drone. `runner` is responsible for uploading the program to your drone, and can then also start any
 code that needs to run on the PC to communicate with the drone.
 
+
+## Fixes
+- Fix for os error 13: sudo usermod -a -G dialout $USER
+Restart to take effect

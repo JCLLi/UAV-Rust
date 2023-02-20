@@ -5,6 +5,8 @@ use std::process::{exit, Command};
 use std::time::Duration;
 use tudelft_serial_upload::{upload_file_or_stop, PortSelector};
 
+mod interface;
+
 fn main() {
     // get a filename from the command line. This filename will be uploaded to the drone
     // note that if no filename is given, the upload to the drone does not fail.
@@ -23,7 +25,7 @@ fn main() {
     // you don't need to choose python.
 
     // start_interface(&port);
-
+    interface::start_interface();
     // open the serial port we got back from `upload_file_or_stop`. This is the same port
     // as the upload occurred on, so we know that we can communicate with the drone over
     // this port.
@@ -44,7 +46,7 @@ fn start_interface(port: &PathBuf) {
     let mut cmd = Command::new("python");
     cmd
         // there must be a `my_interface.py` file of course
-        .arg("my_interface.py")
+        .arg("interface.py")
         // pass the serial port as a command line parameter to the python program
         .arg(port.to_str().unwrap());
 

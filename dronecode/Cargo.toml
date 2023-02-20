@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 tudelft-quadrupel = {version="1"}
 micromath = "2.0.0"
+crc = "3.0.1"
