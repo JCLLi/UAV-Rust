@@ -14,7 +14,7 @@ const CRC_CHECKSUM: crc::Crc<u32> = crc::Crc::<u32>::new(&crc::CRC_32_CKSUM);
 const START_BYTE: u8 = b'<';
 const END_BYTE: u8 = b'>';
 
-/* Packet commands that can be sent with a packet. */
+///Packet commands that can be sent with a packet.
 #[derive(Debug, PartialEq)]
 pub enum Command {
     Lift,
@@ -22,16 +22,16 @@ pub enum Command {
     Pitch,
     Yaw, // etc..
 }
-/* A Packet is the message format that contains a command, an argument and a checksum. */
-#[derive(Clone, Serialize, Deserialize, Debug)]
+///A Packet is the message format that contains a command, an argument and a checksum.
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 pub struct Packet {
     pub command: Vec<u8, FIXED_SIZE>,
     pub argument: Vec<u8, FIXED_SIZE>,
     pub crc: u32,
 }
 
-/* Error types that can be returned from a Packet operation. */
-#[derive(Debug)]
+///Error types that can be returned from a Packet operation.
+#[derive(Debug, PartialEq)]
 pub enum PacketError {
     InvalidPacket,
     InvalidCommand,
@@ -39,8 +39,8 @@ pub enum PacketError {
     ChecksumMismatch,
 }
 
-/* The PacketManager struct is responsible for managing a collection of packets. */
-#[derive(Debug)]
+///The PacketManager struct is responsible for managing a collection of packets.
+#[derive(Debug, PartialEq)]
 pub struct PacketManager {
     packets: Vec<Packet, FIXED_SIZE>,
 }
@@ -73,21 +73,18 @@ impl Packet {
         // Copy bytes of command and argument to the respective vectors
         bytes_command.extend_from_slice(command).unwrap();
         bytes_argument.extend_from_slice(argument).unwrap();
+        
         // Create new Packet instance with the copied command and argument bytes
         Packet { command: bytes_command, argument: bytes_argument, crc: 0 }
     }
 
     /// Serialize the packet into a byte vector
-    pub fn serialize(&mut self) -> Vec<u8, FIXED_SIZE> {
-        // Create a new packet instance with the same argument and command, but calculate and add the checksum
-        let packet = Packet {
-            argument: self.argument.clone(),
-            command: self.command.clone(),
-            crc: self.create_checksum(),
-        };
+    pub fn to_bytes(&mut self) -> Vec<u8, FIXED_SIZE> {
+        // Calculate and add the checksum
+        self.crc = self.create_checksum();
 
         // Convert the packet into a byte vector
-        let packet_bytes: Vec<u8, FIXED_SIZE> = to_vec(&packet).unwrap();
+        let packet_bytes: Vec<u8, FIXED_SIZE> = to_vec(&self).unwrap();
 
         // Create a new byte vector and add the start byte, packet bytes, and end byte to it
         let mut res = Vec::<u8, FIXED_SIZE>::new();
@@ -98,7 +95,7 @@ impl Packet {
     }
 
     /// Deserialize the byte vector into a Packet instance
-    pub fn deserialize(message: &[u8]) -> Result<Packet, PacketError> {
+    pub fn from_bytes(message: &[u8]) -> Result<Packet, PacketError> {
         // Find the payload bytes (bytes between start and end bytes)
         let payload = Packet::find_payload_bytes(message)?;
 
@@ -163,5 +160,64 @@ impl Packet {
         // Finalize the digest and compare it with the provided checksum
         digest.finalize() == packet.crc
     }
-    
+}
+
+#[cfg(test)]
+mod tests {
+    use serde::__private::de;
+
+    use super::*;
+
+    #[test]
+    fn test_packet_serialization() {
+        // Test serialization and deserialization of a valid packet
+        let mut packet = Packet::new(b"Lift", b"100");
+        let serialized_packet = packet.to_bytes();
+        println!("Serialized packet: {:?}", serialized_packet);
+        let deserialized_packet = Packet::from_bytes(&serialized_packet).unwrap();
+        println!("Deserialized packet: {:?}", deserialized_packet);
+        let command = deserialized_packet.command.as_slice();
+        let argument = deserialized_packet.argument.as_slice();
+        println!("Command: {:?}",  String::from_utf8(command.to_vec()));
+        println!("Argument: {:?}", String::from_utf8(argument.to_vec()));
+        assert_eq!(packet, deserialized_packet);
+    }
+
+    #[test]
+    fn test_packet_checksum() {
+        // Test checksum calculation and verification
+        let mut packet = Packet::new(b"Lift", b"100");
+        let checksum = packet.create_checksum();
+        packet.crc = checksum;
+        assert!(packet.verify_checksum(&packet));
+        assert!(!packet.verify_checksum(&Packet {
+            command: packet.command.clone(),
+            argument: packet.argument.clone(),
+            crc: checksum + 1,
+        }));
+    }
+
+    #[test]
+    fn test_packet_command_verification() {
+        // Test command verification
+        let packet = Packet::new(b"Lift", b"100");
+        assert!(packet.verify_command().is_ok());
+        let packet = Packet::new(b"InvalidCommand", b"100");
+        assert!(packet.verify_command().is_err());
+    }
+
+    #[test]
+    fn test_packet_payload_finding() {
+        // Test finding payload bytes
+        let start_byte = vec![START_BYTE];
+        let end_byte = vec![END_BYTE];
+        let payload = vec![0, 1, 2, 3, 4];
+        let message = [&start_byte[..], &payload[..], &end_byte[..]].concat();
+        assert_eq!(Packet::find_payload_bytes(&message), Ok(&payload[..]));
+
+        let start_byte = vec![START_BYTE];
+        let end_byte = vec![END_BYTE];
+        let message = [&end_byte[..], &start_byte[..]].concat();
+        assert_eq!(Packet::find_payload_bytes(&message), Err(PacketError::InvalidPayload));
+    }
 }
