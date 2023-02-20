@@ -3,6 +3,7 @@ use termion::event::Key;
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
 
+/// Starts interface to read joystick/keyboard inputs and maps it to a command
 pub fn start_interface() {
     let stdin = stdin();
     //setting up stdout and going into raw mode. 
@@ -23,7 +24,7 @@ pub fn start_interface() {
         )
         .unwrap();
 
-        // print pressed key
+        // keyboard mapper
         match c.unwrap() {
             //Key::Char(x) => println!("{} pressed", x),
             Key::Esc => println!("go to safe mode, through panic mode"),
