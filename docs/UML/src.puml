@@ -1,0 +1,66 @@
+@startuml
+
+component "Screen" as screen
+component "Keyboard" as keyboard
+component "Joystick" as joystick
+
+interface "Keyboard Keys" as keyboardKeys
+interface "Joystick commands" as joystickCommands 
+
+package "Control Interface System" {
+    component "Joystick Mapper" as joyStickMapper
+    component "Keyboard Mapper" as keyboardMapper
+    component "Settings Logic" as settingsLogic
+    component "Configurations" as configurations
+    component "Settings Visualizer" as settingsVisualizer
+    component "Serial Protocol" as serialProtocol
+
+    interface "joystick settings" as joystickSettings
+    interface "keyboard settings" as keyboardSetings
+    interface "drone commands" as droneCommands
+    interface "drone messages" as droneMessages
+    interface "drone loggins and settings" as droneLogginsSettings
+    interface "interface loggins and settings" as interfaceLogginsSettings
+
+    interface "command settings" as commandSettings
+    interface "visualized settings" as visualizedSettings
+    database  "System Database" as systemDatabase
+}
+package "Drone System" {
+    component "Serial Protocol" as serialProtocol2
+    component "Drone stuff" as droneStuff
+}
+
+joyStickMapper -- joystickSettings
+joystickSettings )-- settingsLogic
+
+keyboardMapper -- keyboardSetings
+keyboardSetings )-- settingsLogic
+
+settingsLogic -- commandSettings
+commandSettings )-- configurations
+
+configurations -right- droneCommands
+droneCommands )-- serialProtocol
+
+serialProtocol -left- droneMessages
+droneMessages )-left- configurations
+
+configurations -up- droneLogginsSettings
+droneLogginsSettings )-up-systemDatabase
+
+systemDatabase -- interfaceLogginsSettings
+interfaceLogginsSettings )--settingsVisualizer
+
+settingsVisualizer -right- visualizedSettings
+visualizedSettings )-right- screen
+
+keyboard -- keyboardKeys
+keyboardKeys )-- keyboardMapper
+
+joystick -- joystickCommands
+joystickCommands )--joyStickMapper
+
+serialProtocol .down.> serialProtocol2: RS232
+
+@enduml
