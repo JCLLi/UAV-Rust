@@ -1,5 +1,5 @@
 [workspace]
-members = ["dronecode", "runner", "protocol"]
+members = ["dronecode", "runner"]
 default-members = ["dronecode"]
 
 [profile.release]
