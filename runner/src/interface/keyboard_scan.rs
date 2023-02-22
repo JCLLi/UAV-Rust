@@ -1,56 +1,61 @@
-#![allow(unused)]
-use std::io::{stdin, stdout, Write};
-use std::path::PathBuf;
-use std::thread::sleep;
-use std::time::Duration;
-use termion::event::Key;
-use termion::input::TermRead;
-use termion::raw::IntoRawMode;
-use serial2::SerialPort;
-use device_query::{DeviceQuery, DeviceState, Keycode};
-use tudelft_serial_upload::{upload_file_or_stop, PortSelector};
+// #![allow(unused)]
+use crossterm::event::{Event, KeyCode, read};
+use core::ops::Deref;
+use serde::{Deserialize, Serialize};
+use std::{fs::File, fmt};
 
-///Keyboard scan,a slice of u8 will be returned which stands for a serialized command
-pub fn keyboard_scan() -> &'static [u8]{
-    //New keyboard scanner
-    let device_state = DeviceState::new();
-    let mut keys: Vec<Keycode> = Vec::new();
+/// Enum with all possible commands that can be given to the drone
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+pub enum Commands {
+    None,
+    Exit,
+    SafeMode,
+    Mode0,
+    Mode1,
+    A,
+    Z,
+    YawControlPUp,
+    YawControlPDown,
+    Lift,
+    Roll,
+    Yaw,
+    Pitch,
+}
 
-    //loop_count and sleep() are both used for avoid key jitter
-    let mut loop_count = 0;
-    loop {
-        loop_count += 1;
-        sleep(Duration::from_micros(1700));
-        keys = device_state.get_keys();
-        if loop_count == 60{
-            loop_count = 0;
-
-            if !keys.is_empty(){
-                let key = keys[0];
-                keys.clear();
-
-                //TODO key mapping to serialized protocol message
-                match key {
-                    Keycode::Escape | Keycode::Space => return b"go to safe mode, through panic mode",
-                    Keycode::Key0 => return b"mode0",
-                    Keycode::Key1 => return b"mode 1",
-                    Keycode::A => return b"lift up",
-                    Keycode::Z => return b"lift down",
-                    Keycode::Left => return b"roll up",
-                    Keycode::Right => return b"roll down",
-                    Keycode::Up => return b"Pitch down",
-                    Keycode::Down => return b"Pitch up",
-                    Keycode::Q => return b"yaw down",
-                    Keycode::W => return b"yaw up",
-                    Keycode::U => return b"yaw control P up",
-                    Keycode::J => return b"yaw control P down",
-                    Keycode::I => return b"roll/pitch control P1 up/down",
-                    Keycode::K => return b"roll/pitch control P1 up/down",
-                    Keycode::O => return b"roll/pitch control P2 up/down",
-                    Keycode::L => return b"roll/pitch control P2 up/down",
-                    _ => (),
-                }
-            }
-       }
+impl fmt::Display for Commands {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Commands::Lift => write!(f, "Lift"),
+            Commands::Roll => write!(f, "Roll"),
+            Commands::Yaw => write!(f, "Yaw"),
+            Commands::Pitch => write!(f, "Pitch"),
+            _ => write!(f, "other")
+        }
     }
+}
+
+#[derive(Serialize, Deserialize, Debug, Eq, PartialEq)]
+pub struct Command {
+    pub command: Commands,
+    pub argument: i16
+}
+
+pub fn keymapper() -> crossterm::Result<Command> {
+    let mut command = Command { command: Commands::None, argument: 0};
+    // `read()` blocks until an `Event` is available
+    loop {
+        match read()? {
+            Event::Key(key) => command = match key.code {
+                KeyCode::Delete => Command {command: Commands::Exit, argument: 0},
+                KeyCode::Char('0') => Command {command: Commands::Mode0, argument: 0},
+                KeyCode::Left => Command {command: Commands::Roll, argument: -1},
+                _ => Command {command: Commands::None, argument: 0},
+            },
+            _ => ()
+        }
+        if command.command != Commands::None {
+            break;
+        }
+    }
+    Ok(command)
 }

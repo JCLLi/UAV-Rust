@@ -13,10 +13,12 @@ forced-target = "x86_64-unknown-linux-gnu"
 tudelft-serial-upload = "1"
 serial2 = "0.1.7"
 termion = "2.0.1"
-postcard = "1.0.0"
-serde = { version = "1.0.*", features = ["derive"], default-features = false }
+postcard = {version = "1.0.0", features = ["alloc"]}
 crc = "2.0"
 heapless = "0.7.16"
 device_query = "1.1.2"
 tui = "0.19"
 crossterm = "0.25"
+protocol = {path = "../protocol"}
+bincode = "1.0"
+serde = { version = "1.0", features = ["derive"] }

@@ -18,10 +18,10 @@ use std::process::{exit, Command};
 use std::sync::{Arc, Mutex};
 use std::thread::sleep;
 use tudelft_serial_upload::{upload_file_or_stop, PortSelector, color_eyre::owo_colors::OwoColorize};
-use crate::interface::{data_transmission, keyboard_scan};
+use crate::interface::{data_transmission, keyboard_scan::{self, keymapper}};
 mod interface;
 
-// mod interface;
+use protocol::{self, Packet};
 
 fn main() -> Result<(), io::Error> {
 
@@ -41,13 +41,23 @@ fn main() -> Result<(), io::Error> {
     })?;
 
 
-    // Open serial port
+    // // Open serial port
     let file = args().nth(1);
     let port = upload_file_or_stop(PortSelector::AutoManufacturer, file);
     let mut serial = SerialPort::open(port, 115200).unwrap();
- 
+    serial.set_read_timeout(Duration::from_secs(1)).unwrap();
+
+    let mut buf = [0u8; 255];
+
+    loop {
+        if let Ok(num) = serial.read(&mut buf) {
+            print!("\r{}", String::from_utf8_lossy(&buf[0..num]));
+            // println!("serial read");
+            // break;
+        }
+    }
     // Open a channel between the threads data transmission and keyboard scan
-     let (sender, receiver) = channel();
+    let (sender, receiver) = channel();
 
     //Thread for keyboard scan
     let keyboard_scan = thread::spawn(move || {
@@ -56,7 +66,7 @@ fn main() -> Result<(), io::Error> {
                 let command = keymapper().unwrap();
                 
                 // Exit program when exit command is given
-                if command == "exit" {
+                if command.command == keyboard_scan::Commands::Exit {
                     break;                
                 }
                 
@@ -70,12 +80,33 @@ fn main() -> Result<(), io::Error> {
     //Thread for data transmission
     let data_trans = thread::spawn(move || {
         serial.set_read_timeout(Duration::from_secs(1)).unwrap();
-        
+        let mut buf = [0u8; 255];
+
         loop {
-            let command = receiver.recv().unwrap();
-            println!("\rReceived from thread 1: {}", command);
-            data_transmission::write_data(command);
-            // Send data over serial port
+            // Receive command
+            // let received = receiver.recv().unwrap();
+            // println!("\rReceived from thread 1: {:?}", received);
+
+            // // Convert received data to Strings
+            // let command = received.command.to_string();
+            // let argument = received.argument.to_string();
+            
+            // // Create packet
+            // let mut packet = Packet::new(command.as_bytes(), argument.as_bytes());
+            // let serialized_packet = packet.to_bytes();
+            // println!("\rSerialized packet: {:?}", serialized_packet);
+
+            // // Send data over serial port
+            // serial.write(&serialized_packet);
+            // println!("\rWrite packet over serial port");
+
+            // loop {
+                if let Ok(num) = serial.read(&mut buf) {
+                    print!("{}", String::from_utf8_lossy(&buf[0..num]));
+                    // println!("serial read");
+                    // break;
+                }
+            // }
         }
     });
     
@@ -94,21 +125,4 @@ fn main() -> Result<(), io::Error> {
     Ok(())
 }
 
-fn keymapper() -> crossterm::Result<String> {
-    let mut command = "0";
-    // `read()` blocks until an `Event` is available
-    loop {
-        match read()? {
-            Event::Key(key) => command = match key.code {
-                KeyCode::Delete => "exit",
-                KeyCode::Char('0') => "mode 0",
-                _ => "0"
-            },
-            _ => ()
-        }
-        if command != "0" {
-            break;
-        }
-    }
-    Ok(command.to_string())
-}
+
