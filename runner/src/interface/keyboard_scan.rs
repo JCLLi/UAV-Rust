@@ -1,3 +1,4 @@
+#![allow(unused)]
 use std::io::{stdin, stdout, Write};
 use std::path::PathBuf;
 use std::thread::sleep;

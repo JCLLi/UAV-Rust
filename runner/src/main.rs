@@ -1,61 +1,114 @@
 use serial2::SerialPort;
-use std::str;
+use std::{io, thread, time::Duration, str, sync::mpsc::channel};
+use tui::{
+    backend::CrosstermBackend,
+    widgets::{Widget, Block, Borders},
+    layout::{Layout, Constraint, Direction},
+    Terminal, style::Modifier, text::Text
+};
+use crossterm::{
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, read},
+    execute,
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+};
+
 use std::env::args;
 use std::path::PathBuf;
 use std::process::{exit, Command};
 use std::sync::{Arc, Mutex};
-use std::thread;
 use std::thread::sleep;
-use std::time::Duration;
-use tudelft_serial_upload::{upload_file_or_stop, PortSelector};
+use tudelft_serial_upload::{upload_file_or_stop, PortSelector, color_eyre::owo_colors::OwoColorize};
 use crate::interface::{data_transmission, keyboard_scan};
-
-
 mod interface;
 
-fn main() {
-    //Open serial port
+// mod interface;
+
+fn main() -> Result<(), io::Error> {
+
+    // setup terminal
+    enable_raw_mode()?;
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+
+    terminal.draw(|f| {
+        let size = f.size();
+        let block = Block::default()
+            .title("Block")
+            .borders(Borders::ALL);
+        f.render_widget(block, size);
+    })?;
+
+
+    // Open serial port
     let file = args().nth(1);
     let port = upload_file_or_stop(PortSelector::AutoManufacturer, file);
     let mut serial = SerialPort::open(port, 115200).unwrap();
-
-    //wait_list is used for save commands from user
-    let wait_list: Vec<&[u8]> = Vec::new();
-
-    //Two threads are used for data transmission through serial port and keyboard scan
-    let v = Arc::new(Mutex::new(wait_list));
-    let (v1, v2) = (v.clone(), v.clone());
+ 
+    // Open a channel between the threads data transmission and keyboard scan
+     let (sender, receiver) = channel();
 
     //Thread for keyboard scan
     let keyboard_scan = thread::spawn(move || {
         loop {
-            //Get commands according to the pressed keys
-            let command = keyboard_scan::keyboard_scan();
-            //Push commands into wait_list
-            v1.lock().unwrap().push(command);
-            //Scan delay to avoid key jitter
-            sleep(Duration::from_millis(100))
-        }
+                // Check key event and map to a command
+                let command = keymapper().unwrap();
+                
+                // Exit program when exit command is given
+                if command == "exit" {
+                    break;                
+                }
+                
+                // Send command to data transmission thread
+                println!("\rSend to thread 2: {:?}", command);
+                sender.send(command).expect("not received");
+  
+            }
     });
-
+            
     //Thread for data transmission
     let data_trans = thread::spawn(move || {
-        //Set serial port
         serial.set_read_timeout(Duration::from_secs(1)).unwrap();
-        loop{
-            //Get data from serial port
-            data_transmission::read_data(&mut serial);
-            //Check if there are commands in wait_list
-            if !v2.lock().unwrap().is_empty(){
-                //Get command from wait_list
-                let command = v2.lock().unwrap().remove(0);
-                //TODO: this part should be used for sending data through serial port rather than print
-                println!("{}", str::from_utf8(command).unwrap());
-            }
+        
+        loop {
+            let command = receiver.recv().unwrap();
+            println!("\rReceived from thread 1: {}", command);
+            data_transmission::write_data(command);
+            // Send data over serial port
         }
     });
-
+    
     keyboard_scan.join();
     data_trans.join();
+    
+    // restore terminal
+    disable_raw_mode()?;
+    execute!(
+        terminal.backend_mut(),
+        LeaveAlternateScreen,
+        DisableMouseCapture
+    )?;
+    terminal.show_cursor()?;
+    
+    Ok(())
 }
 
+fn keymapper() -> crossterm::Result<String> {
+    let mut command = "0";
+    // `read()` blocks until an `Event` is available
+    loop {
+        match read()? {
+            Event::Key(key) => command = match key.code {
+                KeyCode::Delete => "exit",
+                KeyCode::Char('0') => "mode 0",
+                _ => "0"
+            },
+            _ => ()
+        }
+        if command != "0" {
+            break;
+        }
+    }
+    Ok(command.to_string())
+}
