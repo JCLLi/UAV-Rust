@@ -13,7 +13,9 @@ package "Control Interface System" {
     component "Settings Logic" as settingsLogic
     component "Configurations" as configurations
     component "Settings Visualizer" as settingsVisualizer
-    component "Serial Protocol" as serialProtocol
+    component "Send Serial" as sendserial
+    component "CRC" as crc
+    component "Read Serial" as readserial
 
     interface "joystick settings" as joystickSettings
     interface "keyboard settings" as keyboardSetings
@@ -26,10 +28,19 @@ package "Control Interface System" {
     interface "visualized settings" as visualizedSettings
     database  "System Database" as systemDatabase
 }
-package "Drone System" {
-    component "Serial Protocol" as serialProtocol2
-    component "Drone stuff" as droneStuff
+
+
+package "Flight Controller Board" {
+component "Send Serial" as sendserialFCB
+component "Read Serial" as readserialFCB
+component "CRC" as crcFCB
+component "Sensors" as sensors
+component "Motor control" as motors
+component "Stabilization" as stabilization
+component "Data packet to command" as packetdrone
+component "Data logging" as datalogging
 }
+
 
 joyStickMapper -- joystickSettings
 joystickSettings )-- settingsLogic
@@ -61,6 +72,19 @@ keyboardKeys )-- keyboardMapper
 joystick -- joystickCommands
 joystickCommands )--joyStickMapper
 
-serialProtocol .down.> serialProtocol2: RS232
+
+
+serialProtocol .down.> sendserialFCB: RS232
+
+sensors --> sendserialFCB
+' readserialFCB-up->crcFCB
+' crcFCB-->sendserialFCB
+motors <- stabilization
+stabilization <- sensors
+readserialFCB -up-> packetdrone
+packetdrone -> motors
+motors --> sendserialFCB
+datalogging <-- motors
+datalogging <-- sensors
 
 @enduml
