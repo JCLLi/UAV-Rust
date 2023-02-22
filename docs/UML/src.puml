@@ -1,4 +1,4 @@
-@startuml
+@startuml "Component Diagram ESL Drone"
 
 component "Screen" as screen
 component "Keyboard" as keyboard
