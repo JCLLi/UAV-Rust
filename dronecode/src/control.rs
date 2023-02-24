@@ -2,6 +2,7 @@ use crate::yaw_pitch_roll::YawPitchRoll;
 use alloc::format;
 use tudelft_quadrupel::barometer::read_pressure;
 use tudelft_quadrupel::battery::read_battery;
+use tudelft_quadrupel::block;
 use tudelft_quadrupel::led::Led::Blue;
 use tudelft_quadrupel::motor::get_motors;
 use tudelft_quadrupel::mpu::{read_dmp_bytes, read_raw};
@@ -19,7 +20,7 @@ pub fn control_loop() -> ! {
         last = now;
 
         let motors = get_motors();
-        let quaternion = read_dmp_bytes().unwrap();
+        let quaternion = block!(read_dmp_bytes()).unwrap();
         let ypr = YawPitchRoll::from(quaternion);
         let (accel, _) = read_raw().unwrap();
         let bat = read_battery();
