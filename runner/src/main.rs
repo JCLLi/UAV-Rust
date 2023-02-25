@@ -5,7 +5,7 @@ use std::process::{exit, Command};
 use std::time::Duration;
 use tudelft_serial_upload::{upload_file_or_stop, PortSelector};
 
-use self::protocol;
+mod interface;
 
 fn main() {
     // get a filename from the command line. This filename will be uploaded to the drone
@@ -34,6 +34,9 @@ fn main() {
 
     // infinitely print whatever the drone sends us
     let mut buf = [0u8; 255];
+
+    
+
     loop {
         if let Ok(num) = serial.read(&mut buf) {
             print!("{}", String::from_utf8_lossy(&buf[0..num]));

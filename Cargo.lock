@@ -509,6 +509,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "pasts"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "98a644f00d22e5a6c8a9aea7f4e0ab08d890b542e7a139d2b9f15620b9a47f4b"
+
+[[package]]
 name = "pin-project-lite"
 version = "0.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -578,8 +584,13 @@ checksum = "1973f95452ec56a4b2c683f5eabc15617e38f4faf2776ed4a0011d5070ecb37e"
 name = "runner"
 version = "0.1.0"
 dependencies = [
+ "log",
+ "pasts",
  "serial2",
+ "smelling_salts",
+ "stick",
  "tudelft-serial-upload",
+ "winapi",
 ]
 
 [[package]]
@@ -720,6 +731,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a507befe795404456341dfab10cef66ead4c041f62b8b11bbb92bffe5d0953e0"
 
 [[package]]
+name = "smelling_salts"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b0ac3b24afd6d59663abbd40d5b99d281d19413e70f43dc5277dfda314c1647b"
+
+[[package]]
 name = "spin"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -733,6 +750,17 @@ name = "stable_deref_trait"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
+
+[[package]]
+name = "stick"
+version = "0.12.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e60a95d77ca18122ca8cc759b0dcde33274e68af001d899abb732a1d9c6c0cea"
+dependencies = [
+ "log",
+ "smelling_salts",
+ "winapi",
+]
 
 [[package]]
 name = "syn"
