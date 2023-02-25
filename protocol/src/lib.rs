@@ -1,11 +1,14 @@
 #![cfg_attr(not(test), no_std)]
 #[cfg(test)]
 extern crate std;
+extern crate alloc;
 
 use crc;
 use heapless::Vec;
 use postcard::{from_bytes, to_vec, to_slice};
 use serde::{Deserialize, Serialize};
+use alloc::string::ToString;
+use alloc::{format, string::String};
 
 const FIXED_SIZE:usize = 30;
 
@@ -115,7 +118,7 @@ impl Packet {
     pub fn verify_command(&self) -> Result<(), PacketError> {
         // Check if the command is valid and return an error if it is not
         match self.command.as_slice() {
-            b"Lift" | b"Roll" | b"Pitch" | b"Yaw"  => Ok(()),
+            b"ACK" | b"NACK" | b"Lift" | b"Roll" | b"Pitch" | b"Yaw" | b"SafeMode" | b"Mode0" | b"Mode1" | b"YawControlPUp" | b"YawControlPDown" | b"RollPitchControlP1" | b"RollPitchControlP2" => Ok(()),
             _ => Err(PacketError::InvalidCommand),
         }
     }
@@ -160,7 +163,33 @@ impl Packet {
         // Finalize the digest and compare it with the provided checksum
         digest.finalize() == packet.crc
     }
+
+    /// Create ACK or NACK packet, based on checksum
+    pub fn create_ack_or_nack(checksum: bool) -> Vec<u8, FIXED_SIZE> {
+        // Create ack packet, based on checksum
+        let mut packet = if checksum {
+            Packet::new(b"ACK", 1.to_string().as_bytes())
+        } else {
+            Packet::new(b"NACK", 0.to_string().as_bytes())
+        };
+    
+        // Serialize ack packet and return
+        packet.to_bytes()
+    }
+    
+    /// Find end byte (>) position in a data packet
+    pub fn find_end_byte(buf: &[u8], num: usize) -> usize {
+        let mut end_byte_pos = 0;
+        for i in 0..num {
+            if buf[i] == 62 {
+                end_byte_pos = i;
+                break;
+            } 
+        }
+        end_byte_pos
+    }
 }
+
 
 #[cfg(test)]
 mod tests {

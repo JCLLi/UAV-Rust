@@ -1,11 +1,13 @@
 #![no_std]
 #![no_main]
 #![feature(alloc_error_handler)]
+#![feature(log_syntax)]
 
 extern crate alloc;
 
 use crate::control::control_loop;
 use alloc::format;
+use alloc::string::ToString;
 use core::alloc::Layout;
 use core::mem::MaybeUninit;
 use core::panic::PanicInfo;
@@ -36,14 +38,14 @@ fn main() -> ! {
         // As soon as the first driver (led driver) is initialized, the yellow led turns on.
         // That's also the last thing that's turned off. If the yellow led stays on and your
         // program doesn't run, you know that the boot procedure has failed.
-        initialize(unsafe { &mut HEAP_MEMORY }, true);
+        initialize(unsafe { &mut HEAP_MEMORY }, false);
     }
 
     control_loop()
 }
 
 #[inline(never)]
-#[cfg(not(test))]
+// #[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     // On panic:

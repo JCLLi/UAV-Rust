@@ -20,5 +20,4 @@ device_query = "1.1.2"
 tui = "0.19"
 crossterm = "0.25"
 protocol = {path = "../protocol"}
-bincode = "1.0"
 serde = { version = "1.0", features = ["derive"] }
