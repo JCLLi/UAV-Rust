@@ -118,7 +118,9 @@ impl Packet {
     pub fn verify_command(&self) -> Result<(), PacketError> {
         // Check if the command is valid and return an error if it is not
         match self.command.as_slice() {
-            b"ACK" | b"NACK" | b"Lift" | b"Roll" | b"Pitch" | b"Yaw" | b"SafeMode" | b"Mode0" | b"Mode1" | b"YawControlPUp" | b"YawControlPDown" | b"RollPitchControlP1" | b"RollPitchControlP2" => Ok(()),
+            b"ACK" | b"NACK" | b"Lift" | b"Roll" | b"Pitch" | b"Yaw" | 
+            b"SafeMode" | b"Mode0" | b"Mode1" | b"YawControlPUp" | 
+            b"YawControlPDown" | b"RollPitchControlP1" | b"RollPitchControlP2" => Ok(()),
             _ => Err(PacketError::InvalidCommand),
         }
     }
