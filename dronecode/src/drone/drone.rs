@@ -1,7 +1,9 @@
 use tudelft_quadrupel::uart::send_bytes;
-use crate::control::Command;
+use protocol::Message;
 use crate::drone::{Drone, Getter, Setter};
 use crate::working_mode::{mode_switch, motions, WorkingModes};
+
+
 
 impl Drone {
     pub fn initialize() -> Drone{
@@ -9,19 +11,20 @@ impl Drone {
             mode: WorkingModes::SafeMode,
             yaw: 0 as f32,
             pitch: 0 as f32,
-            roll: 0 as f32
+            roll: 0 as f32,
+            floating_speed: 0
         }
     }
 
     //Used to check new command and react to corresponding commands
-    pub fn command_check(&mut self, command: &Command){
-        match command {
-            Command::SafeMode => mode_switch(self, WorkingModes::SafeMode),
-            Command::PanicMode => mode_switch(self, WorkingModes::PanicMode),
-            Command::ManualMode(m0, m1, m2, m3)
+    pub fn message_check(&mut self, message: &Message){
+        match message {
+            Message::SafeMode => mode_switch(self, WorkingModes::SafeMode),
+            Message::PanicMode => mode_switch(self, WorkingModes::PanicMode),
+            Message::ManualMode(m0, m1, m2, m3)
             => {
                 mode_switch(self, WorkingModes::ManualMode);
-                motions(self, [m0, m1, m2, m3])
+                motions(self, [*m0, *m1, *m2, *m3])
             }
             _ => mode_switch(self, WorkingModes::SafeMode),//TODO
         }
@@ -41,6 +44,10 @@ impl Getter for Drone {
     fn get_angles(&self) -> (f32, f32, f32) {
         (self.yaw, self.pitch, self.roll)
     }
+
+    fn get_floating_speed(&self) -> u16 {
+        self.floating_speed
+    }
 }
 
 impl Setter for Drone {
@@ -52,5 +59,9 @@ impl Setter for Drone {
         self.yaw = angles.0;
         self.pitch = angles.1;
         self.roll = angles.2;
+    }
+
+    fn set_floating_speed(&mut self, speed: u16) {
+        self.floating_speed = speed;
     }
 }

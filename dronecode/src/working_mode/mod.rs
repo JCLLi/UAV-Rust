@@ -28,9 +28,9 @@ pub fn mode_switch(drone: &mut Drone, new: WorkingModes){
 }
 
 //Function used to set the motion of the drone according to the arguments from commands
-pub fn motions(drone: &mut Drone, argument: [&u16; 4]){
+pub fn motions(drone: &mut Drone, argument: [u16; 4]){
     match drone.get_mode() {
-        WorkingModes::ManualMode => manual_mode::motion(argument),
+        WorkingModes::ManualMode => manual_mode::motion(drone, argument),
         _ => (),//TODO:add new operation with new modes
     }
 }

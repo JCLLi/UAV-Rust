@@ -1,4 +1,6 @@
 use tudelft_quadrupel::motor::set_motors;
+
+use crate::drone::{Drone, motors, Setter};
 use crate::working_mode::WorkingModes;
 use crate::working_mode::WorkingModes::{ManualMode, PanicMode};
 
@@ -11,19 +13,10 @@ pub fn switch(new: WorkingModes) -> WorkingModes{
     }
 }
 
-pub fn motion(argument: [&u16; 4]){
-    //TODO: use the new message to calculate motor speed
-    set_motors([*argument[0], *argument[0], *argument[0], *argument[0]]);
+pub fn motion(drone: &mut Drone, argument: [u16; 4]){
 
-    //The following codes are examples show which motor should be adjust with different motions
-    // match motion {
-    //     MotionType::PitchUp => {set_motors([250, 300, 350, 300])}
-    //     MotionType::PitchDown => {set_motors([350, 300, 250, 300])}
-    //     MotionType::RollUp => {set_motors([300, 350, 300, 250])}
-    //     MotionType::RollDown => {set_motors([300, 250, 300, 350])}
-    //     MotionType::YawUp => {set_motors([350, 300, 350, 300])}
-    //     MotionType::YawDown => {set_motors([300, 350, 300, 350])}
-    //     MotionType::LiftUp => {set_motors([350, 350, 350, 350])}
-    //     MotionType::LiftDown => {set_motors([250, 250, 250, 250])}
-    // }
+    //Calculation motor speeds according to arguments in messages
+    let speed = motors::get_speed(drone, argument);
+
+    set_motors([speed[0], speed[1], speed[2], speed[3]]);
 }
