@@ -13,8 +13,32 @@ forced-target = "x86_64-unknown-linux-gnu"
 tudelft-serial-upload = "1"
 serial2 = "0.1.7"
 termion = "2.0.1"
-postcard = "1.0.0"
-serde = { version = "1.0.*", features = ["derive"], default-features = false }
+postcard = {version = "1.0.0", features = ["alloc"]}
 crc = "2.0"
 heapless = "0.7.16"
 device_query = "1.1.2"
+tui = "0.19"
+crossterm = "0.25"
+protocol = {path = "../protocol"}
+serde = { version = "1.0", features = ["derive"] }
+stick = "0.12.4"
+pasts = "0.8"
+
+[target.'cfg(all(not(target_arch="wasm32"),target_os="linux"))'.dependencies]
+smelling_salts = "0.4"
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["libloaderapi", "xinput", "winerror"] }
+log = { version = "0.4", default-features = false }
+
+[package.metadata.docs.rs]
+all-features = true
+default-target = "x86_64-unknown-linux-gnu"
+
+[features]
+# By default, just include the stick controller database.
+default = ["sdb"]
+# Include the SDL game controller database (button/axis remappings).
+gcdb = []
+# Include the stick controller database (button/axis remappings).
+sdb = []

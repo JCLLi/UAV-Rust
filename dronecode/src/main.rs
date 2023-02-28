@@ -1,11 +1,13 @@
 #![no_std]
 #![no_main]
 #![feature(alloc_error_handler)]
+#![feature(log_syntax)]
 
 extern crate alloc;
 
 use crate::control::control_loop;
 use alloc::format;
+use alloc::string::ToString;
 use core::alloc::Layout;
 use core::mem::MaybeUninit;
 use core::panic::PanicInfo;
@@ -19,6 +21,8 @@ mod working_mode;
 mod control;
 mod yaw_pitch_roll;
 mod drone;
+mod drone_transmission;
+
 
 /// The heap size of your drone code in bytes.
 /// Note: there are 8192 bytes of RAM available.
@@ -45,7 +49,7 @@ fn main() -> ! {
 }
 
 #[inline(never)]
-#[cfg(not(test))]
+// #[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     // On panic:
