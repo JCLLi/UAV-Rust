@@ -151,11 +151,11 @@ mod tests {
             match bundle_result {
                 Ok(bundle) => {
                     if bundle != bundle_new {
-                        println!("{:?}\r", bundle);
+                        println!("\r{:?}", bundle);
                         bundle_new = bundle;
                     } 
                 },
-                Err(device) => println!("{:?}", device),
+                Err(device) => println!("\r{:?}", device),
             }
         }
     }

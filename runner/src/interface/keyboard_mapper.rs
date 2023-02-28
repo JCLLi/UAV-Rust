@@ -1,4 +1,4 @@
-use crossterm::{event::{Event, KeyCode, read}, terminal::enable_raw_mode, Command};
+use crossterm::event::{Event, KeyCode, read};
 use serde::{Deserialize, Serialize};
 use std::{fmt::{self, write}, sync::mpsc};
 const STATIC_OFFSET_UP:u16 = 1000;

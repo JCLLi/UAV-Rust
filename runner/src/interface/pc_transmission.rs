@@ -1,8 +1,11 @@
-use serial2::SerialPort;
-use protocol::{self, Packet, Message};
-const FIXED_SIZE:usize = 64;
 
-/// Write message to the drone
+use serial2::SerialPort;
+use protocol::{self, Packet, Message, PacketManager};
+
+use crate::interface::settings_logic::Modes;
+use super::settings_logic::{SettingsBundle, DeviceError};
+
+/// Write packet to the drone. Used by the function 'write_message'
 pub fn write_packet(serial: &SerialPort, message: Message) {
 
     // Create packet
@@ -16,40 +19,94 @@ pub fn write_packet(serial: &SerialPort, message: Message) {
     serial.write_all(&serialized_packet).unwrap();
 }
 
-/// Read message from the drone, if available
-pub fn read_packet(serial: &SerialPort) -> Result<Packet, ()> {
-    let mut buf = [0u8; FIXED_SIZE];
-
-    // Read packet from serial port, if available
-    if let Ok(_) = serial.read(&mut buf) {
-        let packet_result = Packet::from_bytes(&mut buf);
-        
-        // Get packet from data 
-        if let Ok(packet) = packet_result  {                       
-            println!("\rMessage from drone: {:?}", packet.message);
+/// Read packet from the drone, if available
+pub fn read_packet(mut buf: Vec<u8>) -> Result<Packet, ()> {
+        if let Ok(packet) = Packet::from_bytes(&mut buf) {  
+            println!("\rMessage from drone: {:?}", packet.message);                     
             Ok(packet)
         } else {
             Err(())
         }
-    } else {
-        Err(())
-    }
 }
 
-/// Wait for acknowledgement
-pub fn wait_for_ack(serial: &SerialPort) -> bool {
-    // Try to receive acknowledgement two times
-    for _ in 0..2 {
-        let rx_packet;
-        rx_packet = read_packet(serial);
+/// Write message to the drone
+pub fn write_message(serial: &SerialPort, mut bundle_new: SettingsBundle, bundle_result: Result<SettingsBundle, DeviceError>) -> (SettingsBundle, bool) {
+    let mut exit = false;
+    match bundle_result {
+        Ok(bundle) => {
+            if bundle != bundle_new {
+                bundle_new = bundle;
+                
+                // Exit program if exit command is given
+                if bundle.abort == true {
+                    write_packet(&serial, Message::SafeMode);
+                    exit = true;
+                    return (bundle_new, exit)
+                } 
 
-        if rx_packet != Err(()) {
-            if rx_packet.unwrap().message == Message::Acknowledgement(true) {
-                return true
-            } else {
-                return false
+                // Match user input with drone message
+                let message = match bundle.mode {
+                    Modes::SafeMode => Message::SafeMode,
+                    Modes::PanicMode => Message::PanicMode,
+                    Modes::ManualMode => Message::ManualMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift),
+                    Modes::CalibrationMode => Message::CalibrationMode,
+                    Modes::YawControlledMode => Message::YawControlledMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift),
+                    Modes::FullControlMode => Message::FullControlMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift),
+                };
+
+                // Write message over serial
+                write_packet(&serial, message);
             }
-         }
+        },
+        Err(device) => println!("{:?}", device),
     }
-    false
+    (bundle_new, exit)
+}
+
+/// Read message from the drone, if available
+pub fn read_message(serial: &SerialPort, mut shared_buf: Vec<u8>) -> (PacketManager, Vec<u8>) {
+    let mut read_buf = [1u8; 255];
+    let mut end_byte_vec = Vec::new();
+    let mut packetmanager = PacketManager::new();
+
+    if let Ok(num) = serial.read(&mut read_buf) {
+        // Place received data into shared buffer
+        shared_buf.extend_from_slice(&read_buf[0..num]);
+
+        // Check if packet is received by checking end byte
+        for i in 0..shared_buf.len() {
+            if shared_buf[i] == 0 {
+                end_byte_vec.push(i);
+            }
+        }
+
+        // If packets have been received, deserialize them
+        if end_byte_vec.len() > 0 {
+            for i in 0..end_byte_vec.len() {
+                let packet_result = read_packet(shared_buf.clone());
+
+                match packet_result {
+                    Err(_) => {
+                        println!("\rError: {:?}", packet_result);
+                    },
+                    Ok(_) => {
+                        let packet = packet_result.unwrap();
+                        packetmanager.add_packet(packet);
+                    }
+                }
+
+                // Remove deserialized packet from shared buffer
+                if i == 0 {
+                    for _ in 0..(end_byte_vec[i]+1) {
+                        shared_buf.remove(0);
+                    }
+                } else {
+                    for _ in 0..(end_byte_vec[i]-end_byte_vec[i-1]) {
+                        shared_buf.remove(0);
+                    }
+                }
+            }
+        }
+    }
+    (packetmanager, shared_buf)
 }

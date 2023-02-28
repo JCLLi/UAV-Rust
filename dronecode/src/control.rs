@@ -1,16 +1,16 @@
 use crate::yaw_pitch_roll::YawPitchRoll;
-use alloc::string::ToString;
+use alloc::{string::ToString, vec::Vec};
 use alloc::{format, string::String};
 use protocol::{self, Packet, PacketError, PacketManager, Message};
 use tudelft_quadrupel::barometer::read_pressure;
 use tudelft_quadrupel::battery::read_battery;
-use tudelft_quadrupel::led::{Blue, Green, Red};
+use tudelft_quadrupel::led::{Blue, Green, Red, Yellow};
 use tudelft_quadrupel::motor::get_motors;
 use tudelft_quadrupel::mpu::{read_dmp_bytes, read_raw};
 use tudelft_quadrupel::time::{set_tick_frequency, wait_for_next_tick, Instant};
 use tudelft_quadrupel::uart::{send_bytes, receive_bytes};
-use heapless::Vec;
-use crate::drone_transmission::{write_packet, read_packet, wait_for_ack};
+use crate::drone_transmission::{write_packet, read_packet, read_message};
+use postcard::{take_from_bytes_cobs, from_bytes_cobs, to_allocvec, to_allocvec_cobs};
 
 const FIXED_SIZE:usize = 64;
 
@@ -18,8 +18,12 @@ pub fn control_loop() -> ! {
     set_tick_frequency(100);
     let mut last = Instant::now();
     
+    let mut shared_buf = Vec::new();
+
     for i in 0.. {
-        Blue.toggle();
+        if i % 50 == 0 {
+            Blue.toggle();
+        }
         let now = Instant::now();
         let dt = now.duration_since(last);
         last = now;
@@ -31,46 +35,20 @@ pub fn control_loop() -> ! {
         // let pres = read_pressure();
  
         Green.off();
+        Yellow.off();
 
-        // Read data
-        let mut buf = [0u8; FIXED_SIZE];
-        let data = receive_bytes(&mut buf);
-        
-        // Check if a packet is received, deserialize the packet into the message and send ACK/NACK. 
-        if data > 0 {
-            let packet_result = read_packet(buf);
-            
-            match packet_result {
-                Err(_) => write_packet(Message::Acknowledgement(false)),
-                Ok(_) => {
-                    let packet = packet_result.unwrap();
+        // Read data, place packets in packetmanager
+        let packetmanager;
+        (packetmanager, shared_buf) = read_message(shared_buf);
 
-                    Green.on();
-                    let message = packet.message;
-                    
-                    // calculate CRC checksum
-                    let checksum = packet.verify_checksum(&packet);
-    
-                    // write_packet(message);
-                    // Send ACK or NACK
-                    write_packet(Message::Acknowledgement(checksum));
-                }
-            }
+        // Data logging
+        if i % 500 == 0 {
+            write_packet(Message::Datalogging(0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0));
+            write_packet(Message::Datalogging(1, 0, 0, 0, 2, 0.0, 0.0, 0.0, 0, 4, 0, 0, 0));
+
+            // write_packet(Message::Datalogging(motors[0], motors[1], motors[2], motors[3], dt.as_secs(), ypr.yaw, ypr.pitch, ypr.roll, accel.x, accel.y, accel.z, bat, 0));
+            Yellow.on();
         }
-
-        // send_bytes(format!("\rDTT: {:?}ms\n", dt.as_millis()).as_bytes());
-        // send_bytes(
-        //     format!(
-        //         "\rMTR: {} {} {} {}\n",
-        //         motors[0], motors[1], motors[2], motors[3]
-        //     )
-        //     .as_bytes(),
-        // );
-        // send_bytes(format!("\rYPR {} {} {}\n", ypr.yaw, ypr.pitch, ypr.roll).as_bytes());
-        // send_bytes(format!("\rACC {} {} {}\n", accel.x, accel.y, accel.z).as_bytes());
-        // send_bytes(format!("\rBAT {bat}\n").as_bytes());
-        // // send_bytes(format!("\rBAR {pres} \n").as_bytes());
-        // send_bytes("\n".as_bytes());
 
         // wait until the timer interrupt goes off again
         // based on the frequency set above
