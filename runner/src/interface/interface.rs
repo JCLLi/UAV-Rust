@@ -1,27 +1,24 @@
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, read},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{disable_raw_mode, enable_raw_mode},
 };
-use std::{error::Error, io, io::Stdout, time::Duration, env::args, sync::{Arc, Mutex, mpsc::channel}, thread};
+use std::{io::{Error, ErrorKind}, sync::mpsc};
+use std::{error::Error as OtherError, io, io::Stdout, time::Duration, env::args, sync::{Arc, Mutex, mpsc::channel}, thread};
 use serial2::SerialPort;
-use protocol::{self, Packet};
-use crate::interface::{data_transmission::{write_data, read_data, wait_for_ack}, keyboard_mapper::{self, keymapper, CommandStruct, Commands}};
+use protocol::{self, Packet, Message};
+use crate::interface::{pc_transmission::{write_packet, read_packet, wait_for_ack}, keyboard_mapper::{self, keymapper}, settings_logic::Modes};
+
+use super::settings_logic::{DeviceListener, SettingsBundle};
+const FIXED_SIZE:u16 = 64;
 
 /// Setup PC terminal interface for PC-drone communication
-pub fn setup_interface(serial: SerialPort, multithread: bool) -> Result<(), Box<dyn Error>> {
+pub fn setup_interface(serial: SerialPort) -> Result<(), Box<dyn OtherError>> {
 
     // Setup terminal
     enable_raw_mode()?;
     print! ("\x1B[2J\x1B[1;1H");
 
     // Run terminal
-    let res ;
-    if multithread == false {
-        res = run_interface(serial);
-    } else {
-        res = run_mt_interface(&serial);
-    }
+    let res = run_interface(serial);
 
     // restore terminal
     disable_raw_mode()?;
@@ -36,66 +33,46 @@ pub fn setup_interface(serial: SerialPort, multithread: bool) -> Result<(), Box<
 /// Run the PC terminal interface
 fn run_interface(serial: SerialPort) -> io::Result<()> {
 
+    let mut device_listener = DeviceListener::new();
+    let mut bundle_new = SettingsBundle::default();
+
     loop {
+        // Receive user input
+        let bundle_result = device_listener.get_combined_settings();
         
-        // Check key event and map to a command
-        let commandstruct = keymapper().unwrap();
-        
-        // Exit program when exit command is given
-        if commandstruct.command == keyboard_mapper::Commands::Exit { 
-            // Set drone in safe state before exiting
-            write_data(&serial, CommandStruct { command: Commands::SafeMode, argument: 0 });
+        // Send command to drone if input is correct
+        match bundle_result {
+            Ok(bundle) => {
+                if bundle != bundle_new {
+                    println!("\r{:?}", bundle);
+                    bundle_new = bundle;
+                    
+                    // Exit program if exit command is given
+                    if bundle.abort == true {
+                        write_packet(&serial, Message::SafeMode);
+                        break;
+                    } 
 
-            return Ok(());       
+                    // Match user input with drone message
+                    let message = match bundle.mode {
+                        Modes::SafeMode => Message::SafeMode,
+                        Modes::PanicMode => Message::PanicMode,
+                        Modes::ManualMode => Message::ManualMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift),
+                        Modes::CalibrationMode => Message::CalibrationMode,
+                        Modes::YawControlledMode => Message::YawControlledMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift),
+                        Modes::FullControlMode => Message::FullControlMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift),
+                    };
+
+                    // Write message over serial
+                    write_packet(&serial, message);
+                }
+            },
+            Err(device) => println!("{:?}", device),
         }
 
-        // Send packet if a command is given
-        if commandstruct.command != keyboard_mapper::Commands::None {
-            write_data(&serial, commandstruct);
-
-            println!("\rACK: {:?}", wait_for_ack(&serial));
-        }
+        let data = read_packet(&serial);
     }
-}
 
-/// Run the multithread PC terminal interface
-fn run_mt_interface(serial: &SerialPort) -> io::Result<()> {
-
-    // let serial_clone = serial.clone();
-    // let serial_clone2 = serial.clone();
-    // // Thread for writing data
-    // let write_serial = thread::spawn(move || {
-    //     let tx_serial = serial;
-    //     loop {
-
-    //         // Check key event and map to a command
-    //         let commandstruct = keymapper().unwrap();
-            
-    //         // Exit program when exit command is given
-    //         if commandstruct.command == keyboard_mapper::Commands::Exit {   
-    //             break;       
-    //         }
-    
-    //         // Send packet if a command is given
-    //         if commandstruct.command != keyboard_mapper::Commands::None {
-    //             write_data(serial_clone2, commandstruct);
-    
-    //             // println!("\rACK: {:?}", wait_for_ack(&serial));
-    //         }
-    //     }
-    // });
-
-    // //Thread for reading serial port
-    // let read_serial = thread::spawn(move || {
-
-    //     loop {
-    //         read_data(serial_clone);
-    //     }
-    // });
-
-    // // keyboard_scan.join();
-    // write_serial.join();
-    // read_serial.join();
-
-    return Ok(());
+    // keyevent_thread.join().unwrap();
+    return Ok(())
 }

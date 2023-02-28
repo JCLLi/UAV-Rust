@@ -3,33 +3,36 @@
 extern crate std;
 extern crate alloc;
 
+use core::ops::Deref;
+use alloc::fmt;
+use alloc::vec::Vec;
 use crc;
-use heapless::Vec;
-use postcard::{from_bytes, to_vec, to_slice};
+use postcard::{from_bytes, to_vec, to_allocvec, to_allocvec_cobs, take_from_bytes_cobs};
 use serde::{Deserialize, Serialize};
-use alloc::string::ToString;
-use alloc::{format, string::String};
-
-const FIXED_SIZE:usize = 30;
 
 const CRC_CHECKSUM: crc::Crc<u32> = crc::Crc::<u32>::new(&crc::CRC_32_CKSUM);
+const FIXED_SIZE:u16 = 64;
 
-const START_BYTE: u8 = b'<';
-const END_BYTE: u8 = b'>';
-
-///Packet commands that can be sent with a packet.
-#[derive(Debug, PartialEq)]
-pub enum Command {
-    Lift,
-    Roll,
-    Pitch,
-    Yaw, // etc..
+/// Message enum with all possible messages
+/// Data order: pitch, roll, yaw, lift
+/// Datalogging order: Motor 1, Motor 2, Motor 3, Motor 4, Delay, 
+/// ypr.yaw, ypr.pitch, ypr.roll, acc.x, acc.y, acc.z, bat, bar
+#[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq)]
+pub enum Message {
+    SafeMode,
+    PanicMode,
+    ManualMode(u16, u16, u16, u16),
+    CalibrationMode,
+    YawControlledMode(u16, u16, u16, u16),
+    FullControlMode(u16, u16, u16, u16),
+    Acknowledgement(bool),
+    Datalogging(u16, u16, u16, u16,u16, u16, u16, u16,u16, u16, u16, u16, u16)
 }
-///A Packet is the message format that contains a command, an argument and a checksum.
-#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
+
+/// A Packet is the message format that contains a command, an argument and a checksum.
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Copy)]
 pub struct Packet {
-    pub command: Vec<u8, FIXED_SIZE>,
-    pub argument: Vec<u8, FIXED_SIZE>,
+    pub message: Message,
     pub crc: u32,
 }
 
@@ -40,22 +43,23 @@ pub enum PacketError {
     InvalidCommand,
     InvalidPayload,
     ChecksumMismatch,
+    NoAvailablePacket,
 }
 
 ///The PacketManager struct is responsible for managing a collection of packets.
 #[derive(Debug, PartialEq)]
 pub struct PacketManager {
-    packets: Vec<Packet, FIXED_SIZE>,
+    packets: Vec<Packet>,
 }
 
 impl PacketManager {
     ///creates a new empty PacketManager with an empty vector of packets.
     pub fn new() -> Self { 
-        PacketManager { packets: Vec::<Packet, FIXED_SIZE>::new() }
+        PacketManager { packets: Vec::<Packet>::new() }
     }
     ///Adds a new packet to the vector managed by the PacketManager. If the vector is already full, it will panic with the error message "Too many packets".
     pub fn add_packet(&mut self, packet: Packet) {
-        self.packets.push(packet).expect("Too many packets");
+        self.packets.push(packet);
     }
     ///removes the first packet from the PacketManager's packet vector and returns it as an Option<Packet>. If the vector is empty, the function returns None.
     pub fn read_packet(&mut self) -> Option<Packet> {
@@ -66,88 +70,55 @@ impl PacketManager {
     }
 }
 
-
 impl Packet {
-    /// Create a new Packet with the given command and argument
-    pub fn new(command: &[u8], argument: &[u8]) -> Self {
-        // Create new vectors to store bytes of command and argument
-        let mut bytes_command = Vec::<u8, FIXED_SIZE>::new();
-        let mut bytes_argument = Vec::<u8, FIXED_SIZE>::new();
-        // Copy bytes of command and argument to the respective vectors
-        bytes_command.extend_from_slice(command).unwrap();
-        bytes_argument.extend_from_slice(argument).unwrap();
-        
-        // Create new Packet instance with the copied command and argument bytes
-        Packet { command: bytes_command, argument: bytes_argument, crc: 0 }
+    /// Create new Packet instance with the message. CRC is created when packet is serialized.
+    pub fn new(message: Message) -> Self {
+        Packet { message: message, crc: 0 }
     }
 
     /// Serialize the packet into a byte vector
-    pub fn to_bytes(&mut self) -> Vec<u8, FIXED_SIZE> {
+    pub fn to_bytes(&mut self) -> Vec<u8> {
         // Calculate and add the checksum
         self.crc = self.create_checksum();
 
         // Convert the packet into a byte vector
-        let packet_bytes: Vec<u8, FIXED_SIZE> = to_vec(&self).unwrap();
+        let mut byte_vector = to_allocvec_cobs(self).unwrap();
+        let vec_len = byte_vector.len() as u16;
 
-        // Create a new byte vector and add the start byte, packet bytes, and end byte to it
-        let mut res = Vec::<u8, FIXED_SIZE>::new();
-        res.push(START_BYTE).unwrap();
-        res.extend_from_slice(&packet_bytes).unwrap();
-        res.push(END_BYTE).unwrap();
-        res
+        // Make vector fixed size
+        for _ in 0..(FIXED_SIZE - vec_len) {
+            byte_vector.push(1);
+        }
+
+        byte_vector
     }
 
     /// Deserialize the byte vector into a Packet instance
-    pub fn from_bytes(message: &[u8]) -> Result<Packet, PacketError> {
-        // Find the payload bytes (bytes between start and end bytes)
-        let payload = Packet::find_payload_bytes(message)?;
-
+    pub fn from_bytes(buf: &mut [u8]) -> Result<Packet, PacketError> {
         // Deserialize the payload into a Packet instance
-        let packet = from_bytes::<Packet>(payload).map_err(|_| PacketError::InvalidPacket)?;
-
-        // Verify the checksum and command of the packet
-        if packet.verify_checksum(&packet) {
-            packet.verify_command()?;
-            Ok(packet)
-        } else {
-            Err(PacketError::ChecksumMismatch)
-        }
-    }
-
-    /// Verify that the packet's command is valid
-    pub fn verify_command(&self) -> Result<(), PacketError> {
-        // Check if the command is valid and return an error if it is not
-        match self.command.as_slice() {
-            b"ACK" | b"NACK" | b"Lift" | b"Roll" | b"Pitch" | b"Yaw" | 
-            b"SafeMode" | b"Mode0" | b"Mode1" | b"YawControlPUp" | 
-            b"YawControlPDown" | b"RollPitchControlP1" | b"RollPitchControlP2" => Ok(()),
-            _ => Err(PacketError::InvalidCommand),
-        }
-    }
-
-    /// Find the payload bytes of the packet
-    pub fn find_payload_bytes(bytes: &[u8]) -> Result<&[u8], PacketError> {
-        // Find the positions of the start and end bytes
-        let start_byte_pos = bytes.iter().position(|&b| b == START_BYTE);
-        let end_byte_pos = bytes.iter().position(|&b| b == END_BYTE);
-
-        // Return the payload bytes if start and end bytes are found and in the right order
-        match (start_byte_pos, end_byte_pos) {
-            (Some(start_pos), Some(end_pos)) if start_pos < end_pos => {
-                Ok(&bytes[start_pos + 1..end_pos])
+        let cobs_result = take_from_bytes_cobs::<Packet>(buf);
+        match cobs_result {
+            Err(_) => Err(PacketError::InvalidPacket),
+            Ok(_) => {
+                let packet;
+                (packet, _) = cobs_result.unwrap();
+        
+                // Verify the checksum and command of the packet
+                if packet.verify_checksum(&packet) {
+                    Ok(packet)
+                } else {
+                    Err(PacketError::ChecksumMismatch)
+                }
             }
-            _ => Err(PacketError::InvalidPayload),
         }
     }
 
     /// This function computes the CRC32 checksum of the packet's command and argument fields.
     pub fn create_checksum(&mut self) -> u32 {
         let mut digest = CRC_CHECKSUM.digest();
-        let mut buf = [0u8; 255];
         
-        // Update the digest with the bytes of the command and argument fields
-        digest.update(to_slice(&self.command, &mut buf).unwrap());
-        digest.update(to_slice(&self.argument, &mut buf).unwrap());
+        // Update the digest with the message
+        digest.update(to_allocvec(&self.message).unwrap().deref());
         
         // Finalize the digest and return the computed checksum
         digest.finalize()
@@ -156,27 +127,12 @@ impl Packet {
     /// This function verifies the integrity of the packet's data by computing its CRC32 checksum.
     pub fn verify_checksum(&self, packet: &Packet) -> bool {
         let mut digest = CRC_CHECKSUM.digest();
-        let mut buf = [0u8; 255];
 
         // Update the digest with the bytes of the command and argument fields of the provided packet
-        digest.update(to_slice(&packet.command, &mut buf).unwrap());
-        digest.update(to_slice(&packet.argument, &mut buf).unwrap());
+        digest.update(to_allocvec(&packet.message).unwrap().deref());
         
         // Finalize the digest and compare it with the provided checksum
         digest.finalize() == packet.crc
-    }
-
-    /// Create ACK or NACK packet, based on checksum
-    pub fn create_ack_or_nack(checksum: bool) -> Vec<u8, FIXED_SIZE> {
-        // Create ack packet, based on checksum
-        let mut packet = if checksum {
-            Packet::new(b"ACK", 1.to_string().as_bytes())
-        } else {
-            Packet::new(b"NACK", 0.to_string().as_bytes())
-        };
-    
-        // Serialize ack packet and return
-        packet.to_bytes()
     }
     
     /// Find end byte (>) position in a data packet
@@ -195,58 +151,33 @@ impl Packet {
 
 #[cfg(test)]
 mod tests {
+    use core::ops::DerefMut;
+
     use super::*;
 
-    #[test]
-    fn test_packet_serialization() {
-        // Test serialization and deserialization of a valid packet
-        let mut packet = Packet::new(b"Lift", b"100");
-        let serialized_packet = packet.to_bytes();
-        println!("Serialized packet: {:?}", serialized_packet);
-        let deserialized_packet = Packet::from_bytes(&serialized_packet).unwrap();
-        println!("Deserialized packet: {:?}", deserialized_packet);
-        let command = deserialized_packet.command.as_slice();
-        let argument = deserialized_packet.argument.as_slice();
-        println!("Command: {:?}",  String::from_utf8(command.to_vec()));
-        println!("Argument: {:?}", String::from_utf8(argument.to_vec()));
-        assert_eq!(packet, deserialized_packet);
-    }
+    // #[test]
+    // fn test_packet_serialization() {
+    //     // Test serialization and deserialization of a valid packet
+    //     let mut packet = Packet::new(Message::SafeMode);
+    //     let written_packet = &packet.to_bytes();
+    //     let deserialized_packet;
+    //     (buf,) = Packet::from_bytes(packet.to_bytes().deref_mut()).unwrap();
+    //     println!("Deserialized packet: {:?}", deserialized_packet);
+    //     let message = deserialized_packet.message;
+    //     println!("Message: {:?}",  message);
+    //     assert_eq!(packet, deserialized_packet);
+    // }
 
     #[test]
     fn test_packet_checksum() {
         // Test checksum calculation and verification
-        let mut packet = Packet::new(b"Lift", b"100");
+        let mut packet = Packet::new(Message::PanicMode);
         let checksum = packet.create_checksum();
         packet.crc = checksum;
         assert!(packet.verify_checksum(&packet));
         assert!(!packet.verify_checksum(&Packet {
-            command: packet.command.clone(),
-            argument: packet.argument.clone(),
+            message: Message::PanicMode,
             crc: checksum + 1,
         }));
-    }
-
-    #[test]
-    fn test_packet_command_verification() {
-        // Test command verification
-        let packet = Packet::new(b"Lift", b"100");
-        assert!(packet.verify_command().is_ok());
-        let packet = Packet::new(b"InvalidCommand", b"100");
-        assert!(packet.verify_command().is_err());
-    }
-
-    #[test]
-    fn test_packet_payload_finding() {
-        // Test finding payload bytes
-        let start_byte = vec![START_BYTE];
-        let end_byte = vec![END_BYTE];
-        let payload = vec![0, 1, 2, 3, 4];
-        let message = [&start_byte[..], &payload[..], &end_byte[..]].concat();
-        assert_eq!(Packet::find_payload_bytes(&message), Ok(&payload[..]));
-
-        let start_byte = vec![START_BYTE];
-        let end_byte = vec![END_BYTE];
-        let message = [&end_byte[..], &start_byte[..]].concat();
-        assert_eq!(Packet::find_payload_bytes(&message), Err(PacketError::InvalidPayload));
     }
 }

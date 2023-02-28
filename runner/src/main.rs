@@ -12,9 +12,7 @@ fn main()  {
     // Open serial port
     let serial = open_serial();
 
-    // Run interface in either single thread or multithread
-    let multithread = false;
-    let res = setup_interface(serial, multithread);
+    let res = setup_interface(serial);
     
     println!("\rInterface stopped: {:?}", res);
 }
