@@ -47,7 +47,7 @@ pub enum PacketError {
 ///The PacketManager struct is responsible for managing a collection of packets.
 #[derive(Debug, PartialEq)]
 pub struct PacketManager {
-    packets: Vec<Packet>,
+    pub packets: Vec<Packet>,
 }
 
 impl PacketManager {

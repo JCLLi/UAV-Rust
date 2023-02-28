@@ -1,8 +1,10 @@
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use std::{error::Error as OtherError, io};
 use serial2::SerialPort;
-use protocol::{self, Packet, Message, PacketError};
+use protocol::{self, Packet, Message, PacketError, PacketManager};
 use crate::interface::{pc_transmission::{write_packet, write_message}, settings_logic::{DeviceListener, SettingsBundle}};
+
+use super::pc_transmission::read_message;
 
 /// Setup PC terminal interface for PC-drone communication
 pub fn setup_interface(serial: SerialPort) -> Result<(), Box<dyn OtherError>> {
@@ -79,6 +81,6 @@ fn run_interface(serial: SerialPort) -> io::Result<()> {
         // let packetmanager;
         // (packetmanager, shared_buf) = read_message(&serial, shared_buf);
     }
-    
+
     return Ok(())
 }
