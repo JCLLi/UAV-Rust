@@ -4,6 +4,7 @@ use crate::drone::{Drone, Setter};
 const MOTOR_MAX: u16 = 400;
 const ZERO_POINT: u16 = 32767;
 const RESOLUTION: f32 = MOTOR_MAX as f32 / ZERO_POINT as f32;
+const FLOATING_SPEED: f32 = 100 as f32;
 
 pub struct Motors {
     pitch: [f32; 4],
@@ -46,44 +47,44 @@ pub fn add(a: f32, b: f32) -> f32{
 pub fn get_speed(drone: &mut Drone, argument: [u16; 4]) -> [u16; 4]{
     let mut motor = Motors::default();
 
-    //This is the basic speed which is got from the lift argument.
-    //It can be seen as the floating speed.
-    let bs = 50 as f32;
     //This is the support speed for the motor needs to speed down with motion pitch and roll
-    //The value is limited to a quarter of bs
-    let ss = bs / 4 as f32;
+    //The value is limited to a quarter of FLOATING_SPEED
+    let ss = FLOATING_SPEED / 4 as f32;
 
-    drone.set_floating_speed(bs as u16);
+    drone.set_floating_speed(FLOATING_SPEED as u16);
 
     //Calculate motor speeds with only pitch
     if argument[0] >= ZERO_POINT {
         let speedup = (argument[0] - ZERO_POINT) as f32 * RESOLUTION;
-        motor.pitch = [sub(bs, ss), bs, add(bs, speedup), bs];
+        motor.pitch = [sub(FLOATING_SPEED, ss), FLOATING_SPEED, add(FLOATING_SPEED, speedup), FLOATING_SPEED];
     } else {
         let speedup = argument[0] as f32 * RESOLUTION;
-        motor.pitch = [add(bs, speedup), bs, sub(bs, ss), bs];
+        motor.pitch = [add(FLOATING_SPEED, speedup), FLOATING_SPEED, sub(FLOATING_SPEED, ss), FLOATING_SPEED];
     }
 
     //Calculate motor speeds with only roll
     if argument[1] >= ZERO_POINT {
         let speedup = (argument[1] - ZERO_POINT) as f32 * RESOLUTION;
-        motor.roll = [bs, sub(bs, ss), bs, add(bs, speedup)];
+        motor.roll = [FLOATING_SPEED, sub(FLOATING_SPEED, ss), FLOATING_SPEED, add(FLOATING_SPEED, speedup)];
     } else {
         let speedup = argument[1] as f32 * RESOLUTION;
-        motor.roll = [bs, add(bs, speedup), bs, sub(bs, ss)];
+        motor.roll = [FLOATING_SPEED, add(FLOATING_SPEED, speedup), FLOATING_SPEED, sub(FLOATING_SPEED, ss)];
     }
 
     //Calculate motor speeds with only yaw
     if argument[2] >= ZERO_POINT {
         let speedup = (argument[2] - ZERO_POINT) as f32 * RESOLUTION;
-        motor.yaw = [add(bs, speedup), bs, add(bs, speedup), bs];
+        motor.yaw = [add(FLOATING_SPEED, speedup), FLOATING_SPEED, add(FLOATING_SPEED, speedup), FLOATING_SPEED];
     } else {
         let speedup = argument[2] as f32 * RESOLUTION;
-        motor.yaw = [bs, add(bs, speedup), bs, add(bs, speedup)];
+        motor.yaw = [FLOATING_SPEED, add(FLOATING_SPEED, speedup), FLOATING_SPEED, add(FLOATING_SPEED, speedup)];
     }
 
+    let ls = (argument[3] as f32 * MOTOR_MAX as f32) / 65535 as f32;
     //Calculate motor speeds with only lift
-    motor.lift = [bs, bs, bs, bs];
+    for i in 0..4{
+        motor.lift[i] = add(FLOATING_SPEED, ls);
+    }
 
     //Calculate the average when 4 motions are together
     for i in 0..4{
