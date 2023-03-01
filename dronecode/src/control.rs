@@ -80,7 +80,7 @@ pub fn control_loop() -> ! {
         // Data logging
         if i % 100 == 0 {
             let mut datalog = Message::Datalogging(0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0);
-            write_packet(message);
+            write_packet(datalog);
 
             // write_packet(Message::Datalogging(motors[0], motors[1], motors[2], motors[3], dt.as_secs(), ypr.yaw, ypr.pitch, ypr.roll, accel.x, accel.y, accel.z, bat, 0));
             Yellow.on();
