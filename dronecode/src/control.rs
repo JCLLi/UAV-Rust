@@ -49,7 +49,6 @@ pub fn control_loop() -> ! {
             no_message = 0;
         }
 
-
         //This match is used to process messages
         match drone.get_mode() {
             WorkingModes::PanicMode => drone.set_mode(panic_mode()),
@@ -80,7 +79,8 @@ pub fn control_loop() -> ! {
 
         // Data logging
         if i % 100 == 0 {
-            write_packet(Message::Datalogging(0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0));
+            let mut datalog = Message::Datalogging(0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0);
+            write_packet(message);
 
             // write_packet(Message::Datalogging(motors[0], motors[1], motors[2], motors[3], dt.as_secs(), ypr.yaw, ypr.pitch, ypr.roll, accel.x, accel.y, accel.z, bat, 0));
             Yellow.on();

@@ -2,9 +2,9 @@ use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use std::{error::Error as OtherError, io, thread, sync::mpsc::{self, Sender, Receiver}};
 use serial2::SerialPort;
 use protocol::{self, Packet, Message, PacketError, PacketManager};
-use crate::interface::{pc_transmission::{write_packet, write_message}, settings_logic::{DeviceListener, SettingsBundle}};
+use crate::interface::{pc_transmission::{write_packet, write_message}, settings_logic::{DeviceListener, SettingsBundle, Modes}};
 
-use super::pc_transmission::read_message;
+use super::{pc_transmission::read_message, settings_logic::DeviceError};
 
 /// Setup PC terminal interface for PC-drone communication
 pub fn setup_interface(serial: &SerialPort) -> Result<(), Box<dyn OtherError>> {
@@ -40,9 +40,10 @@ fn write_serial(serial: &SerialPort, sender: Sender<bool>) {
         // Write data to drone is user input is available
         let exit;
         (bundle_new, exit) = write_message(serial, bundle_new, bundle_result);
+        
+        // Exit the program if exit command is given. This command is also sent to the read_serial thread.
         if exit == true {
-            println!("\rexit");
-            sender.send(true);
+            sender.send(true).unwrap();
             break;
         }
     }
@@ -54,9 +55,13 @@ fn read_serial(serial: &SerialPort, receiver: Receiver<bool>) {
     // Read data, place packets in packetmanager
     let mut packetmanager = PacketManager::new();
     loop {
+        // Read packets sent by the drone and place them in the packetmanager
         read_message(serial, &mut shared_buf, &mut packetmanager);
 
+        // Read one packet from the packetmanager and use it
         let packet = packetmanager.read_packet();
+
+        // Exit program if exit command is given
         if receiver.recv().unwrap() == true {
             break;
         }

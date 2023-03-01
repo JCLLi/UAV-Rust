@@ -55,8 +55,8 @@ impl Default for SettingsBundle {
         SettingsBundle { 
             pitch: 32767, 
             roll: 32767, 
-            yaw: 32767, 
-            lift: 32767, 
+            yaw: 0, 
+            lift: 0, 
             abort: false, 
             mode: Modes::SafeMode, 
             yaw_control_p: 0, 
@@ -96,9 +96,10 @@ impl DeviceListener {
 
                 self.bundle.abort = mapped_coordinates.abort | self.bundle.abort;
             },
-            Err(TryRecvError::Disconnected) => return Err(DeviceError::DisconnectedJoystickRunner),
+            Err(TryRecvError::Disconnected) => {
+                return Err(DeviceError::DisconnectedJoystickRunner);
+            }
             _ => (),
-
         }
 
         // Try to receive a value from the keyboard channel without blocking
@@ -108,10 +109,31 @@ impl DeviceListener {
                     Commands::Exit => self.bundle.abort = true,
                     Commands::SafeMode => self.bundle.mode = Modes::SafeMode,
                     Commands::PanicMode => self.bundle.mode = Modes::PanicMode,
-                    Commands::ManualMode => self.bundle.mode = Modes::ManualMode,
+                    Commands::ManualMode => self.bundle.mode = {
+                        // If joystick is at zeropoint, go to manual mode, otherwise stay in old mode
+                        if (self.bundle.pitch == 32767) && (self.bundle.roll == 32767) && (self.bundle.yaw == 0) && (self.bundle.lift == 0) {
+                            Modes::ManualMode
+                        } else {
+                            self.bundle.mode
+                        }
+                    },
                     Commands::CalibrationMode => self.bundle.mode = Modes::CalibrationMode,
-                    Commands::YawControlledMode => self.bundle.mode = Modes::YawControlledMode,
-                    Commands::FullControlMode => self.bundle.mode = Modes::FullControlMode,
+                    Commands::YawControlledMode => self.bundle.mode = {
+                        // If joystick is at zeropoint, go to manual mode, otherwise stay in old mode
+                        if (self.bundle.pitch == 32767) && (self.bundle.roll == 32767) && (self.bundle.yaw == 0) && (self.bundle.lift == 0) {
+                            Modes::YawControlledMode
+                        } else {
+                            self.bundle.mode
+                        }
+                    },
+                    Commands::FullControlMode => self.bundle.mode = {
+                        // If joystick is at zeropoint, go to manual mode, otherwise stay in old mode
+                        if (self.bundle.pitch == 32767) && (self.bundle.roll == 32767) && (self.bundle.yaw == 0) && (self.bundle.lift == 0) {
+                            Modes::FullControlMode
+                        } else {
+                            self.bundle.mode
+                        }
+                    },
                     Commands::LiftUp => self.bundle.lift = self.bundle.lift.saturating_add(keyboardcommand.argument),
                     Commands::LiftDown => self.bundle.lift = self.bundle.lift.saturating_sub(keyboardcommand.argument),
                     Commands::RollUp => self.bundle.roll = self.bundle.roll.saturating_add(keyboardcommand.argument),
@@ -153,6 +175,10 @@ mod tests {
                     if bundle != bundle_new {
                         println!("\r{:?}", bundle);
                         bundle_new = bundle;
+
+                        if bundle.abort == true {
+                            break;
+                        }
                     } 
                 },
                 Err(device) => println!("\r{:?}", device),

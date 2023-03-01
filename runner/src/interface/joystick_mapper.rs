@@ -44,7 +44,10 @@ impl State {
 
         match event {
             Event::Disconnect => {
+                println!("\rJjoystick unplugged");
                 self.controllers.swap_remove(id);
+                self.mapped.abort = true;
+                self.sender.send(self.mapped).unwrap();
             }
             Event::MenuR(true) => return Ready(player),
             Event::ActionA(pressed) => {
