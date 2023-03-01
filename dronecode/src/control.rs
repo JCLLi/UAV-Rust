@@ -19,7 +19,7 @@ use crate::working_mode::WorkingModes;
 use crate::drone_transmission::{write_packet, read_packet, wait_for_ack};
 
 const FIXED_SIZE:usize = 64;
-const MOTION_DELAY:u8 = 50;
+const MOTION_DELAY:u32 = 500;
 
 pub fn control_loop() -> ! {
     set_tick_frequency(100);
@@ -73,9 +73,9 @@ pub fn control_loop() -> ! {
             }
             _ => {
                 //Check panic situation
-                if !panic_check() {
-                    drone.set_mode(WorkingModes::PanicMode);
-                }
+                // if !panic_check() {
+                //     drone.set_mode(WorkingModes::PanicMode);
+                // }
                 if new_message {
                     drone.message_check(&message);
                 }
@@ -90,7 +90,24 @@ pub fn control_loop() -> ! {
             keep_floating(&drone);
             no_message = 0;
         }
+        if i % 100 == 0 {
+            let motors = get_motors();
+            send_bytes(
+                format!(
+                    "MTR: {} {} {} {}\n",
+                    motors[0], motors[1], motors[2], motors[3]
+                )
+                    .as_bytes(),
+            );
+            let a = match drone.get_mode() {
+                WorkingModes::SafeMode => send_bytes("SafeMode".as_bytes()),
+                WorkingModes::PanicMode => send_bytes("PanicMode".as_bytes()),
+                WorkingModes::ManualMode => send_bytes("ManualMode".as_bytes()),
+                _ => send_bytes("error".as_bytes()),
+            };
+            send_bytes("\n".as_bytes());
 
+        }
         // wait until the timer interrupt goes off again
         // based on the frequency set above
         wait_for_next_tick();
