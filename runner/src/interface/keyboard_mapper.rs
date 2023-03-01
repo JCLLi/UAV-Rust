@@ -1,6 +1,6 @@
 use crossterm::event::{Event, KeyCode, read};
 use serde::{Deserialize, Serialize};
-use std::{fmt::{self, write}, sync::mpsc};
+use std::{fmt::{self}, sync::mpsc};
 const STATIC_OFFSET_UP:u16 = 1000;
 const STATIC_OFFSET_DOWN:u16 = 1000;
 const CONTROL_STATIC_OFFSET_UP:u16 = 100;
