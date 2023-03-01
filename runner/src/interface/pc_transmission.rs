@@ -39,7 +39,7 @@ pub fn write_message(serial: &SerialPort, mut bundle_new: SettingsBundle, bundle
                 
                 // Exit program if exit command is given
                 if bundle.abort == true {
-                    write_packet(&serial, Message::SafeMode);
+                    write_packet(serial, Message::SafeMode);
                     exit = true;
                     return (bundle_new, exit)
                 } 
@@ -55,7 +55,7 @@ pub fn write_message(serial: &SerialPort, mut bundle_new: SettingsBundle, bundle
                 };
 
                 // Write message over serial
-                write_packet(&serial, message);
+                write_packet(serial, message);
             }
         },
         Err(device) => println!("{:?}", device),
@@ -64,10 +64,9 @@ pub fn write_message(serial: &SerialPort, mut bundle_new: SettingsBundle, bundle
 }
 
 /// Read message from the drone, if available
-pub fn read_message(serial: &SerialPort, mut shared_buf: Vec<u8>) -> (PacketManager, Vec<u8>) {
+pub fn read_message(serial: &SerialPort, shared_buf: &mut Vec<u8>, packet_manager: &mut PacketManager) {
     let mut read_buf = [1u8; 255];
     let mut end_byte_vec = Vec::new();
-    let mut packetmanager = PacketManager::new();
 
     if let Ok(num) = serial.read(&mut read_buf) {
         // Place received data into shared buffer
@@ -91,7 +90,7 @@ pub fn read_message(serial: &SerialPort, mut shared_buf: Vec<u8>) -> (PacketMana
                     },
                     Ok(_) => {
                         let packet = packet_result.unwrap();
-                        packetmanager.add_packet(packet);
+                        packet_manager.add_packet(packet);
                     }
                 }
 
@@ -108,5 +107,4 @@ pub fn read_message(serial: &SerialPort, mut shared_buf: Vec<u8>) -> (PacketMana
             }
         }
     }
-    (packetmanager, shared_buf)
 }

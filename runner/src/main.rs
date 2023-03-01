@@ -12,7 +12,7 @@ fn main()  {
     // Open serial port
     let serial = open_serial();
 
-    let res = setup_interface(serial);
+    let res = setup_interface(&serial);
     
     println!("\rInterface stopped: {:?}", res);
 }

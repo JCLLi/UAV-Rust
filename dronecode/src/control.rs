@@ -79,9 +79,8 @@ pub fn control_loop() -> ! {
         }
 
         // Data logging
-        if i % 500 == 0 {
+        if i % 100 == 0 {
             write_packet(Message::Datalogging(0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0));
-            write_packet(Message::Datalogging(1, 0, 0, 0, 2, 0.0, 0.0, 0.0, 0, 4, 0, 0, 0));
 
             // write_packet(Message::Datalogging(motors[0], motors[1], motors[2], motors[3], dt.as_secs(), ypr.yaw, ypr.pitch, ypr.roll, accel.x, accel.y, accel.z, bat, 0));
             Yellow.on();

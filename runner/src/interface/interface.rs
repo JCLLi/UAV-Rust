@@ -1,5 +1,5 @@
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
-use std::{error::Error as OtherError, io};
+use std::{error::Error as OtherError, io, thread, sync::mpsc::{self, Sender, Receiver}};
 use serial2::SerialPort;
 use protocol::{self, Packet, Message, PacketError, PacketManager};
 use crate::interface::{pc_transmission::{write_packet, write_message}, settings_logic::{DeviceListener, SettingsBundle}};
@@ -7,7 +7,7 @@ use crate::interface::{pc_transmission::{write_packet, write_message}, settings_
 use super::pc_transmission::read_message;
 
 /// Setup PC terminal interface for PC-drone communication
-pub fn setup_interface(serial: SerialPort) -> Result<(), Box<dyn OtherError>> {
+pub fn setup_interface(serial: &SerialPort) -> Result<(), Box<dyn OtherError>> {
 
     // Setup terminal
     enable_raw_mode()?;
@@ -29,42 +29,9 @@ pub fn setup_interface(serial: SerialPort) -> Result<(), Box<dyn OtherError>> {
     Ok(())
 }
 
-/// Run the PC terminal interface
-fn run_interface(serial: SerialPort) -> io::Result<()> {
-    
-    // let write_serial = thread::spawn(move || {
-    //     let mut device_listener = DeviceListener::new();
-    //     let mut bundle_new = SettingsBundle::default();
-    
-    //     loop {
-    //         // Receive user input
-    //         let bundle_result = device_listener.get_combined_settings();
-    
-    //         // Write data to drone is user input is available
-    //         let exit;
-    //         (bundle_new, exit) = write_message(&serial, bundle_new, bundle_result);
-    //         if exit == true {
-    //             break;
-    //         }
-    //     }
-    // });
-
-    // let read_serial = thread::spawn(move || {
-    //     let mut shared_buf = Vec::new();
-    
-    //     // Read data, place packets in packetmanager
-    //     let packetmanager;
-    //     (packetmanager, shared_buf) = read_message(&serial, shared_buf);
-    // });
-
-    // write_serial.join();
-    // read_serial.join();
-
-    // let mut shared_buf = Vec::new();
-
+fn write_serial(serial: &SerialPort, sender: Sender<bool>) {
     let mut device_listener = DeviceListener::new();
     let mut bundle_new = SettingsBundle::default();
-    
     
     loop {
         // Receive user input
@@ -72,15 +39,49 @@ fn run_interface(serial: SerialPort) -> io::Result<()> {
 
         // Write data to drone is user input is available
         let exit;
-        (bundle_new, exit) = write_message(&serial, bundle_new, bundle_result);
+        (bundle_new, exit) = write_message(serial, bundle_new, bundle_result);
         if exit == true {
+            println!("\rexit");
+            sender.send(true);
             break;
         }
-
-        // Read data, place packets in packetmanager
-        // let packetmanager;
-        // (packetmanager, shared_buf) = read_message(&serial, shared_buf);
     }
+}
+
+fn read_serial(serial: &SerialPort, receiver: Receiver<bool>) {
+    let mut shared_buf = Vec::new();
+    
+    // Read data, place packets in packetmanager
+    let mut packetmanager = PacketManager::new();
+    loop {
+        read_message(serial, &mut shared_buf, &mut packetmanager);
+
+        let packet = packetmanager.read_packet();
+        if receiver.recv().unwrap() == true {
+            break;
+        }
+    }
+}
+
+/// Run the PC terminal interface
+fn run_interface(serial: &SerialPort) -> io::Result<()> {
+
+    let (sender, receiver) = mpsc::channel();
+
+    // Start a write serial and read serial thread. When one thread stops, the other threads will stop aswell.
+    std::thread::scope(|s| {
+
+        // Write thread
+        s.spawn(|| {
+            write_serial(serial, sender);
+        });
+        
+        // Read thread
+        s.spawn(|| {
+            read_serial(serial, receiver);
+        });
+
+    });
 
     return Ok(())
 }
