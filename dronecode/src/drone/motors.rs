@@ -48,7 +48,7 @@ pub fn get_speed(drone: &mut Drone, argument: [u16; 4]) -> [u16; 4]{
 
     //This is the basic speed which is got from the lift argument.
     //It can be seen as the floating speed.
-    let bs = (argument[3] as f32 * MOTOR_MAX as f32) / 65535 as f32;
+    let bs = 50 as f32;
     //This is the support speed for the motor needs to speed down with motion pitch and roll
     //The value is limited to a quarter of bs
     let ss = bs / 4 as f32;
