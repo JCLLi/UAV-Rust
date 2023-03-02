@@ -4,14 +4,12 @@ extern crate std;
 extern crate alloc;
 
 use core::ops::Deref;
-use alloc::fmt;
 use alloc::vec::Vec;
 use crc;
-use postcard::{from_bytes, to_vec, to_allocvec, to_allocvec_cobs, take_from_bytes_cobs};
+use postcard::{to_allocvec, to_allocvec_cobs, take_from_bytes_cobs};
 use serde::{Deserialize, Serialize};
 
 const CRC_CHECKSUM: crc::Crc<u32> = crc::Crc::<u32>::new(&crc::CRC_32_CKSUM);
-const FIXED_SIZE:u16 = 64;
 
 /// Message enum with all possible messages
 /// Data order: pitch, roll, yaw, lift
@@ -26,7 +24,7 @@ pub enum Message {
     YawControlledMode(u16, u16, u16, u16),
     FullControlMode(u16, u16, u16, u16),
     Acknowledgement(bool),
-    Datalogging(u16, u16, u16, u16,u16, u16, u16, u16,u16, u16, u16, u16, u16)
+    Datalogging(u16, u16, u16, u16, u64, f32, f32, f32, i16, i16, i16, u16, u32)
 }
 
 /// A Packet is the message format that contains a command, an argument and a checksum.
@@ -49,7 +47,7 @@ pub enum PacketError {
 ///The PacketManager struct is responsible for managing a collection of packets.
 #[derive(Debug, PartialEq)]
 pub struct PacketManager {
-    packets: Vec<Packet>,
+    pub packets: Vec<Packet>,
 }
 
 impl PacketManager {
@@ -76,19 +74,15 @@ impl Packet {
         Packet { message: message, crc: 0 }
     }
 
-    /// Serialize the packet into a byte vector
+    /// Serialize the packet into a byte vector. The CRC checksum is added and cobs is 
+    /// used to insert an end byte which does not appear in the packet data
     pub fn to_bytes(&mut self) -> Vec<u8> {
         // Calculate and add the checksum
         self.crc = self.create_checksum();
 
         // Convert the packet into a byte vector
-        let mut byte_vector = to_allocvec_cobs(self).unwrap();
-        let vec_len = byte_vector.len() as u16;
-
-        // Make vector fixed size
-        for _ in 0..(FIXED_SIZE - vec_len) {
-            byte_vector.push(1);
-        }
+        // cobs is used to insert an end byte which does not appear in the packet data
+        let byte_vector = to_allocvec_cobs(self).unwrap();
 
         byte_vector
     }
@@ -151,8 +145,6 @@ impl Packet {
 
 #[cfg(test)]
 mod tests {
-    use core::ops::DerefMut;
-
     use super::*;
 
     // #[test]

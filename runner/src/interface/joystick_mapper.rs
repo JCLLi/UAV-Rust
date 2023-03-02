@@ -1,6 +1,4 @@
 
-//! This is the example from the lib.rs documentation.
-
 use pasts::Loop;
 use std::{sync::mpsc, task::Poll::{self, Pending, Ready}};
 use stick::{Controller, Event, Listener};
@@ -31,7 +29,7 @@ pub struct State {
 impl State {
     pub fn connect(&mut self, controller: Controller) -> Poll<Exit> {
         println!(
-            "Connected p{}, id: {:016X}, name: {}",
+            "\rConnected p{}, id: {:016X}, name: {}",
             self.controllers.len() + 1,
             controller.id(),
             controller.name(),
@@ -46,7 +44,12 @@ impl State {
 
         match event {
             Event::Disconnect => {
-                self.controllers.swap_remove(id);
+                if self.controllers.len() > 0 {
+                    println!("\rJjoystick unplugged");
+                    self.controllers.swap_remove(id);
+                    self.mapped.abort = true;
+                    self.sender.send(self.mapped).unwrap();
+                }
             }
             Event::MenuR(true) => return Ready(player),
             Event::ActionA(pressed) => {

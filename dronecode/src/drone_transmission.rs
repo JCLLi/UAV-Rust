@@ -1,6 +1,7 @@
-use protocol::{self, Packet, Message};
+use protocol::{self, Packet, Message, PacketManager};
 use tudelft_quadrupel::uart::{send_bytes, receive_bytes};
-const FIXED_SIZE:usize = 64;
+use tudelft_quadrupel::led::{Blue, Green, Red, Yellow};
+use alloc::{string::ToString, vec::Vec};
 
 /// Write message to the PC
 pub fn write_packet(message: Message) {
@@ -16,8 +17,7 @@ pub fn write_packet(message: Message) {
 }
 
 /// Read message from the data
-pub fn read_packet(mut buf: [u8; 64]) -> Result<Packet, ()> {      
-    // Get packet from data 
+pub fn read_packet(mut buf: Vec<u8>) -> Result<Packet, ()> {      
     if let Ok(packet) = Packet::from_bytes(&mut buf) {                       
         Ok(packet)
     } else {
@@ -25,21 +25,52 @@ pub fn read_packet(mut buf: [u8; 64]) -> Result<Packet, ()> {
     }
 }
 
-/// Wait for acknowledgement
-pub fn wait_for_ack() -> bool {
-    // Try to receive acknowledgement two times
-    for _ in 0..2 {
-        let mut buf = [0u8; FIXED_SIZE];
-        
-        let packet = read_packet(buf);
+/// Read message from the drone, if available
+pub fn read_message(mut shared_buf: Vec<u8>) -> (PacketManager, Vec<u8>) {
+    let mut read_buf = [1u8; 255];
+    let mut end_byte_vec = Vec::new();
+    let mut packetmanager = PacketManager::new();
 
-        if packet != Err(()) {
-            if packet.unwrap().message == Message::Acknowledgement(true) {
-                return true
-            } else {
-                return false
+    let num = receive_bytes(&mut read_buf);
+    if num > 0 {
+        // Place received data into shared buffer
+        shared_buf.extend_from_slice(&read_buf[0..num]);
+
+        // Check if packet is received by checking end byte
+        for i in 0..shared_buf.len() {
+            if shared_buf[i] == 0 {
+                end_byte_vec.push(i);
             }
-         }
+        }
+
+        // If packets have been received, deserialize them
+        if end_byte_vec.len() > 0 {
+            for i in 0..end_byte_vec.len() {
+                let packet_result = read_packet(shared_buf.clone());
+
+                match packet_result {
+                    Err(_) => {
+                        Yellow.on();
+                    },
+                    Ok(_) => {
+                        let packet = packet_result.unwrap();
+                        packetmanager.add_packet(packet);
+                        Green.on();
+                    }
+                }
+
+                // Remove deserialized packet from shared buffer
+                if i == 0 {
+                    for _ in 0..(end_byte_vec[i]+1) {
+                        shared_buf.remove(0);
+                    }
+                } else {
+                    for _ in 0..(end_byte_vec[i]-end_byte_vec[i-1]) {
+                        shared_buf.remove(0);
+                    }
+                }
+            }
+        }
     }
-    false
+    (packetmanager, shared_buf)
 }
