@@ -16,6 +16,7 @@ use crate::drone::motors::keep_floating;
 use crate::working_mode;
 use crate::working_mode::panic_mode::{panic_check, panic_mode};
 use crate::working_mode::WorkingModes;
+use crate::log_storage_manager::LogStorageManager;
 
 const MOTION_DELAY:u8 = 50;
 
@@ -31,6 +32,8 @@ pub fn control_loop() -> ! {
     let mut new_message = false;
 
     let mut shared_buf = Vec::new();
+
+    let mut log_storage = LogStorageManager::new(0x100);
 
     for i in 0.. {
         if i % 50 == 0 {
@@ -80,7 +83,7 @@ pub fn control_loop() -> ! {
         // Data logging
         if i % 100 == 0 {
             let mut datalog = Message::Datalogging(0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0);
-            write_packet(message);
+            log_storage.store_logging(datalog).unwrap();
 
             // write_packet(Message::Datalogging(motors[0], motors[1], motors[2], motors[3], dt.as_secs(), ypr.yaw, ypr.pitch, ypr.roll, accel.x, accel.y, accel.z, bat, 0));
             Yellow.on();
@@ -89,6 +92,9 @@ pub fn control_loop() -> ! {
         // wait until the timer interrupt goes off again
         // based on the frequency set above
         wait_for_next_tick();
+        let log = log_storage.retrieve_logging(0).unwrap();
+        write_packet(log);
+
     }
     unreachable!();
 }

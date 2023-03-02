@@ -8,6 +8,7 @@ extern crate alloc;
 use crate::control::control_loop;
 use alloc::format;
 use alloc::string::ToString;
+use drone_transmission::write_packet;
 use core::alloc::Layout;
 use core::mem::MaybeUninit;
 use core::panic::PanicInfo;
@@ -16,12 +17,14 @@ use tudelft_quadrupel::led::Led::{Green, Red};
 use tudelft_quadrupel::time::assembly_delay;
 use tudelft_quadrupel::uart::send_bytes;
 use tudelft_quadrupel::{entry, uart};
+use tudelft_quadrupel::flash::{self, flash_chip_erase};
 
 mod working_mode;
 mod control;
 mod yaw_pitch_roll;
 mod drone;
 mod drone_transmission;
+pub mod log_storage_manager;
 
 /// The heap size of your drone code in bytes.
 /// Note: there are 8192 bytes of RAM available.
@@ -40,10 +43,10 @@ fn main() -> ! {
         //
         // As soon as the first driver (led driver) is initialized, the yellow led turns on.
         // That's also the last thing that's turned off. If the yellow led stays on and your
-        // program doesn't run, you know that the boot procedure has failed.
+        // program doesserialized_packetn't run, you know that the boot procedure has failed.
         initialize(unsafe { &mut HEAP_MEMORY }, false);
     }
-
+    
     control_loop()
 }
 

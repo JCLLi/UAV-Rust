@@ -61,10 +61,10 @@ fn read_serial(serial: &SerialPort, receiver: Receiver<bool>) {
         // Read one packet from the packetmanager and use it
         let packet = packetmanager.read_packet();
 
-        // Exit program if exit command is given
-        if receiver.recv().unwrap() == true {
-            break;
-        }
+        // // Exit program if exit command is given
+        // if receiver.recv().unwrap() == true {
+        //     break;
+        // }
     }
 }
 
