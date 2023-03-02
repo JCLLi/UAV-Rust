@@ -26,7 +26,7 @@ impl Drone {
                 mode_switch(self, WorkingModes::ManualMode);
                 motions(self, [*m0, *m1, *m2, *m3])
             }
-            _ => mode_switch(self, WorkingModes::SafeMode),//TODO
+            _ => mode_switch(self, WorkingModes::SafeMode),//TODO: add new mode and change the 'new' argument
         }
     }
 }
