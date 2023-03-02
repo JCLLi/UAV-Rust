@@ -21,7 +21,7 @@ use crate::working_mode::panic_mode::{panic_check, panic_mode};
 use crate::working_mode::WorkingModes;
 
 const FIXED_SIZE:usize = 64;
-const MOTION_DELAY:u8 = 50;
+const MOTION_DELAY:u8 = 50000;//Set a big value for debugging
 
 pub fn control_loop() -> ! {
     set_tick_frequency(100);
@@ -93,7 +93,7 @@ pub fn control_loop() -> ! {
         new_message = false;
         no_message += 1;
 
-        //If there is no new message over 500ms, drone goes back to floating state. This value can be changed
+        //If there is no new message over __ms, drone goes back to floating state. This value can be changed
         if no_message == MOTION_DELAY {
             keep_floating(&drone);
             no_message = 0;
