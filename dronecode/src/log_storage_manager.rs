@@ -1,15 +1,19 @@
 use core::mem::size_of;
+use alloc::borrow::ToOwned;
+use alloc::string::ToString;
 use alloc::vec::Vec;
 use postcard::{to_allocvec, from_bytes};
 use protocol::{Packet, Message, PacketManager};
 use crate::drone_transmission::{write_packet};
 use tudelft_quadrupel::flash::{flash_read_bytes, flash_write_bytes, FlashError, flash_chip_erase};
+use tudelft_quadrupel::uart::send_bytes;
 
 pub struct LogStorageManager {
     max_flash_size: usize,
     remaining_flash_size: usize,
-    written_packets: usize,
+    pub written_packets: usize,
 }
+
 
 impl LogStorageManager {
 
@@ -26,7 +30,7 @@ impl LogStorageManager {
 
     pub fn store_logging(&mut self, log: Message) -> Result<(), FlashError> {
         //check whether we can still write to the flash
-        if self.remaining_flash_size - size_of::<Message>() > 0 {
+        if self.remaining_flash_size.saturating_sub(size_of::<Message>()) > 1 {
             // Convert the log struct to a byte slice
             let log_bytes = to_allocvec(&log).unwrap();
 

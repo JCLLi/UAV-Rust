@@ -35,6 +35,8 @@ pub fn control_loop() -> ! {
 
     let mut log_storage = LogStorageManager::new(0x100);
 
+    log_storage.retrieve_loggings(0x100);
+
     for i in 0.. {
         if i % 50 == 0 {
             Blue.toggle();
@@ -81,8 +83,8 @@ pub fn control_loop() -> ! {
         }
 
         // Data logging
-        if i % 100 == 0 {
-            let mut datalog = Message::Datalogging(0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0);
+        if i % 100 == 0 {   
+            let mut datalog = Message::Datalogging(log_storage.written_packets as u16, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0);
             log_storage.store_logging(datalog).unwrap();
 
             // write_packet(Message::Datalogging(motors[0], motors[1], motors[2], motors[3], dt.as_secs(), ypr.yaw, ypr.pitch, ypr.roll, accel.x, accel.y, accel.z, bat, 0));
@@ -92,8 +94,8 @@ pub fn control_loop() -> ! {
         // wait until the timer interrupt goes off again
         // based on the frequency set above
         wait_for_next_tick();
-        let log = log_storage.retrieve_logging(0).unwrap();
-        write_packet(log);
+        // let log = log_storage.retrieve_logging(0).unwrap();
+        // write_packet(log);
 
     }
     unreachable!();

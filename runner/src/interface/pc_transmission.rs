@@ -72,6 +72,10 @@ pub fn read_message(serial: &SerialPort, shared_buf: &mut Vec<u8>, packet_manage
         // Place received data into shared buffer
         shared_buf.extend_from_slice(&read_buf[0..num]);
 
+        if let Ok(s) = std::str::from_utf8(&read_buf[0..num]) {
+            println!("{}\r", s.trim());
+        }
+
         // Check if packet is received by checking end byte
         for i in 0..shared_buf.len() {
             if shared_buf[i] == 0 {
