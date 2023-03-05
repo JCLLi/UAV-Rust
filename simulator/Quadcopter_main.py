@@ -176,7 +176,7 @@ initialize_results(body_torque,3)
 #     r_error = quadcopter.pos_ref - quadcopter.pos
 #     total_error.append(np.linalg.norm(r_error))
 
-quadcopter.angle_ref = [0.0, 0.0, 1.0]
+quadcopter.angle_ref = [0.0, 0.0, 3.14]
 
 for time in enumerate(time_index):
     #call angle controller
