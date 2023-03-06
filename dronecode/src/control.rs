@@ -21,7 +21,7 @@ use crate::working_mode::panic_mode::{panic_check, panic_mode};
 use crate::working_mode::WorkingModes;
 
 const FIXED_SIZE:usize = 64;
-const MOTION_DELAY:u8 = 50000;//Set a big value for debugging
+const MOTION_DELAY:u16 = 100;//Set a big value for debugging
 
 pub fn control_loop() -> ! {
     set_tick_frequency(100);
@@ -51,25 +51,8 @@ pub fn control_loop() -> ! {
             message = packetmanager.read_packet().unwrap().message;
             new_message = true;
             no_message = 0;
-        }
-
-        //This match is used to process messages
-        match drone.get_mode() {
-            WorkingModes::PanicMode => drone.set_mode(panic_mode()),
-            WorkingModes::SafeMode => {
-                if new_message {
-                    drone.message_check(&message);
-                }
-            }
-            _ => {
-                //Check panic situation
-                if !panic_check() {
-                    drone.set_mode(WorkingModes::PanicMode);
-                }
-                if new_message {
-                    drone.message_check(&message);
-                }
-            }
+        }else {
+            no_message += 1;
         }
 
         //This match is used to process messages
@@ -85,24 +68,39 @@ pub fn control_loop() -> ! {
                 // if !panic_check() {
                 //     drone.set_mode(WorkingModes::PanicMode);
                 // }
+
+                //If there is no new message over __ms, drone goes back to floating state. This value can be changed
+                if no_message == MOTION_DELAY {
+                    keep_floating(&drone);
+                    no_message = 0;
+                }
+
+                //If there is new message, check the message
                 if new_message {
                     drone.message_check(&message);
                 }
             }
         }
         new_message = false;
-        no_message += 1;
 
-        //If there is no new message over __ms, drone goes back to floating state. This value can be changed
-        if no_message == MOTION_DELAY {
-            keep_floating(&drone);
-            no_message = 0;
-        }
+
+
 
         // Data logging
         if i % 100 == 0 {
-                let mut datalog = Message::Datalogging(0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0);
+                let mut datalog = Message::Datalogging(i, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0);
                 write_packet(datalog);
+                // let a = get_motors();
+                // match drone.get_mode() {
+                //     WorkingModes::SafeMode => {send_bytes("SafeMode".as_bytes());}
+                //     WorkingModes::PanicMode => {send_bytes("PanicMode".as_bytes());}
+                //     WorkingModes::ManualMode => {send_bytes("ManualMode".as_bytes());}
+                //     _ => ()
+                // }
+                // for i in 0..4{
+                //     send_bytes(" ".as_bytes());
+                //     send_bytes(a[i].to_string().as_bytes());
+                // }
 
                 // write_packet(Message::Datalogging(motors[0], motors[1], motors[2], motors[3], dt.as_secs(), ypr.yaw, ypr.pitch, ypr.roll, accel.x, accel.y, accel.z, bat, 0));
                 Yellow.on();
