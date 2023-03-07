@@ -7,6 +7,8 @@ use std::fs;
 use std::fs::File;
 use std::io::Write;
 use std::io::BufReader;
+use std::path::Path;
+use std::time::SystemTime;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DatabaseManager {
@@ -28,47 +30,30 @@ pub struct DatabaseManager {
 
 impl DatabaseManager {
     ///Create the Json for it to be stored in the directory
-    /// -> Result<(), DatabaseError>{
     pub fn create_json(packet: &Packet)-> () {
+
+        // Create folder to store jsons, if it does not exist yet
+        let database_exists = Path::new("database").is_dir();
+        
+        if !database_exists {
+            fs::create_dir("database").unwrap();
+        }
+
         let test = packet;
         let msg = test.message;
         
         match msg {
-            Message::Datalogging(motor1,motor2 ,motor3 ,motor4 ,delay ,ypr_yaw ,ypr_pitch ,ypr_roll ,acc_x ,acc_y ,acc_z ,bat ,bar ) => {
-                print!("test");
-                let drone_stats = DatabaseManager {
-                    motor1: motor1,
-                    motor2: motor2,
-                    motor3: motor3,
-                    motor4: motor4,
-                    rtc: delay,
-                    yaw: ypr_yaw,
-                    pitch: ypr_pitch,
-                    roll: ypr_roll,
-                    x: acc_x,
-                    y: acc_y,
-                    z: acc_z,
-                    bat: bat,
-                    bar: bar,
-                    workingmode: 0
-                };
-                let json = serde_json::to_string(&drone_stats).unwrap();
-                let file_name = drone_stats.rtc.to_string();
+            Message::Datalogging(datalog) => {
+                let json = serde_json::to_string(&datalog).unwrap();
+                let now = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_nanos();
+
+                let file_name = now.to_string();
                 let mut file = File::create(format!("database/{}.json", file_name)).unwrap();
                 file.write_all(json.as_bytes()).unwrap();
             }
             _ => ()
         }
         
-    }
-    
-    pub fn read_json()->Vec<DatabaseManager>{ //think about what you are going to return
-            
-        let file = File::open("database/data.json").expect("Failed to open file");
-        let reader = BufReader::new(file);
-
-        let json_log: Vec<DatabaseManager> = serde_json::from_reader(reader).expect("Failed to parse JSON");
-        return json_log;  
     }
     
     fn read_json_files() -> Result<Vec<Value>, Box<dyn Error>>{
@@ -86,21 +71,25 @@ impl DatabaseManager {
     }
 }
 
-
-  
-
 #[cfg(test)]
 mod tests {
+    use std::{time::{SystemTime, Duration}, thread::sleep};
+
+    use protocol::Datalog;
+
     use super::*;
 
     #[test]
     fn test_store_json() {
 
         for i in 0..10 {
-            let message = Message::Datalogging(0, 0, 0, 0, i, 0.0, 0.0, 0.0 ,0, 0, 0, 0, 0);
+            let datalog = Datalog {motor1: i, motor2: 0, motor3: 0, motor4: 0, rtc: 9, yaw: 0.0, pitch: 0.0, roll: 0.0, x: 0, y: 0, z: 0, bat: 0, bar: 0, workingmode: 0 };
+            let message = Message::Datalogging(datalog);
             let packet = Packet::new(message);
-
+            
             DatabaseManager::create_json(&packet);
+
+            sleep(Duration::from_millis(500));
         }
     }
 

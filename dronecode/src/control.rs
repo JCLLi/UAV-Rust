@@ -21,6 +21,7 @@ const MOTION_DELAY:u8 = 50;
 
 pub fn control_loop() -> ! {
     set_tick_frequency(100);
+    let mut last = Instant::now();
     let mut drone = Drone::initialize();
     let mut message = Message::SafeMode;
 
@@ -36,6 +37,9 @@ pub fn control_loop() -> ! {
         if i % 50 == 0 {
             Blue.toggle();
         }
+        let now = Instant::now();
+        let dt = now.duration_since(last);
+        last = now;
 
         Green.off();
         Yellow.off();
@@ -81,7 +85,6 @@ pub fn control_loop() -> ! {
         if i % 10 == 0 {
                         
             // Read motor and sensor values
-            let now = Instant::now();
             let motors = get_motors();
             let quaternion = block!(read_dmp_bytes()).unwrap();
             let ypr = YawPitchRoll::from(quaternion);
@@ -95,7 +98,7 @@ pub fn control_loop() -> ! {
                 motor2: motors[1], 
                 motor3: motors[2], 
                 motor4: motors[3], 
-                rtc: now, 
+                rtc: dt.as_millis(), 
                 yaw: ypr.yaw, 
                 pitch: ypr.pitch, 
                 roll: ypr.roll, 
