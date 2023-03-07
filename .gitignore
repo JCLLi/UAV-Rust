@@ -2,3 +2,4 @@
 .idea
 .direnv/
 .vscode/
+/runner/database
