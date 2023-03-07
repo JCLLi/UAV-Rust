@@ -106,48 +106,49 @@ impl DeviceListener {
         match self.receiver_keyboard_channel.try_recv() {
             Ok(keyboardcommand) => {
                 match keyboardcommand.command {
-                    Commands::Exit => self.bundle.abort = true,
-                    Commands::SafeMode => self.bundle.mode = Modes::SafeMode,
-                    Commands::PanicMode => self.bundle.mode = Modes::PanicMode,
-                    Commands::ManualMode => self.bundle.mode = {
-                        // If joystick is at zeropoint, go to manual mode, otherwise stay in old mode
-                        if (self.bundle.pitch == 32767) && (self.bundle.roll == 32767) && (self.bundle.yaw == 0) && (self.bundle.lift == 0) {
-                            Modes::ManualMode
-                        } else {
-                            self.bundle.mode
-                        }
-                    },
-                    Commands::CalibrationMode => self.bundle.mode = Modes::CalibrationMode,
-                    Commands::YawControlledMode => self.bundle.mode = {
-                        // If joystick is at zeropoint, go to manual mode, otherwise stay in old mode
-                        if (self.bundle.pitch == 32767) && (self.bundle.roll == 32767) && (self.bundle.yaw == 0) && (self.bundle.lift == 0) {
-                            Modes::YawControlledMode
-                        } else {
-                            self.bundle.mode
-                        }
-                    },
-                    Commands::FullControlMode => self.bundle.mode = {
-                        // If joystick is at zeropoint, go to manual mode, otherwise stay in old mode
-                        if (self.bundle.pitch == 32767) && (self.bundle.roll == 32767) && (self.bundle.yaw == 0) && (self.bundle.lift == 0) {
-                            Modes::FullControlMode
-                        } else {
-                            self.bundle.mode
-                        }
-                    },
-                    Commands::LiftUp => self.bundle.lift = self.bundle.lift.saturating_add(keyboardcommand.argument),
-                    Commands::LiftDown => self.bundle.lift = self.bundle.lift.saturating_sub(keyboardcommand.argument),
-                    Commands::RollUp => self.bundle.roll = self.bundle.roll.saturating_add(keyboardcommand.argument),
-                    Commands::RollDown => self.bundle.roll = self.bundle.roll.saturating_sub(keyboardcommand.argument),
-                    Commands::YawUp => self.bundle.yaw = self.bundle.yaw.saturating_add(keyboardcommand.argument),
-                    Commands::YawDown => self.bundle.yaw = self.bundle.yaw.saturating_sub(keyboardcommand.argument),
-                    Commands::PitchUp => self.bundle.pitch = self.bundle.pitch.saturating_add(keyboardcommand.argument),
-                    Commands::PitchDown => self.bundle.pitch = self.bundle.pitch.saturating_sub(keyboardcommand.argument),
-                    Commands::YawControlPUp => self.bundle.yaw_control_p = self.bundle.yaw_control_p.saturating_add(keyboardcommand.argument),
-                    Commands::YawControlPDown => self.bundle.yaw_control_p = self.bundle.yaw_control_p.saturating_sub(keyboardcommand.argument),
-                    Commands::RollPitchControlP1Up => self.bundle.roll_pitch_control_p1 = self.bundle.roll_pitch_control_p1.saturating_add(keyboardcommand.argument),
-                    Commands::RollPitchControlP1Down => self.bundle.roll_pitch_control_p1 = self.bundle.roll_pitch_control_p1.saturating_sub(keyboardcommand.argument),
-                    Commands::RollPitchControlP2Up => self.bundle.roll_pitch_control_p2 = self.bundle.roll_pitch_control_p2.saturating_add(keyboardcommand.argument),
-                    Commands::RollPitchControlP2Down => self.bundle.roll_pitch_control_p2 = self.bundle.roll_pitch_control_p2.saturating_sub(keyboardcommand.argument),
+                    Commands::Exit                  => self.bundle.abort = true,
+                    Commands::SafeMode              => self.bundle.mode = Modes::SafeMode,
+                    Commands::PanicMode             => self.bundle.mode = Modes::PanicMode,
+                    Commands::ManualMode            => self.bundle.mode = {
+                                                        // If joystick is at zeropoint, go to manual mode, otherwise stay in old mode
+                                                        if (self.bundle.pitch == 32767) && (self.bundle.roll == 32767) && (self.bundle.yaw == 0) && (self.bundle.lift == 0) {
+                                                            Modes::ManualMode
+                                                        } else {
+                                                            self.bundle.mode
+                                                        }
+                                                    },
+                    Commands::CalibrationMode       => self.bundle.mode = Modes::CalibrationMode,
+                    Commands::YawControlledMode     => self.bundle.mode = {
+                                                        // If joystick is at zeropoint, go to manual mode, otherwise stay in old mode
+                                                        if (self.bundle.pitch == 32767) && (self.bundle.roll == 32767) && (self.bundle.yaw == 0) && (self.bundle.lift == 0) {
+                                                            Modes::YawControlledMode
+                                                        } else {
+                                                            self.bundle.mode
+                                                        }
+                                                    },
+                    Commands::FullControlMode       => self.bundle.mode = {
+                                                        // If joystick is at zeropoint, go to manual mode, otherwise stay in old mode
+                                                        if (self.bundle.pitch == 32767) && (self.bundle.roll == 32767) && (self.bundle.yaw == 0) && (self.bundle.lift == 0) {
+                                                            Modes::FullControlMode
+                                                        } else {
+                                                            self.bundle.mode
+                                                        }
+                                                    },
+                    Commands::ResetToZeroPoint      => self.bundle = SettingsBundle::default(),
+                    Commands::LiftUp                => self.bundle.lift = self.bundle.lift.saturating_add(keyboardcommand.argument),
+                    Commands::LiftDown              => self.bundle.lift = self.bundle.lift.saturating_sub(keyboardcommand.argument),
+                    Commands::RollUp                => self.bundle.roll = self.bundle.roll.saturating_add(keyboardcommand.argument),
+                    Commands::RollDown              => self.bundle.roll = self.bundle.roll.saturating_sub(keyboardcommand.argument),
+                    Commands::YawUp                 => self.bundle.yaw = self.bundle.yaw.saturating_add(keyboardcommand.argument),
+                    Commands::YawDown               => self.bundle.yaw = self.bundle.yaw.saturating_sub(keyboardcommand.argument),
+                    Commands::PitchUp               => self.bundle.pitch = self.bundle.pitch.saturating_add(keyboardcommand.argument),
+                    Commands::PitchDown             => self.bundle.pitch = self.bundle.pitch.saturating_sub(keyboardcommand.argument),
+                    Commands::YawControlPUp         => self.bundle.yaw_control_p = self.bundle.yaw_control_p.saturating_add(keyboardcommand.argument),
+                    Commands::YawControlPDown       => self.bundle.yaw_control_p = self.bundle.yaw_control_p.saturating_sub(keyboardcommand.argument),
+                    Commands::RollPitchControlP1Up  => self.bundle.roll_pitch_control_p1 = self.bundle.roll_pitch_control_p1.saturating_add(keyboardcommand.argument),
+                    Commands::RollPitchControlP1Down=> self.bundle.roll_pitch_control_p1 = self.bundle.roll_pitch_control_p1.saturating_sub(keyboardcommand.argument),
+                    Commands::RollPitchControlP2Up  => self.bundle.roll_pitch_control_p2 = self.bundle.roll_pitch_control_p2.saturating_add(keyboardcommand.argument),
+                    Commands::RollPitchControlP2Down=> self.bundle.roll_pitch_control_p2 = self.bundle.roll_pitch_control_p2.saturating_sub(keyboardcommand.argument),
 
                     _ => (),
                 }

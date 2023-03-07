@@ -1,7 +1,7 @@
 use crossterm::{terminal::{disable_raw_mode, enable_raw_mode, self}, execute, cursor::MoveTo, style::{SetAttribute, Attribute, Print}};
 use std::{error::Error as OtherError, io::{self, stdout}, sync::mpsc::{self, Sender, Receiver}};
 use serial2::SerialPort;
-use protocol::{self, Message, PacketManager};
+use protocol::{self, Message, PacketManager, Datalog, Packet};
 use crate::interface::{pc_transmission::{write_packet, write_message}, settings_logic::{DeviceListener, SettingsBundle}};
 
 use super::{pc_transmission::read_message};
@@ -11,14 +11,19 @@ pub fn setup_interface(serial: &SerialPort) -> Result<(), Box<dyn OtherError>> {
 
     // Setup terminal
     enable_raw_mode()?;
-    // print! ("\x1B[2J\x1B[1;1H");
+    
     execute!(
         stdout(),
         terminal::Clear(terminal::ClearType::All),
-        MoveTo(40,0),
+        MoveTo(80,0),
         SetAttribute(Attribute::Bold),
-        Print("PC interface")
-    )?;
+        Print("PC interface"),
+        MoveTo(120,1),
+        Print("Drone data"),
+        MoveTo(0,1),
+        Print("Command to drone"),
+        SetAttribute(Attribute::Reset)
+    ).unwrap();
     
     // Put drone in safemode
     write_packet(&serial, Message::SafeMode);
@@ -34,6 +39,29 @@ pub fn setup_interface(serial: &SerialPort) -> Result<(), Box<dyn OtherError>> {
     }
     
     Ok(())
+}
+
+/// Run the PC terminal interface
+fn run_interface(serial: &SerialPort) -> io::Result<()> {
+
+    let (sender, receiver) = mpsc::channel();
+
+    // Start a write serial and read serial thread. When one thread stops, the other threads will stop aswell.
+    std::thread::scope(|s| {
+
+        // Write thread
+        s.spawn(|| {
+            write_serial(serial, sender);
+        });
+        
+        // Read thread
+        s.spawn(|| {
+            read_serial(serial, receiver);
+        });
+
+    });
+
+    return Ok(())
 }
 
 fn write_serial(serial: &SerialPort, sender: Sender<bool>) {
@@ -61,10 +89,10 @@ fn write_serial(serial: &SerialPort, sender: Sender<bool>) {
         for i in 0..messagevec.len() {
             execute!(
                 stdout(),
-                MoveTo(0,i as u16 + 1),
-                Print(&messagevec[i]),
+                MoveTo(0,i as u16 + 2),
+                Print(&messagevec[i]), Print("                                                     ")
             ).unwrap();
-        }
+        } 
     }
 }
 
@@ -80,30 +108,8 @@ fn read_serial(serial: &SerialPort, receiver: Receiver<bool>) {
         // Read one packet from the packetmanager and use it
         let packet = packetmanager.read_packet();
 
-        // Show message sent by drone in terminal
-        match packet {
-            None => (),
-            Some(x) => {
-                if let Message::Datalogging(m1, m2, m3, m4, dt, yaw, pitch, roll, accx, accy, accz, bat, bar) = x.message {
-                    execute!(
-                        stdout(),
-                        SetAttribute(Attribute::Reset),
-                        MoveTo(120,2),
-                        Print("Motors: "), Print(m1), Print(", "), Print(m2), Print(", "), Print(m3), Print(", "), Print(m4), Print(" RPM"),
-                        MoveTo(120,3),
-                        Print("Delay: "), Print(dt), 
-                        MoveTo(120,4),
-                        Print("YPR: "), Print(yaw), Print(", "), Print(pitch), Print(", "), Print(roll),
-                        MoveTo(120,5),
-                        Print("ACC: "), Print(accx), Print(", "), Print(accy), Print(", "), Print(accz), 
-                        MoveTo(120,6),
-                        Print("Battery: "), Print(bat), Print(" mV"), 
-                        MoveTo(120,7),
-                        Print("Barometer: "), Print(bar), Print(" 10^-5 bar"), 
-                    ).unwrap();
-                }
-            }
-        }
+        // Show values sent by drone in tui
+        print_datalog(packet);
 
         // Exit program if exit command is given
         if receiver.recv().unwrap() == true {
@@ -112,32 +118,36 @@ fn read_serial(serial: &SerialPort, receiver: Receiver<bool>) {
     }
 }
 
-/// Run the PC terminal interface
-fn run_interface(serial: &SerialPort) -> io::Result<()> {
-
-    let (sender, receiver) = mpsc::channel();
-
-    // Start a write serial and read serial thread. When one thread stops, the other threads will stop aswell.
-    std::thread::scope(|s| {
-
-        // Write thread
-        s.spawn(|| {
-            write_serial(serial, sender);
-        });
-        
-        // Read thread
-        s.spawn(|| {
-            read_serial(serial, receiver);
-        });
-
-    });
-
-    return Ok(())
+/// Show values sent by drone in tui
+fn print_datalog(packet: Option<Packet>) {
+    // Show message sent by drone in terminal
+    match packet {
+        None => (),
+        Some(x) => {
+            if let Message::Datalogging(d) = x.message {
+                execute!(
+                    stdout(),
+                    MoveTo(120,2),
+                    Print("Motors: "), Print(d.motor1), Print(", "), Print(d.motor2), Print(", "), Print(d.motor3), Print(", "), Print(d.motor4), Print(" RPM"),
+                    MoveTo(120,3),
+                    Print("Time: "), Print(d.rtc), 
+                    MoveTo(120,4),
+                    Print("YPR: "), Print(d.yaw), Print(", "), Print(d.pitch), Print(", "), Print(d.roll),
+                    MoveTo(120,5),
+                    Print("ACC: "), Print(d.x), Print(", "), Print(d.y), Print(", "), Print(d.z), 
+                    MoveTo(120,6),
+                    Print("Battery: "), Print(d.bat), Print(" mV"), 
+                    MoveTo(120,7),
+                    Print("Barometer: "), Print(d.bar), Print(" 10^-5 bar"), 
+                ).unwrap();
+            }
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use protocol::Packet;
+    use protocol::{Packet, Datalog};
 
     use crate::interface::settings_logic::Modes;
 
@@ -158,37 +168,36 @@ mod tests {
             Print("Command to drone")
         ).unwrap();
 
-        let message = Message::Datalogging(1, 1, 0, 0, 4, 0.0, 0.0, 0.0, 0, 0, 0, 5, 6);
+        let datalog = Datalog {motor1: 0, motor2: 0, motor3: 0, motor4: 0, rtc: 0, yaw: 0.0, pitch: 0.0, roll: 0.0, x: 0, y: 0, z: 0, bat: 0, bar: 0, workingmode: 0 };
+        let message = Message::Datalogging(datalog);
         let packet = Packet::new(message);
 
         let mut packetmanager = PacketManager::new();
-
         packetmanager.add_packet(packet);
 
-        let get_packet = packetmanager.read_packet();
         // Read one packet from the packetmanager and use it
-        // let packet = packetmanager.read_packet();
+        let get_packet = packetmanager.read_packet();
 
         // Show message sent by drone in terminal
         match get_packet {
             None => (),
             Some(x) => {
-                if let Message::Datalogging(m1, m2, m3, m4, dt, yaw, pitch, roll, accx, accy, accz, bat, bar) = x.message {
+                if let Message::Datalogging(d) = x.message {
                     execute!(
                         stdout(),
                         SetAttribute(Attribute::Reset),
                         MoveTo(120,2),
-                        Print("Motors: "), Print(m1), Print(", "), Print(m2), Print(", "), Print(m3), Print(", "), Print(m4), Print(" RPM"),
+                        Print("Motors: "), Print(d.motor1), Print(", "), Print(d.motor2), Print(", "), Print(d.motor3), Print(", "), Print(d.motor4), Print(" RPM"),
                         MoveTo(120,3),
-                        Print("Delay: "), Print(dt), 
+                        Print("Time: "), Print(d.rtc), 
                         MoveTo(120,4),
-                        Print("YPR: "), Print(yaw), Print(", "), Print(pitch), Print(", "), Print(roll),
+                        Print("YPR: "), Print(d.yaw), Print(", "), Print(d.pitch), Print(", "), Print(d.roll),
                         MoveTo(120,5),
-                        Print("ACC: "), Print(accx), Print(", "), Print(accy), Print(", "), Print(accz), 
+                        Print("ACC: "), Print(d.x), Print(", "), Print(d.y), Print(", "), Print(d.z), 
                         MoveTo(120,6),
-                        Print("Battery: "), Print(bat), Print(" mV"), 
+                        Print("Battery: "), Print(d.bat), Print(" mV"), 
                         MoveTo(120,7),
-                        Print("Barometer: "), Print(bar), Print(" 10^-5 bar"), 
+                        Print("Barometer: "), Print(d.bar), Print(" 10^-5 bar"), 
                     ).unwrap();
                 }
             }
@@ -232,7 +241,7 @@ mod tests {
                             execute!(
                                 stdout(),
                                 MoveTo(0,i as u16 + 2),
-                                Print(&messagevec[i]),
+                                Print(&messagevec[i]), Print("                                                     ")
                             ).unwrap();
                         }  
 
