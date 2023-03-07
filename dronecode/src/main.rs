@@ -17,11 +17,14 @@ use tudelft_quadrupel::time::assembly_delay;
 use tudelft_quadrupel::uart::send_bytes;
 use tudelft_quadrupel::{entry, uart};
 
+
 mod working_mode;
 mod control;
 mod yaw_pitch_roll;
 mod drone;
 mod drone_transmission;
+mod log_storage_manager;
+mod angular_controller;
 
 
 /// The heap size of your drone code in bytes.

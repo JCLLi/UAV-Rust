@@ -62,7 +62,7 @@ pub fn control_loop() -> ! {
                 if new_message {
                     drone.message_check(&message);
                 }
-            }
+            },
             _ => {
                 //Check panic situation
                 // if !panic_check() {
