@@ -1,6 +1,6 @@
 use alloc::{string::ToString, vec::Vec};
 use alloc::{format, string::String};
-use protocol::{self, Packet, PacketError, PacketManager, Message};
+use protocol::{self, Packet, PacketError, PacketManager, Message, Datalog};
 use tudelft_quadrupel::barometer::read_pressure;
 use tudelft_quadrupel::battery::read_battery;
 use tudelft_quadrupel::led::{Blue, Green, Red, Yellow};
@@ -78,12 +78,37 @@ pub fn control_loop() -> ! {
         }
 
         // Data logging
-        if i % 100 == 0 {
-            let mut datalog = Message::Datalogging(0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0);
-            write_packet(datalog);
+        if i % 10 == 0 {
+                        
+            // Read motor and sensor values
+            let now = Instant::now();
+            let motors = get_motors();
+            let quaternion = block!(read_dmp_bytes()).unwrap();
+            let ypr = YawPitchRoll::from(quaternion);
+            let (accel, _) = read_raw().unwrap();
+            let bat = read_battery();
+            let pres = read_pressure();
 
-            // write_packet(Message::Datalogging(motors[0], motors[1], motors[2], motors[3], dt.as_secs(), ypr.yaw, ypr.pitch, ypr.roll, accel.x, accel.y, accel.z, bat, 0));
-            Yellow.on();
+            // Place values in Datalog struct
+            let datalog = Datalog {
+                motor1: motors[0], 
+                motor2: motors[1], 
+                motor3: motors[2], 
+                motor4: motors[3], 
+                rtc: now, 
+                yaw: ypr.yaw, 
+                pitch: ypr.pitch, 
+                roll: ypr.roll, 
+                x: accel.x, 
+                y: accel.y, 
+                z: accel.z, 
+                bat: bat, 
+                bar: pres, 
+                workingmode: drone.get_mode() 
+            };
+
+            // Send datalog struct to pc
+            write_packet(Message::Datalogging(datalog));
         }
 
         // wait until the timer interrupt goes off again

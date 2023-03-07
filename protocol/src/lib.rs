@@ -24,7 +24,7 @@ pub enum Message {
     YawControlledMode(u16, u16, u16, u16),
     FullControlMode(u16, u16, u16, u16),
     Acknowledgement(bool),
-    Datalogging(u16, u16, u16, u16, u64, f32, f32, f32, i16, i16, i16, u16, u32)
+    Datalogging(Datalog)
 }
 
 // Convert Message enum to string
@@ -38,9 +38,28 @@ impl fmt::Display for Message {
             Message::YawControlledMode(a, b, c, d) => write!(f, "YawControlledMode({}, {}, {}, {})", a, b, c, d),
             Message::FullControlMode(a, b, c, d) => write!(f, "FullControllMode({}, {}, {}, {})", a, b, c, d),
             Message::Acknowledgement(a) => write!(f, "Acknowledgement({})", a),
-            Message::Datalogging(_,_,_,_,_,_,_,_,_,_,_,_,_) => write!(f, "Datalogging()"),
+            Message::Datalogging(_) => write!(f, "Datalogging()"),
         }
     }
+}
+
+/// Datalog stuct which holds all data to be sent
+#[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq)]
+pub struct Datalog {
+    pub motor1: u16,
+    pub motor2: u16,
+    pub motor3: u16,
+    pub motor4:u16,
+    pub rtc: u64,
+    pub yaw: f32,
+    pub pitch: f32,
+    pub roll: f32,
+    pub x: i16, 
+    pub y: i16,
+    pub z: i16, 
+    pub bat: u16, 
+    pub bar: u32,
+    pub workingmode: u8,
 }
 
 /// A Packet is the message format that contains a command, an argument and a checksum.
