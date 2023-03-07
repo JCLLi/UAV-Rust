@@ -1,4 +1,7 @@
 
+use std::io::stdout;
+
+use crossterm::{execute, cursor::MoveTo, style::{SetAttribute, Attribute, Print}};
 use serial2::SerialPort;
 use protocol::{self, Packet, Message, PacketManager};
 
@@ -10,7 +13,7 @@ pub fn write_packet(serial: &SerialPort, message: Message) {
 
     // Create packet
     let mut packet = Packet::new(message);
-    println!("\rCommand to drone: {:?}", message);
+    // println!("\rCommand to drone: {:?}", message);
 
     // Serialize packet
     let serialized_packet = packet.to_bytes();
@@ -22,7 +25,15 @@ pub fn write_packet(serial: &SerialPort, message: Message) {
 /// Read packet from the drone, if available
 pub fn read_packet(mut buf: Vec<u8>) -> Result<Packet, ()> {
         if let Ok(packet) = Packet::from_bytes(&mut buf) {  
-            println!("\rMessage from drone: {:?}", packet.message);                     
+            // println!("\rMessage from drone: {:?}", packet.message);  
+            
+            // execute!(
+            //     stdout(),
+            //     MoveTo(40,0),
+            //     SetAttribute(Attribute::Reset),
+            //     Print(packet.message)
+            // ).unwrap();
+
             Ok(packet)
         } else {
             Err(())
@@ -30,7 +41,7 @@ pub fn read_packet(mut buf: Vec<u8>) -> Result<Packet, ()> {
 }
 
 /// Write message to the drone
-pub fn write_message(serial: &SerialPort, mut bundle_new: SettingsBundle, bundle_result: Result<SettingsBundle, DeviceError>) -> (SettingsBundle, bool) {
+pub fn write_message(serial: &SerialPort, mut bundle_new: SettingsBundle, bundle_result: Result<SettingsBundle, DeviceError>, messagevec: &mut Vec<Message>) -> (SettingsBundle, bool) {
     let mut exit = false;
     match bundle_result {
         Ok(bundle) => {
@@ -55,7 +66,15 @@ pub fn write_message(serial: &SerialPort, mut bundle_new: SettingsBundle, bundle
                 };
 
                 // Write message over serial
-                write_packet(serial, message);
+                write_packet(serial, message);   
+                
+                // Add message to messagevec, to show in terminal
+                if messagevec.len() >= 10 {
+                    messagevec.rotate_left(1);
+                    messagevec[9] = message;
+                } else {
+                    messagevec.push(message);
+                }             
             }
         },
         Err(device) => println!("{:?}", device),

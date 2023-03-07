@@ -4,7 +4,7 @@ extern crate std;
 extern crate alloc;
 
 use core::ops::Deref;
-use alloc::vec::Vec;
+use alloc::{vec::Vec, fmt};
 use crc;
 use postcard::{to_allocvec, to_allocvec_cobs, take_from_bytes_cobs};
 use serde::{Deserialize, Serialize};
@@ -13,7 +13,7 @@ const CRC_CHECKSUM: crc::Crc<u32> = crc::Crc::<u32>::new(&crc::CRC_32_CKSUM);
 
 /// Message enum with all possible messages
 /// Data order: pitch, roll, yaw, lift
-/// Datalogging order: Motor 1, Motor 2, Motor 3, Motor 4, Delay, 
+/// Datalogging order: Motor 1, Motor 2, Motor 3, Motor 4, Delay,
 /// ypr.yaw, ypr.pitch, ypr.roll, acc.x, acc.y, acc.z, bat, bar
 #[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq)]
 pub enum Message {
@@ -25,6 +25,22 @@ pub enum Message {
     FullControlMode(u16, u16, u16, u16),
     Acknowledgement(bool),
     Datalogging(u16, u16, u16, u16, u64, f32, f32, f32, i16, i16, i16, u16, u32)
+}
+
+// Convert Message enum to string
+impl fmt::Display for Message {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Message::SafeMode => write!(f, "SafeMode"),
+            Message::PanicMode => write!(f, "PanicMode"),
+            Message::ManualMode(a, b, c, d) => write!(f, "ManualMode({}, {}, {}, {})", a, b, c, d),
+            Message::CalibrationMode => write!(f, "CalibrationMode"),
+            Message::YawControlledMode(a, b, c, d) => write!(f, "YawControlledMode({}, {}, {}, {})", a, b, c, d),
+            Message::FullControlMode(a, b, c, d) => write!(f, "FullControllMode({}, {}, {}, {})", a, b, c, d),
+            Message::Acknowledgement(a) => write!(f, "Acknowledgement({})", a),
+            Message::Datalogging(_,_,_,_,_,_,_,_,_,_,_,_,_) => write!(f, "Datalogging()"),
+        }
+    }
 }
 
 /// A Packet is the message format that contains a command, an argument and a checksum.

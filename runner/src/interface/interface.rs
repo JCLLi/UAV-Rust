@@ -1,5 +1,5 @@
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
-use std::{error::Error as OtherError, io, sync::mpsc::{self, Sender, Receiver}};
+use crossterm::{terminal::{disable_raw_mode, enable_raw_mode, self}, execute, cursor::MoveTo, style::{SetAttribute, Attribute, Print}};
+use std::{error::Error as OtherError, io::{self, stdout}, sync::mpsc::{self, Sender, Receiver}};
 use serial2::SerialPort;
 use protocol::{self, Message, PacketManager};
 use crate::interface::{pc_transmission::{write_packet, write_message}, settings_logic::{DeviceListener, SettingsBundle}};
@@ -11,8 +11,15 @@ pub fn setup_interface(serial: &SerialPort) -> Result<(), Box<dyn OtherError>> {
 
     // Setup terminal
     enable_raw_mode()?;
-    print! ("\x1B[2J\x1B[1;1H");
-
+    // print! ("\x1B[2J\x1B[1;1H");
+    execute!(
+        stdout(),
+        terminal::Clear(terminal::ClearType::All),
+        MoveTo(40,0),
+        SetAttribute(Attribute::Bold),
+        Print("PC interface")
+    )?;
+    
     // Put drone in safemode
     write_packet(&serial, Message::SafeMode);
 
@@ -33,18 +40,30 @@ fn write_serial(serial: &SerialPort, sender: Sender<bool>) {
     let mut device_listener = DeviceListener::new();
     let mut bundle_new = SettingsBundle::default();
     
+    // Message vec to show messages in terminal
+    let mut messagevec: Vec<Message> = Vec::new();
+
     loop {
         // Receive user input
         let bundle_result = device_listener.get_combined_settings();
 
         // Write data to drone is user input is available
         let exit;
-        (bundle_new, exit) = write_message(serial, bundle_new, bundle_result);
+        (bundle_new, exit) = write_message(serial, bundle_new, bundle_result, &mut messagevec);
         
         // Exit the program if exit command is given. This command is also sent to the read_serial thread.
         if exit == true {
             sender.send(true).unwrap();
             break;
+        }
+
+        // Show messages to drone in terminal
+        for i in 0..messagevec.len() {
+            execute!(
+                stdout(),
+                MoveTo(0,i as u16 + 1),
+                Print(&messagevec[i]),
+            ).unwrap();
         }
     }
 }
@@ -60,6 +79,31 @@ fn read_serial(serial: &SerialPort, receiver: Receiver<bool>) {
 
         // Read one packet from the packetmanager and use it
         let packet = packetmanager.read_packet();
+
+        // Show message sent by drone in terminal
+        match packet {
+            None => (),
+            Some(x) => {
+                if let Message::Datalogging(m1, m2, m3, m4, dt, yaw, pitch, roll, accx, accy, accz, bat, bar) = x.message {
+                    execute!(
+                        stdout(),
+                        SetAttribute(Attribute::Reset),
+                        MoveTo(120,2),
+                        Print("Motors: "), Print(m1), Print(", "), Print(m2), Print(", "), Print(m3), Print(", "), Print(m4), Print(" RPM"),
+                        MoveTo(120,3),
+                        Print("Delay: "), Print(dt), 
+                        MoveTo(120,4),
+                        Print("YPR: "), Print(yaw), Print(", "), Print(pitch), Print(", "), Print(roll),
+                        MoveTo(120,5),
+                        Print("ACC: "), Print(accx), Print(", "), Print(accy), Print(", "), Print(accz), 
+                        MoveTo(120,6),
+                        Print("Battery: "), Print(bat), Print(" mV"), 
+                        MoveTo(120,7),
+                        Print("Barometer: "), Print(bar), Print(" 10^-5 bar"), 
+                    ).unwrap();
+                }
+            }
+        }
 
         // Exit program if exit command is given
         if receiver.recv().unwrap() == true {
@@ -89,4 +133,116 @@ fn run_interface(serial: &SerialPort) -> io::Result<()> {
     });
 
     return Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use protocol::Packet;
+
+    use crate::interface::settings_logic::Modes;
+
+    use super::*;
+
+    #[test]
+    fn test_tui() {
+
+        execute!(
+            stdout(),
+            terminal::Clear(terminal::ClearType::All),
+            MoveTo(80,0),
+            SetAttribute(Attribute::Bold),
+            Print("PC interface"),
+            MoveTo(120,1),
+            Print("Drone data"),
+            MoveTo(0,1),
+            Print("Command to drone")
+        ).unwrap();
+
+        let message = Message::Datalogging(1, 1, 0, 0, 4, 0.0, 0.0, 0.0, 0, 0, 0, 5, 6);
+        let packet = Packet::new(message);
+
+        let mut packetmanager = PacketManager::new();
+
+        packetmanager.add_packet(packet);
+
+        let get_packet = packetmanager.read_packet();
+        // Read one packet from the packetmanager and use it
+        // let packet = packetmanager.read_packet();
+
+        // Show message sent by drone in terminal
+        match get_packet {
+            None => (),
+            Some(x) => {
+                if let Message::Datalogging(m1, m2, m3, m4, dt, yaw, pitch, roll, accx, accy, accz, bat, bar) = x.message {
+                    execute!(
+                        stdout(),
+                        SetAttribute(Attribute::Reset),
+                        MoveTo(120,2),
+                        Print("Motors: "), Print(m1), Print(", "), Print(m2), Print(", "), Print(m3), Print(", "), Print(m4), Print(" RPM"),
+                        MoveTo(120,3),
+                        Print("Delay: "), Print(dt), 
+                        MoveTo(120,4),
+                        Print("YPR: "), Print(yaw), Print(", "), Print(pitch), Print(", "), Print(roll),
+                        MoveTo(120,5),
+                        Print("ACC: "), Print(accx), Print(", "), Print(accy), Print(", "), Print(accz), 
+                        MoveTo(120,6),
+                        Print("Battery: "), Print(bat), Print(" mV"), 
+                        MoveTo(120,7),
+                        Print("Barometer: "), Print(bar), Print(" 10^-5 bar"), 
+                    ).unwrap();
+                }
+            }
+        }
+
+        let mut device_listener = DeviceListener::new();
+        let mut bundle_new = SettingsBundle::default();
+        
+        // Message vec to show messages in terminal
+        let mut messagevec: Vec<Message> = Vec::new();
+    
+        loop {
+            // Receive user input
+            let bundle_result = device_listener.get_combined_settings();
+    
+            match bundle_result {
+                Ok(bundle) => {
+                    if bundle != bundle_new {
+                        bundle_new = bundle;
+        
+                        // Match user input with drone message
+                        let message = match bundle.mode {
+                            Modes::SafeMode => Message::SafeMode,
+                            Modes::PanicMode => Message::PanicMode,
+                            Modes::ManualMode => Message::ManualMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift),
+                            Modes::CalibrationMode => Message::CalibrationMode,
+                            Modes::YawControlledMode => Message::YawControlledMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift),
+                            Modes::FullControlMode => Message::FullControlMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift),
+                        };
+
+                        // Add message to messagevec, to show in terminal
+                        if messagevec.len() >= 10 {
+                            messagevec.rotate_left(1);
+                            messagevec[9] = message;
+                        } else {
+                            messagevec.push(message);
+                        }      
+
+                        // Show messages to drone in terminal
+                        for i in 0..messagevec.len() {
+                            execute!(
+                                stdout(),
+                                MoveTo(0,i as u16 + 2),
+                                Print(&messagevec[i]),
+                            ).unwrap();
+                        }  
+
+                    }
+                },
+                Err(device) => println!("{:?}", device),    
+            }
+    
+            
+        }
+
+    }
 }
