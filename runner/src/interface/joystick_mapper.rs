@@ -28,12 +28,12 @@ pub struct State {
 /// or exit (Ready with an exit code).
 impl State {
     pub fn connect(&mut self, controller: Controller) -> Poll<Exit> {
-        println!(
-            "\rConnected p{}, id: {:016X}, name: {}",
-            self.controllers.len() + 1,
-            controller.id(),
-            controller.name(),
-        );
+        // println!(
+        //     "\rConnected p{}, id: {:016X}, name: {}",
+        //     self.controllers.len() + 1,
+        //     controller.id(),
+        //     controller.name(),
+        // );
         self.controllers.push(controller);
         Pending
     }

@@ -1,7 +1,8 @@
 
 use alloc::{string::ToString, vec::Vec};
 use alloc::{format, string::String};
-use protocol::{self, Packet, PacketError, PacketManager, Message};
+use protocol::{self, Packet, PacketError, PacketManager, Message, Datalog, WorkingModes};
+use tudelft_quadrupel::block;
 use tudelft_quadrupel::barometer::read_pressure;
 use tudelft_quadrupel::battery::read_battery;
 use tudelft_quadrupel::led::{Blue, Green, Red, Yellow};
@@ -18,13 +19,13 @@ use crate::drone::{Drone, Getter, Setter};
 use crate::drone::motors::keep_floating;
 use crate::working_mode;
 use crate::working_mode::panic_mode::{panic_check, panic_mode};
-use crate::working_mode::WorkingModes;
 
 const FIXED_SIZE:usize = 64;
 const MOTION_DELAY:u16 = 100;//Set a big value for debugging
 
 pub fn control_loop() -> ! {
     set_tick_frequency(100);
+    let mut last = Instant::now();
     let mut drone = Drone::initialize();
     let mut message = Message::SafeMode;
 
@@ -40,6 +41,9 @@ pub fn control_loop() -> ! {
         if i % 50 == 0 {
             Blue.toggle();
         }
+        let now = Instant::now();
+        let dt = now.duration_since(last);
+        last = now;
 
         Green.off();
         Yellow.off();
@@ -87,31 +91,36 @@ pub fn control_loop() -> ! {
 
 
         // Data logging
-        if i % 100 == 0 {
-            let m = get_motors();
-            let mut a = 0 as u64;
-            match drone.get_mode() {
-                WorkingModes::SafeMode => {a = 0}
-                WorkingModes::PanicMode => {a = 1}
-                WorkingModes::ManualMode => {a = 2}
-                _ => ()
-            }
-            let mut datalog = Message::Datalogging(m[0], m[1], m[2], m[3], 0, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0);
-            write_packet(datalog);
-            // let a = get_motors();
-            // match drone.get_mode() {
-            //     WorkingModes::SafeMode => {send_bytes("SafeMode".as_bytes());}
-            //     WorkingModes::PanicMode => {send_bytes("PanicMode".as_bytes());}
-            //     WorkingModes::ManualMode => {send_bytes("ManualMode".as_bytes());}
-            //     _ => ()
-            // }
-            // for i in 0..4{
-            //     send_bytes(" ".as_bytes());
-            //     send_bytes(a[i].to_string().as_bytes());
-            // }
+        if i % 10 == 0 {
+                        
+            // Read motor and sensor values
+            let motors = get_motors();
+            let quaternion = block!(read_dmp_bytes()).unwrap();
+            let ypr = YawPitchRoll::from(quaternion);
+            let (accel, _) = read_raw().unwrap();
+            let bat = read_battery();
+            let pres = read_pressure();
 
-            // write_packet(Message::Datalogging(motors[0], motors[1], motors[2], motors[3], dt.as_secs(), ypr.yaw, ypr.pitch, ypr.roll, accel.x, accel.y, accel.z, bat, 0));
-            Yellow.on();
+            // Place values in Datalog struct
+            let datalog = Datalog {
+                motor1: motors[0], 
+                motor2: motors[1], 
+                motor3: motors[2], 
+                motor4: motors[3], 
+                rtc: dt.as_millis(), 
+                yaw: ypr.yaw, 
+                pitch: ypr.pitch, 
+                roll: ypr.roll, 
+                x: accel.x, 
+                y: accel.y, 
+                z: accel.z, 
+                bat: bat, 
+                bar: pres, 
+                workingmode: drone.get_mode()
+            };
+
+            // Send datalog struct to pc
+            write_packet(Message::Datalogging(datalog));
         }
 
         // wait until the timer interrupt goes off again

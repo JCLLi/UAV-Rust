@@ -1,4 +1,4 @@
-use crate::working_mode::WorkingModes;
+use protocol::WorkingModes;
 
 //Mode switch function for safe mode
 pub fn switch(new: WorkingModes) -> WorkingModes{

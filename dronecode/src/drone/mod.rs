@@ -1,7 +1,7 @@
 mod drone;
 pub mod motors;
 
-use crate::working_mode::WorkingModes;
+use protocol::WorkingModes;
 
 pub struct Drone{
     mode: WorkingModes,
