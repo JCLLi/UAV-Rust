@@ -1,7 +1,7 @@
 use crossterm::{terminal::{disable_raw_mode, enable_raw_mode, self}, execute, cursor::MoveTo, style::{SetAttribute, Attribute, Print}};
 use std::{error::Error as OtherError, io::{self, stdout}, sync::mpsc::{self, Sender, Receiver}};
 use serial2::SerialPort;
-use protocol::{self, Message, PacketManager, Datalog, Packet};
+use protocol::{self, Message, PacketManager, Datalog, Packet, WorkingModes};
 use crate::interface::{pc_transmission::{write_packet, write_message}, settings_logic::{DeviceListener, SettingsBundle}};
 
 use super::{pc_transmission::read_message};
@@ -168,7 +168,7 @@ mod tests {
             Print("Command to drone")
         ).unwrap();
 
-        let datalog = Datalog {motor1: 0, motor2: 0, motor3: 0, motor4: 0, rtc: 0, yaw: 0.0, pitch: 0.0, roll: 0.0, x: 0, y: 0, z: 0, bat: 0, bar: 0, workingmode: 0 };
+        let datalog = Datalog {motor1: 0, motor2: 0, motor3: 0, motor4: 0, rtc: 0, yaw: 0.0, pitch: 0.0, roll: 0.0, x: 0, y: 0, z: 0, bat: 0, bar: 0, workingmode: WorkingModes::ManualMode };
         let message = Message::Datalogging(datalog);
         let packet = Packet::new(message);
 

@@ -1,8 +1,8 @@
 use tudelft_quadrupel::uart::send_bytes;
 use protocol::Message;
 use crate::drone::{Drone, Getter, Setter};
-use crate::working_mode::{mode_switch, motions, WorkingModes};
-
+use crate::working_mode::{mode_switch, motions};
+use protocol::WorkingModes;
 
 
 impl Drone {

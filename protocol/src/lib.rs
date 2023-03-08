@@ -11,12 +11,25 @@ use serde::{Deserialize, Serialize};
 
 const CRC_CHECKSUM: crc::Crc<u32> = crc::Crc::<u32>::new(&crc::CRC_32_CKSUM);
 
+
+#[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq)]
+pub enum WorkingModes {
+    SafeMode,
+    PanicMode,
+    ManualMode,
+    CalibrationMode,
+    YawMode,
+    FullControlMode,
+    Motion
+}
+
 /// Message enum with all possible messages
 /// Data order: pitch, roll, yaw, lift
 /// Datalogging order: Motor 1, Motor 2, Motor 3, Motor 4, Delay,
 /// ypr.yaw, ypr.pitch, ypr.roll, acc.x, acc.y, acc.z, bat, bar
 #[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq)]
 pub enum Message {
+    Check,
     SafeMode,
     PanicMode,
     ManualMode(u16, u16, u16, u16),
@@ -31,6 +44,7 @@ pub enum Message {
 impl fmt::Display for Message {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            Message::Check => write!(f, "Check"),
             Message::SafeMode => write!(f, "SafeMode"),
             Message::PanicMode => write!(f, "PanicMode"),
             Message::ManualMode(a, b, c, d) => write!(f, "ManualMode({}, {}, {}, {})", a, b, c, d),
@@ -59,7 +73,7 @@ pub struct Datalog {
     pub z: i16, 
     pub bat: u16, 
     pub bar: u32,
-    pub workingmode: u8,
+    pub workingmode: WorkingModes,
 }
 
 /// A Packet is the message format that contains a command, an argument and a checksum.

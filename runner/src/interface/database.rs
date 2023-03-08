@@ -1,4 +1,4 @@
-use protocol::{self, Packet, Message, PacketError, PacketManager};
+use protocol::{self, Packet, Message, PacketError, PacketManager, WorkingModes};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use serde_json::json;
@@ -25,7 +25,7 @@ pub struct DatabaseManager {
     z: i16, 
     bat: u16, 
     bar: u32,
-    workingmode: u8,
+    workingmode: WorkingModes,
 }
 
 impl DatabaseManager {
@@ -83,7 +83,7 @@ mod tests {
     fn test_store_json() {
 
         for i in 0..10 {
-            let datalog = Datalog {motor1: i, motor2: 0, motor3: 0, motor4: 0, rtc: 9, yaw: 0.0, pitch: 0.0, roll: 0.0, x: 0, y: 0, z: 0, bat: 0, bar: 0, workingmode: 0 };
+            let datalog = Datalog {motor1: i, motor2: 0, motor3: 0, motor4: 0, rtc: 9, yaw: 0.0, pitch: 0.0, roll: 0.0, x: 0, y: 0, z: 0, bat: 0, bar: 0, workingmode: WorkingModes::ManualMode };
             let message = Message::Datalogging(datalog);
             let packet = Packet::new(message);
             

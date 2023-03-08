@@ -1,6 +1,7 @@
 use alloc::{string::ToString, vec::Vec};
 use alloc::{format, string::String};
-use protocol::{self, Packet, PacketError, PacketManager, Message, Datalog};
+use protocol::{self, Packet, PacketError, PacketManager, Message, Datalog, WorkingModes};
+use tudelft_quadrupel::block;
 use tudelft_quadrupel::barometer::read_pressure;
 use tudelft_quadrupel::battery::read_battery;
 use tudelft_quadrupel::led::{Blue, Green, Red, Yellow};
@@ -15,7 +16,6 @@ use crate::drone::{Drone, Getter, Setter};
 use crate::drone::motors::keep_floating;
 use crate::working_mode;
 use crate::working_mode::panic_mode::{panic_check, panic_mode};
-use crate::working_mode::WorkingModes;
 
 const MOTION_DELAY:u8 = 50;
 
@@ -107,7 +107,7 @@ pub fn control_loop() -> ! {
                 z: accel.z, 
                 bat: bat, 
                 bar: pres, 
-                workingmode: drone.get_mode() 
+                workingmode: drone.get_mode()
             };
 
             // Send datalog struct to pc
