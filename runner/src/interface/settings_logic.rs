@@ -55,8 +55,8 @@ impl Default for SettingsBundle {
         SettingsBundle { 
             pitch: 32767, 
             roll: 32767, 
-            yaw: 0, 
-            lift: 0, 
+            yaw: 8263,
+            lift: 0,
             abort: false, 
             mode: Modes::SafeMode, 
             yaw_control_p: 0, 

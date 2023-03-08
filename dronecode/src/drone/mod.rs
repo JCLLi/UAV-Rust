@@ -8,7 +8,8 @@ pub struct Drone{
     yaw: f32,
     pitch: f32,
     roll: f32,
-    floating_speed: u16
+    thrust: f32,
+    floating_speed: u16,
 }
 
 pub trait Getter{

@@ -1,3 +1,4 @@
+
 use alloc::{string::ToString, vec::Vec};
 use alloc::{format, string::String};
 use protocol::{self, Packet, PacketError, PacketManager, Message, Datalog, WorkingModes};
@@ -9,15 +10,18 @@ use tudelft_quadrupel::motor::get_motors;
 use tudelft_quadrupel::mpu::{read_dmp_bytes, read_raw};
 use tudelft_quadrupel::time::{set_tick_frequency, wait_for_next_tick, Instant};
 use tudelft_quadrupel::uart::{send_bytes, receive_bytes};
+
 use crate::drone_transmission::{write_packet, read_packet, read_message};
 use postcard::{take_from_bytes_cobs, from_bytes_cobs, to_allocvec, to_allocvec_cobs};
+
 use crate::yaw_pitch_roll::YawPitchRoll;
 use crate::drone::{Drone, Getter, Setter};
 use crate::drone::motors::keep_floating;
 use crate::working_mode;
 use crate::working_mode::panic_mode::{panic_check, panic_mode};
 
-const MOTION_DELAY:u8 = 50;
+const FIXED_SIZE:usize = 64;
+const MOTION_DELAY:u16 = 100;//Set a big value for debugging
 
 pub fn control_loop() -> ! {
     set_tick_frequency(100);
@@ -51,6 +55,8 @@ pub fn control_loop() -> ! {
             message = packetmanager.read_packet().unwrap().message;
             new_message = true;
             no_message = 0;
+        }else {
+            no_message += 1;
         }
 
         //This match is used to process messages
@@ -63,23 +69,26 @@ pub fn control_loop() -> ! {
             }
             _ => {
                 //Check panic situation
-                if !panic_check() {
-                    drone.set_mode(WorkingModes::PanicMode);
-                }
+                // if !panic_check() {
+                //     drone.set_mode(WorkingModes::PanicMode);
+                // }
+
+                //If there is no new message over __ms, drone goes back to floating state. This value can be changed
+                // if no_message == MOTION_DELAY {
+                //     keep_floating(&drone);
+                //     no_message = 0;
+                // }
+
+                //If there is new message, check the message
                 if new_message {
                     drone.message_check(&message);
                 }
             }
         }
-
         new_message = false;
-        no_message += 1;
 
-        //If there is no new message over 500ms, drone goes back to floating state. This value can be changed
-        if no_message == MOTION_DELAY {
-            keep_floating(&drone);
-            no_message = 0;
-        }
+
+
 
         // Data logging
         if i % 10 == 0 {
@@ -120,5 +129,4 @@ pub fn control_loop() -> ! {
     }
     unreachable!();
 }
-
 

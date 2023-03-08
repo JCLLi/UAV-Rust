@@ -1,12 +1,14 @@
 use tudelft_quadrupel::motor::set_motors;
 
 use crate::drone::{Drone, motors, Setter};
+<<<<<<< dronecode/src/working_mode/manual_mode.rs
+use crate::drone::motors::{angle_to_pwm, motor_assign};
 // use crate::working_mode::WorkingModes;
 // use crate::working_mode::WorkingModes::{ManualMode, PanicMode};
 use protocol::WorkingModes;
 use protocol::WorkingModes::{ManualMode, PanicMode};
 
-//Mode switch function for manual mode
+///Mode switch function for manual mode
 pub fn switch(new: WorkingModes) -> WorkingModes{
     match new {
         WorkingModes::SafeMode | PanicMode => PanicMode,
@@ -15,10 +17,11 @@ pub fn switch(new: WorkingModes) -> WorkingModes{
     }
 }
 
+///Do the motion according to the argument from command by changing motor speed
 pub fn motion(drone: &mut Drone, argument: [u16; 4]){
+    //Convert from u16 value to required pwm signal for different signal
+    let pwm = angle_to_pwm(drone, argument);
 
-    //Calculation motor speeds according to arguments in messages
-    let speed = motors::get_speed(drone, argument);
-
-    set_motors([speed[0], speed[1], speed[2], speed[3]]);
+    //Assign motor speed according to the pwm signal
+    motor_assign(pwm);
 }

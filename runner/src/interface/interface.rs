@@ -97,9 +97,20 @@ fn write_serial(serial: &SerialPort, sender: Sender<bool>) {
 }
 
 fn read_serial(serial: &SerialPort, receiver: Receiver<bool>) {
-    let mut shared_buf = Vec::new();
+
     
     // Read data, place packets in packetmanager
+    // let mut buf = [0u8; 255];
+    // loop {
+    //     if let Ok(num) = serial.read(&mut buf) {
+    //         println!("Message:");
+    //         print!("{}", String::from_utf8_lossy(&buf[0..num]));
+    //     }
+    //     // if receiver.recv().unwrap() == true {
+    //     //     break;
+    //     // }
+    // }
+    let mut shared_buf = Vec::new();
     let mut packetmanager = PacketManager::new();
     loop {
         // Read packets sent by the drone and place them in the packetmanager
@@ -112,9 +123,9 @@ fn read_serial(serial: &SerialPort, receiver: Receiver<bool>) {
         print_datalog(packet);
 
         // Exit program if exit command is given
-        if receiver.recv().unwrap() == true {
-            break;
-        }
+        // if receiver.recv().unwrap() == true {
+        //     break;
+        // }
     }
 }
 

@@ -43,6 +43,7 @@ pub fn read_packet(mut buf: Vec<u8>) -> Result<Packet, ()> {
 /// Write message to the drone
 pub fn write_message(serial: &SerialPort, mut bundle_new: SettingsBundle, bundle_result: Result<SettingsBundle, DeviceError>, messagevec: &mut Vec<Message>) -> (SettingsBundle, bool) {
     let mut exit = false;
+
     match bundle_result {
         Ok(bundle) => {
             if bundle != bundle_new {

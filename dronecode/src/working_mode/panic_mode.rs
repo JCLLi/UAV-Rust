@@ -14,9 +14,9 @@ pub fn panic_mode() -> WorkingModes{
 //Different situations that can panic
 pub fn panic_check() -> bool{
     //Panic when battery is low
-    if read_battery() < 1 {
-        return false;
-    }
+    // if read_battery() < 1 {
+    //     return false;
+    // }
 
     //Panic when motors shut down
     for i in get_motors(){
