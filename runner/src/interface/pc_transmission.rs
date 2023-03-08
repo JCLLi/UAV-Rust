@@ -13,7 +13,7 @@ pub fn write_packet(serial: &SerialPort, message: Message) {
 
     // Create packet
     let mut packet = Packet::new(message);
-    // println!("\rCommand to drone: {:?}", message);
+    println!("\rCommand to drone: {:?}", message);
 
     // Serialize packet
     let serialized_packet = packet.to_bytes();
@@ -25,7 +25,7 @@ pub fn write_packet(serial: &SerialPort, message: Message) {
 /// Read packet from the drone, if available
 pub fn read_packet(mut buf: Vec<u8>) -> Result<Packet, ()> {
         if let Ok(packet) = Packet::from_bytes(&mut buf) {  
-            // println!("\rMessage from drone: {:?}", packet.message);  
+            println!("\rMessage from drone: {:?}", packet.message);  
             
             // execute!(
             //     stdout(),
@@ -76,20 +76,21 @@ pub fn write_message(serial: &SerialPort, mut bundle_new: SettingsBundle, bundle
                 } else {
                     messagevec.push(message);
                 }             
-            } else {
-                let message = Message::Check;
+            } 
+            // else {
+            //     let message = Message::Check;
 
-                // Write message over serial
-                write_packet(serial, message);   
+            //     // Write message over serial
+            //     write_packet(serial, message);   
                 
-                // // Add message to messagevec, to show in terminal
-                // if messagevec.len() >= 10 {
-                //     messagevec.rotate_left(1);
-                //     messagevec[9] = message;
-                // } else {
-                //     messagevec.push(message);
-                // }  
-            }
+            //     // // Add message to messagevec, to show in terminal
+            //     // if messagevec.len() >= 10 {
+            //     //     messagevec.rotate_left(1);
+            //     //     messagevec[9] = message;
+            //     // } else {
+            //     //     messagevec.push(message);
+            //     // }  
+            // }
         },
         Err(device) => println!("{:?}", device),
     }

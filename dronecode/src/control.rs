@@ -87,19 +87,16 @@ pub fn control_loop() -> ! {
         }
         new_message = false;
 
-
-
-
         // Data logging
-        if i % 10 == 0 {
+        if i % 20 == 0 {
                         
-            // Read motor and sensor values
+            // // Read motor and sensor values
             let motors = get_motors();
-            let quaternion = block!(read_dmp_bytes()).unwrap();
-            let ypr = YawPitchRoll::from(quaternion);
-            let (accel, _) = read_raw().unwrap();
-            let bat = read_battery();
-            let pres = read_pressure();
+            // let quaternion = block!(read_dmp_bytes()).unwrap();
+            // let ypr = YawPitchRoll::from(quaternion);
+            // let (accel, _) = read_raw().unwrap();
+            // let bat = read_battery();
+            // let pres = read_pressure();
 
             // Place values in Datalog struct
             let datalog = Datalog {
@@ -108,19 +105,20 @@ pub fn control_loop() -> ! {
                 motor3: motors[2], 
                 motor4: motors[3], 
                 rtc: dt.as_millis(), 
-                yaw: ypr.yaw, 
-                pitch: ypr.pitch, 
-                roll: ypr.roll, 
-                x: accel.x, 
-                y: accel.y, 
-                z: accel.z, 
-                bat: bat, 
-                bar: pres, 
+                yaw: 0.0, 
+                pitch: 0.0, 
+                roll: 0.0, 
+                x: 0, 
+                y: 0, 
+                z: 0, 
+                bat: 100, 
+                bar: 100, 
                 workingmode: drone.get_mode()
             };
 
             // Send datalog struct to pc
             write_packet(Message::Datalogging(datalog));
+            Yellow.on();
         }
 
         // wait until the timer interrupt goes off again

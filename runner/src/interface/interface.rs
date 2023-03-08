@@ -1,5 +1,5 @@
 use crossterm::{terminal::{disable_raw_mode, enable_raw_mode, self}, execute, cursor::MoveTo, style::{SetAttribute, Attribute, Print}};
-use std::{error::Error as OtherError, io::{self, stdout}, sync::mpsc::{self, Sender, Receiver}};
+use std::{error::Error as OtherError, io::{self, stdout}, sync::mpsc::{self, Sender, Receiver}, thread::sleep, time::Duration};
 use serial2::SerialPort;
 use protocol::{self, Message, PacketManager, Datalog, Packet, WorkingModes};
 use crate::interface::{pc_transmission::{write_packet, write_message}, settings_logic::{DeviceListener, SettingsBundle}};
@@ -12,18 +12,18 @@ pub fn setup_interface(serial: &SerialPort) -> Result<(), Box<dyn OtherError>> {
     // Setup terminal
     enable_raw_mode()?;
     
-    execute!(
-        stdout(),
-        terminal::Clear(terminal::ClearType::All),
-        MoveTo(80,0),
-        SetAttribute(Attribute::Bold),
-        Print("PC interface"),
-        MoveTo(120,1),
-        Print("Drone data"),
-        MoveTo(0,1),
-        Print("Command to drone"),
-        SetAttribute(Attribute::Reset)
-    ).unwrap();
+    // execute!(
+    //     stdout(),
+    //     terminal::Clear(terminal::ClearType::All),
+    //     MoveTo(80,0),
+    //     SetAttribute(Attribute::Bold),
+    //     Print("PC interface"),
+    //     MoveTo(120,1),
+    //     Print("Drone data"),
+    //     MoveTo(0,1),
+    //     Print("Command to drone"),
+    //     SetAttribute(Attribute::Reset)
+    // ).unwrap();
     
     // Put drone in safemode
     write_packet(&serial, Message::SafeMode);
@@ -86,44 +86,38 @@ fn write_serial(serial: &SerialPort, sender: Sender<bool>) {
         }
 
         // Show messages to drone in terminal
-        for i in 0..messagevec.len() {
-            execute!(
-                stdout(),
-                MoveTo(0,i as u16 + 2),
-                Print(&messagevec[i]), Print("                                                     ")
-            ).unwrap();
-        } 
+        // for i in 0..messagevec.len() {
+        //     execute!(
+        //         stdout(),
+        //         MoveTo(0,i as u16 + 2),
+        //         Print(&messagevec[i]), Print("                                                     ")
+        //     ).unwrap();
+        // } 
+
+        sleep(Duration::from_millis(50));
     }
 }
 
 fn read_serial(serial: &SerialPort, receiver: Receiver<bool>) {
 
-    
-    // Read data, place packets in packetmanager
-    // let mut buf = [0u8; 255];
-    // loop {
-    //     if let Ok(num) = serial.read(&mut buf) {
-    //         println!("Message:");
-    //         print!("{}", String::from_utf8_lossy(&buf[0..num]));
-    //     }
-    //     // if receiver.recv().unwrap() == true {
-    //     //     break;
-    //     // }
-    // }
     let mut shared_buf = Vec::new();
     let mut packetmanager = PacketManager::new();
     loop {
+        // println!("\rreading...");
+
         // Read packets sent by the drone and place them in the packetmanager
         read_message(serial, &mut shared_buf, &mut packetmanager);
+
 
         // Read one packet from the packetmanager and use it
         let packet = packetmanager.read_packet();
 
         // Show values sent by drone in tui
-        print_datalog(packet);
+        // print_datalog(packet);
 
         // Exit program if exit command is given
         // if receiver.recv().unwrap() == true {
+        //     println!("\rbreak");
         //     break;
         // }
     }

@@ -1,10 +1,7 @@
 use tudelft_quadrupel::motor::set_motors;
 
 use crate::drone::{Drone, motors, Setter};
-<<<<<<< dronecode/src/working_mode/manual_mode.rs
 use crate::drone::motors::{angle_to_pwm, motor_assign};
-// use crate::working_mode::WorkingModes;
-// use crate::working_mode::WorkingModes::{ManualMode, PanicMode};
 use protocol::WorkingModes;
 use protocol::WorkingModes::{ManualMode, PanicMode};
 
