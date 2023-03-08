@@ -94,7 +94,7 @@ fn write_serial(serial: &SerialPort, sender: Sender<bool>) {
         //     ).unwrap();
         // } 
 
-        sleep(Duration::from_millis(50));
+        //sleep(Duration::from_millis(50));
     }
 }
 

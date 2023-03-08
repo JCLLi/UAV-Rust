@@ -81,7 +81,7 @@ pub fn write_message(serial: &SerialPort, mut bundle_new: SettingsBundle, bundle
             //     let message = Message::Check;
 
             //     // Write message over serial
-            //     write_packet(serial, message);   
+            //     write_packet(serial, message);
                 
             //     // // Add message to messagevec, to show in terminal
             //     // if messagevec.len() >= 10 {
@@ -89,7 +89,7 @@ pub fn write_message(serial: &SerialPort, mut bundle_new: SettingsBundle, bundle
             //     //     messagevec[9] = message;
             //     // } else {
             //     //     messagevec.push(message);
-            //     // }  
+            //     // }
             // }
         },
         Err(device) => println!("{:?}", device),

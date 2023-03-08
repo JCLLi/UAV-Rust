@@ -88,7 +88,7 @@ pub fn control_loop() -> ! {
         new_message = false;
 
         // Data logging
-        if i % 20 == 0 {
+        if i % 100 == 0 {
                         
             // // Read motor and sensor values
             let motors = get_motors();
