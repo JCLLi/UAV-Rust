@@ -73,9 +73,9 @@ fn read_serial(serial: &SerialPort, receiver: Receiver<bool>) {
         let packet = packetmanager.read_packet();
 
         // Exit program if exit command is given
-        if receiver.recv().unwrap() == true {
-            break;
-        }
+        // if receiver.recv().unwrap() == true {
+        //     break;
+        // }
     }
 }
 

@@ -10,7 +10,7 @@ pub fn write_packet(serial: &SerialPort, message: Message) {
 
     // Create packet
     let mut packet = Packet::new(message);
-    println!("\rCommand to drone: {:?}", message);
+    //println!("\rCommand to drone: {:?}", message);
 
     // Serialize packet
     let serialized_packet = packet.to_bytes();
@@ -32,6 +32,7 @@ pub fn read_packet(mut buf: Vec<u8>) -> Result<Packet, ()> {
 /// Write message to the drone
 pub fn write_message(serial: &SerialPort, mut bundle_new: SettingsBundle, bundle_result: Result<SettingsBundle, DeviceError>) -> (SettingsBundle, bool) {
     let mut exit = false;
+
     match bundle_result {
         Ok(bundle) => {
             if bundle != bundle_new {

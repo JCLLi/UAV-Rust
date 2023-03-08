@@ -70,10 +70,10 @@ pub fn control_loop() -> ! {
                 // }
 
                 //If there is no new message over __ms, drone goes back to floating state. This value can be changed
-                if no_message == MOTION_DELAY {
-                    keep_floating(&drone);
-                    no_message = 0;
-                }
+                // if no_message == MOTION_DELAY {
+                //     keep_floating(&drone);
+                //     no_message = 0;
+                // }
 
                 //If there is new message, check the message
                 if new_message {
@@ -88,22 +88,30 @@ pub fn control_loop() -> ! {
 
         // Data logging
         if i % 100 == 0 {
-                let mut datalog = Message::Datalogging(i, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0);
-                write_packet(datalog);
-                // let a = get_motors();
-                // match drone.get_mode() {
-                //     WorkingModes::SafeMode => {send_bytes("SafeMode".as_bytes());}
-                //     WorkingModes::PanicMode => {send_bytes("PanicMode".as_bytes());}
-                //     WorkingModes::ManualMode => {send_bytes("ManualMode".as_bytes());}
-                //     _ => ()
-                // }
-                // for i in 0..4{
-                //     send_bytes(" ".as_bytes());
-                //     send_bytes(a[i].to_string().as_bytes());
-                // }
+            let m = get_motors();
+            let mut a = 0 as u64;
+            match drone.get_mode() {
+                WorkingModes::SafeMode => {a = 0}
+                WorkingModes::PanicMode => {a = 1}
+                WorkingModes::ManualMode => {a = 2}
+                _ => ()
+            }
+            let mut datalog = Message::Datalogging(m[0], m[1], m[2], m[3], 0, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0);
+            write_packet(datalog);
+            // let a = get_motors();
+            // match drone.get_mode() {
+            //     WorkingModes::SafeMode => {send_bytes("SafeMode".as_bytes());}
+            //     WorkingModes::PanicMode => {send_bytes("PanicMode".as_bytes());}
+            //     WorkingModes::ManualMode => {send_bytes("ManualMode".as_bytes());}
+            //     _ => ()
+            // }
+            // for i in 0..4{
+            //     send_bytes(" ".as_bytes());
+            //     send_bytes(a[i].to_string().as_bytes());
+            // }
 
-                // write_packet(Message::Datalogging(motors[0], motors[1], motors[2], motors[3], dt.as_secs(), ypr.yaw, ypr.pitch, ypr.roll, accel.x, accel.y, accel.z, bat, 0));
-                Yellow.on();
+            // write_packet(Message::Datalogging(motors[0], motors[1], motors[2], motors[3], dt.as_secs(), ypr.yaw, ypr.pitch, ypr.roll, accel.x, accel.y, accel.z, bat, 0));
+            Yellow.on();
         }
 
         // wait until the timer interrupt goes off again
