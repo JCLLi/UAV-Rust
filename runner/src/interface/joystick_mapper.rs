@@ -87,6 +87,11 @@ impl State {
                 self.sender.send(self.mapped).unwrap();
             }
 
+            Event::Throttle(z) => {
+                self.mapped.lift = (u16::MAX - (z * (u16::MAX as f64)) as u16) + 32767;
+                self.sender.send(self.mapped).unwrap();
+            }
+
             Event::Trigger(t) => {
                 self.mapped.abort = t;
                 self.sender.send(self.mapped).unwrap();
@@ -129,7 +134,7 @@ use super::*;
             pasts::block_on(event_loop(tx));
         });
 
-        while let Ok(packet) = rx.recv(){
+        while let Ok(packet) = rx.recv() {
             println!("{:?}", packet);
         }
     }    
