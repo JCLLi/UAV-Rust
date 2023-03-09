@@ -79,6 +79,11 @@ impl State {
                 self.sender.send(self.mapped).unwrap();
             }
 
+            Event::CamX(z) => {
+                self.mapped.yaw = ((z + 1.0) / 2.0 * (u16::MAX as f64)) as u16;
+                self.sender.send(self.mapped).unwrap();
+            }
+
             Event::CamZ(z) => {
                 self.mapped.yaw = ((z + 1.0) / 2.0 * (u16::MAX as f64)) as u16;
                 self.sender.send(self.mapped).unwrap();
