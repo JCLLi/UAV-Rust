@@ -13,5 +13,3 @@ serde = { version = "1.0.*", features = ["derive"], default-features = false }
 crc = "2.0"
 heapless = "0.7.16"
 protocol = {path = "../protocol"}
-
-

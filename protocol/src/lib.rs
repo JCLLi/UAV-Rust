@@ -64,7 +64,7 @@ pub struct Datalog {
     pub motor2: u16,
     pub motor3: u16,
     pub motor4:u16,
-    pub rtc: u128,
+    pub rtc: u64,
     pub yaw: f32,
     pub pitch: f32,
     pub roll: f32,

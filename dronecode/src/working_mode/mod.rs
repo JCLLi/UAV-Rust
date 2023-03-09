@@ -1,4 +1,3 @@
-use tudelft_quadrupel::uart::send_bytes;
 use crate::drone::{Drone, Getter, Setter};
 use crate::working_mode::panic_mode::panic_mode;
 use protocol::WorkingModes;
