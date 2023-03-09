@@ -49,10 +49,12 @@ pub fn control_loop() -> ! {
         let time = last.ns_since_start() / 1_000_000;
 
         Green.off();
+        Red.off();
 
         // Read data, place packets in packetmanager, message in first packet is used
         let mut packetmanager;
         (packetmanager, shared_buf) = read_message(shared_buf);
+        
         if packetmanager.packets.len() > 0 {
             message = packetmanager.read_packet().unwrap().message;
             new_message = true;
@@ -63,7 +65,12 @@ pub fn control_loop() -> ! {
 
         //This match is used to process messages
         match drone.get_mode() {
-            WorkingModes::PanicMode => drone.set_mode(panic_mode()),
+            WorkingModes::PanicMode => {
+                drone.set_mode(panic_mode());
+
+                Yellow.off();
+                Red.on();
+            },
             WorkingModes::SafeMode => {
                 if new_message {
                     drone.message_check(&message);

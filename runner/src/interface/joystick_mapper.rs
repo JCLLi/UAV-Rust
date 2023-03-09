@@ -1,6 +1,6 @@
 
 use pasts::Loop;
-use std::{sync::mpsc, task::Poll::{self, Pending, Ready}};
+use std::{sync::mpsc, task::Poll::{self, Pending, Ready}, thread::sleep, time::Duration};
 use stick::{Controller, Event, Listener};
 
 type Exit = usize;
@@ -78,13 +78,29 @@ impl State {
                 self.sender.send(self.mapped).unwrap();
             }
 
+            // Yaw on real joystick
+            // 0 - 16000
+            // middle: 8000 - 8600
             Event::CamZ(z) => {
                 self.mapped.yaw = ((z + 1.0) / 2.0 * (u16::MAX as f64)) as u16;
                 self.sender.send(self.mapped).unwrap();
             }
 
+            // Yaw on PS4 controller
+            Event::CamX(x) => {
+
+                self.mapped.yaw = ((x + 1.0) / 2.0 * (16000 as f64)) as u16;
+                self.sender.send(self.mapped).unwrap();
+            }
+
             Event::JoyZ(z) => {
                 self.mapped.lift = ((z + 1.0) / 2.0 * (u16::MAX as f64)) as u16;
+                // self.mapped.lift = u16::MAX - (z * (u16::MAX as f64)) as u16;
+                self.sender.send(self.mapped).unwrap();
+            }
+
+            Event::Throttle(z) => {
+                self.mapped.lift = u16::MAX - (z * (u16::MAX as f64)) as u16;
                 self.sender.send(self.mapped).unwrap();
             }
 

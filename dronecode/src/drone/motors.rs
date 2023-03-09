@@ -69,8 +69,9 @@ pub fn angle_to_pwm(drone: &mut Drone, argument: [u16; 4]) -> [f32; 4]{
         pwm_yaw = 0 as f32 - (8263 - argument[2]) as f32 * RESOLUTION;
     }
 
-    pwm_thrust = argument[3] as f32 * RESOLUTION + FLOATING_SPEED as f32 * MOTOR_RESOLUTION;
-
+    pwm_thrust = (argument[3]) as f32 * (1 as f32 / 65535 as f32) + FLOATING_SPEED as f32 * MOTOR_RESOLUTION;
+    if pwm_thrust > 1.0 {pwm_thrust = 1 as f32 }
+    
     drone.pitch = pwm_pitch * 180 as f32 / PI;
     drone.roll = pwm_roll * 180 as f32 / PI;
     drone.yaw = pwm_pitch * 180 as f32 / PI;//TODO: change into rate

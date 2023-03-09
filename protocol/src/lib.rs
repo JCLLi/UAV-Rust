@@ -44,6 +44,7 @@ impl fmt::Display for WorkingModes {
 /// ypr.yaw, ypr.pitch, ypr.roll, acc.x, acc.y, acc.z, bat, bar
 #[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq)]
 pub enum Message {
+    HeartBeat,
     SafeMode,
     PanicMode,
     ManualMode(u16, u16, u16, u16),
@@ -58,6 +59,7 @@ pub enum Message {
 impl fmt::Display for Message {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            Message::HeartBeat => write!(f, "HeartBeat"),
             Message::SafeMode => write!(f, "SafeMode"),
             Message::PanicMode => write!(f, "PanicMode"),
             Message::ManualMode(a, b, c, d) => write!(f, "ManualMode({}, {}, {}, {})", a, b, c, d),

@@ -1,5 +1,6 @@
 use core::fmt;
 use std::sync::mpsc::TryRecvError;
+use std::time::Instant;
 use std::{thread, sync::mpsc};
 use crossterm::terminal::enable_raw_mode;
 
@@ -98,6 +99,7 @@ impl DeviceListener {
 
         return DeviceListener { bundle: SettingsBundle::default(), receiver_joystick_channel: receiver_js, receiver_keyboard_channel: receiver_kb }
     }
+    
     /// make sure that this function runs in a loop..
     pub fn get_combined_settings(&mut self) -> Result<SettingsBundle, DeviceError> {
 

@@ -1,5 +1,5 @@
 use crossterm::{cursor, terminal::{disable_raw_mode, enable_raw_mode, self}, execute, cursor::{MoveTo, Hide, Show}, style::{SetAttribute, Attribute, Print}};
-use std::{error::Error as OtherError, io::{self, stdout}, sync::mpsc::{self, Sender, Receiver}, thread::sleep, time::Duration};
+use std::{error::Error as OtherError, io::{self, stdout}, sync::mpsc::{self, Sender, Receiver}, thread::sleep, time::{Duration, Instant}};
 use serial2::SerialPort;
 use protocol::{self, Message, PacketManager, Datalog, Packet, WorkingModes};
 use crate::interface::{pc_transmission::{write_packet, write_message}, settings_logic::{DeviceListener, SettingsBundle}};
@@ -85,6 +85,8 @@ fn write_serial(serial: &SerialPort, tx_exit: Sender<bool>, tx_tui1: Sender<Sett
     let mut device_listener = DeviceListener::new();
     let mut bundle_new = SettingsBundle::default();
     
+    let mut last = Instant::now();
+    
     loop {
         // Receive user input
         let bundle_result = device_listener.get_combined_settings();
@@ -108,6 +110,15 @@ fn write_serial(serial: &SerialPort, tx_exit: Sender<bool>, tx_tui1: Sender<Sett
                 }
             }, 
             Err(_) => (),
+        }
+
+        // Send heartbeat to drone every 500 ms
+        let now = Instant::now();
+        let dt = now.duration_since(last).as_millis();
+
+        if dt >= 500 {
+            write_packet(serial, Message::HeartBeat);
+            last = now;
         }
     }
 }
