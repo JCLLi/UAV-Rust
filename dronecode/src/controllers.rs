@@ -7,6 +7,14 @@ pub struct AngularController {
     dt: f32,
 }
 
+pub struct PDController {
+    kp: [f32; 3],
+    kd: [f32; 3],
+    last_error: [f32; 3],
+    dt: f32,    
+}
+
+
 fn signum_f32(x: f32) -> f32 {
     if x > 0.0 {
         1.0
@@ -55,3 +63,34 @@ impl AngularController {
         ]
     }
 }
+
+
+impl PDController {
+    pub fn new(kp: [f32; 3], kd: [f32; 3], dt: f32) -> Self {
+        Self {
+            kp,
+            kd,
+            last_error: [0.0, 0.0, 0.0],
+            dt
+        }
+    }
+
+    pub fn step(&mut self, target_pos: [f32; 3], current_pos: [f32; 3], dt: f32) -> [f32; 3] {
+        let mut error = [0.0; 3];
+        for i in 0..3 {
+            error[i] = target_pos[i] - current_pos[i];
+        }
+        let mut derivative = [0.0; 3];
+        for i in 0..3 {
+            derivative[i] = (error[i] - self.last_error[i]) / dt;
+        }
+        self.last_error = error;
+        let mut output = [0.0; 3];
+        for i in 0..3 {
+            output[i] = self.kp[i] * error[i] + self.kd[i] * derivative[i];
+        }
+        output
+    }
+    
+}
+ 

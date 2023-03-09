@@ -24,7 +24,7 @@ mod yaw_pitch_roll;
 mod drone;
 mod drone_transmission;
 mod log_storage_manager;
-mod angular_controller;
+mod controllers;
 
 
 /// The heap size of your drone code in bytes.
@@ -47,7 +47,6 @@ fn main() -> ! {
         // program doesn't run, you know that the boot procedure has failed.
         initialize(unsafe { &mut HEAP_MEMORY }, false);
     }
-
     control_loop()
 }
 
