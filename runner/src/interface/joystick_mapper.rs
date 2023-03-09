@@ -35,6 +35,7 @@ impl State {
         //     controller.name(),
         // );
         self.controllers.push(controller);
+        self.mapped.abort = false;
         Pending
     }
 
@@ -45,7 +46,7 @@ impl State {
         match event {
             Event::Disconnect => {
                 if self.controllers.len() > 0 {
-                    println!("\rJjoystick unplugged");
+                    // println!("\rJjoystick unplugged");
                     self.controllers.swap_remove(id);
                     self.mapped.abort = true;
                     self.sender.send(self.mapped).unwrap();
@@ -53,44 +54,36 @@ impl State {
             }
             Event::MenuR(true) => return Ready(player),
             Event::ActionA(pressed) => {
-                println!("hh");
                 self.controllers[id].rumble(f32::from(u8::from(pressed)));
             }
             Event::ActionB(pressed) => {
-                println!("gg");
                 self.controllers[id].rumble(0.5 * f32::from(u8::from(pressed)));
             }
             Event::BumperL(pressed) => {
-                println!("ff");
                 self.rumble.0 = f32::from(u8::from(pressed));
                 self.controllers[id].rumble(self.rumble);
             }
             Event::BumperR(pressed) => {
-                println!("ee");
                 self.rumble.1 = f32::from(u8::from(pressed));
                 self.controllers[id].rumble(self.rumble);
             }
 
             Event::JoyX(x) => {
-                println!("dd");
                 self.mapped.roll = ((x + 1.0) / 2.0 * (u16::MAX as f64)) as u16;
                 self.sender.send(self.mapped).unwrap();
             }
 
             Event::JoyY(y) => {
-                println!("cc");
                 self.mapped.pitch = ((y + 1.0) / 2.0 * (u16::MAX as f64)) as u16;
                 self.sender.send(self.mapped).unwrap();
             }
 
             Event::CamZ(z) => {
-                println!("bb");
                 self.mapped.yaw = ((z + 1.0) / 2.0 * (u16::MAX as f64)) as u16;
                 self.sender.send(self.mapped).unwrap();
             }
 
             Event::JoyZ(z) => {
-                println!("aaa");
                 self.mapped.lift = ((z + 1.0) / 2.0 * (u16::MAX as f64)) as u16;
                 self.sender.send(self.mapped).unwrap();
             }

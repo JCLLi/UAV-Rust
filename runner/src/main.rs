@@ -14,6 +14,7 @@ fn main()  {
 
     let res = setup_interface(&serial);
     
+    print!("\x1B[2J\x1B[1;1H");
     println!("\rInterface stopped: {:?}", res);
 }
 

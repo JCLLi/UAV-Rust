@@ -41,12 +41,14 @@ pub fn control_loop() -> ! {
         if i % 50 == 0 {
             Blue.toggle();
         }
+
         let now = Instant::now();
         let dt = now.duration_since(last);
         last = now;
 
+        let time = last.ns_since_start() / 1_000_000;
+
         Green.off();
-        Yellow.off();
 
         // Read data, place packets in packetmanager, message in first packet is used
         let mut packetmanager;
@@ -66,6 +68,9 @@ pub fn control_loop() -> ! {
                 if new_message {
                     drone.message_check(&message);
                 }
+                
+                // Turn yellow led on to show that we are in safe mode
+                Yellow.on();
             }
             _ => {
                 //Check panic situation
@@ -83,14 +88,16 @@ pub fn control_loop() -> ! {
                 if new_message {
                     drone.message_check(&message);
                 }
+
+                Yellow.off();
             }
         }
         new_message = false;
 
         // Data logging
-        if i % 20 == 0 {
+        if i % 5 == 0 {
                         
-            // // Read motor and sensor values
+            // Read motor and sensor values
             let motors = get_motors();
             // let quaternion = block!(read_dmp_bytes()).unwrap();
             // let ypr = YawPitchRoll::from(quaternion);
@@ -104,21 +111,20 @@ pub fn control_loop() -> ! {
                 motor2: motors[1], 
                 motor3: motors[2], 
                 motor4: motors[3], 
-                rtc: dt.as_millis(), 
+                rtc: time, 
                 yaw: 0.0, 
                 pitch: 0.0, 
                 roll: 0.0, 
                 x: 0, 
                 y: 0, 
                 z: 0, 
-                bat: 100, 
-                bar: 100, 
+                bat: 0, 
+                bar: 0, 
                 workingmode: drone.get_mode()
             };
 
             // Send datalog struct to pc
             write_packet(Message::Datalogging(datalog));
-            Yellow.on();
         }
 
         // wait until the timer interrupt goes off again
