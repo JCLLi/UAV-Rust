@@ -1,6 +1,6 @@
 
 use pasts::Loop;
-use std::{sync::mpsc, task::Poll::{self, Pending, Ready}, thread::sleep, time::Duration};
+use std::{sync::mpsc, task::Poll::{self, Pending, Ready}};
 use stick::{Controller, Event, Listener};
 
 type Exit = usize;

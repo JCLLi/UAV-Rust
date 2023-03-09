@@ -1,12 +1,12 @@
-use protocol::{self, Packet, Message, PacketError, PacketManager, WorkingModes};
+use protocol::{self, Packet, Message, WorkingModes};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use serde_json::json;
+
 use std::error::Error;
 use std::fs;
 use std::fs::File;
 use std::io::Write;
-use std::io::BufReader;
+
 use std::path::Path;
 use std::time::SystemTime;
 
@@ -73,7 +73,7 @@ impl DatabaseManager {
 
 #[cfg(test)]
 mod tests {
-    use std::{time::{SystemTime, Duration}, thread::sleep};
+    use std::{time::{Duration}, thread::sleep};
 
     use protocol::Datalog;
 

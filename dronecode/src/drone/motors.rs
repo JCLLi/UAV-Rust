@@ -1,7 +1,7 @@
-use alloc::format;
+
 use tudelft_quadrupel::motor::set_motors;
-use tudelft_quadrupel::uart::send_bytes;
-use crate::drone::{Drone, Setter};
+
+use crate::drone::{Drone};
 
 const MOTOR_MAX: u16 = 400;
 const ZERO_POINT: u16 = 32767;

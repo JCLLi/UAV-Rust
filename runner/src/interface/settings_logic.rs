@@ -1,6 +1,6 @@
 use core::fmt;
 use std::sync::mpsc::TryRecvError;
-use std::time::Instant;
+
 use std::{thread, sync::mpsc};
 use crossterm::terminal::enable_raw_mode;
 

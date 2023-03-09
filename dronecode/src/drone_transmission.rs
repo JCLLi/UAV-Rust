@@ -1,7 +1,7 @@
 use protocol::{self, Packet, Message, PacketManager};
 use tudelft_quadrupel::uart::{send_bytes, receive_bytes};
-use tudelft_quadrupel::led::{Blue, Green, Red, Yellow};
-use alloc::{string::ToString, vec::Vec};
+use tudelft_quadrupel::led::{Green, Yellow};
+use alloc::{vec::Vec};
 
 /// Write message to the PC
 pub fn write_packet(message: Message) {

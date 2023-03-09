@@ -7,7 +7,7 @@ extern crate alloc;
 
 use crate::control::control_loop;
 use alloc::format;
-use alloc::string::ToString;
+
 use core::alloc::Layout;
 use core::mem::MaybeUninit;
 use core::panic::PanicInfo;

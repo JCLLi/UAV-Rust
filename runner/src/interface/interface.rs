@@ -1,7 +1,7 @@
-use crossterm::{cursor, terminal::{disable_raw_mode, enable_raw_mode, self}, execute, cursor::{MoveTo, Hide, Show}, style::{SetAttribute, Attribute, Print}};
-use std::{error::Error as OtherError, io::{self, stdout}, sync::mpsc::{self, Sender, Receiver}, thread::sleep, time::{Duration, Instant}};
+use crossterm::{terminal::{disable_raw_mode, enable_raw_mode, self}, execute, cursor::{MoveTo, Hide, Show}, style::{SetAttribute, Attribute, Print}};
+use std::{error::Error as OtherError, io::{self, stdout}, sync::mpsc::{self, Sender, Receiver}, time::{Instant}};
 use serial2::SerialPort;
-use protocol::{self, Message, PacketManager, Datalog, Packet, WorkingModes};
+use protocol::{self, Message, PacketManager, Packet};
 use crate::interface::{pc_transmission::{write_packet, write_message}, settings_logic::{DeviceListener, SettingsBundle}};
 
 use super::{pc_transmission::read_message, database::DatabaseManager};
@@ -228,7 +228,7 @@ fn print_datalog(packet: Packet) {
   
 #[cfg(test)]
 mod tests {
-    use protocol::{Packet, Datalog};
+    use protocol::{Packet, Datalog, WorkingModes};
 
     use crate::interface::settings_logic::Modes;
 

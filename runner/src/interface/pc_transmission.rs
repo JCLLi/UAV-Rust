@@ -1,12 +1,12 @@
 
-use std::io::stdout;
 
-use crossterm::{execute, cursor::MoveTo, style::{SetAttribute, Attribute, Print}};
+
+
 use serial2::SerialPort;
 use protocol::{self, Packet, Message, PacketManager};
 
 use crate::interface::settings_logic::Modes;
-use super::settings_logic::{SettingsBundle, DeviceError};
+use super::settings_logic::{SettingsBundle};
 
 /// Write packet to the drone. Used by the function 'write_message'
 pub fn write_packet(serial: &SerialPort, message: Message) {
@@ -34,7 +34,7 @@ pub fn read_packet(mut buf: Vec<u8>) -> Result<Packet, ()> {
 }
 
 /// Write message to the drone
-pub fn write_message(serial: &SerialPort, mut bundle: SettingsBundle) {
+pub fn write_message(serial: &SerialPort, bundle: SettingsBundle) {
 
     // Match user input with drone message
     let message = match bundle.mode {

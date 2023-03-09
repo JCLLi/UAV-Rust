@@ -1,4 +1,4 @@
-use tudelft_quadrupel::battery::read_battery;
+
 use tudelft_quadrupel::motor::{get_motors, set_motors};
 use tudelft_quadrupel::time::assembly_delay;
 use protocol::WorkingModes;

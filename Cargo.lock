@@ -298,7 +298,6 @@ name = "eslgroup14"
 version = "0.1.0"
 dependencies = [
  "crc",
- "heapless",
  "micromath",
  "postcard",
  "protocol",
@@ -531,12 +530,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "numtoa"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8f8bdf33df195859076e54ab11ee78a1b208382d3a26ec40d142ffc1ecc49ef"
-
-[[package]]
 name = "object"
 version = "0.30.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -623,7 +616,6 @@ name = "protocol"
 version = "0.1.0"
 dependencies = [
  "crc",
- "heapless",
  "postcard",
  "serde",
 ]
@@ -665,15 +657,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "redox_termios"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8440d8acb4fd3d277125b4bd01a6f38aee8d814b3b5fc09b3f2b825d37d3fe8f"
-dependencies = [
- "redox_syscall",
-]
-
-[[package]]
 name = "ringbuffer"
 version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -686,21 +669,15 @@ dependencies = [
  "crc",
  "crossterm",
  "device_query",
- "heapless",
- "log",
  "pasts",
  "postcard",
  "protocol",
  "serde",
  "serde_json",
  "serial2",
- "single_value_channel",
- "smelling_salts",
  "stick",
- "termion",
  "tudelft-serial-upload",
  "tui",
- "winapi",
 ]
 
 [[package]]
@@ -852,12 +829,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "single_value_channel"
-version = "1.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5dac3e54a6fb2c64489607c294b41d4a1cef34c58e05e6bc4050fb4831588b6"
-
-[[package]]
 name = "smallvec"
 version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -904,18 +875,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
-]
-
-[[package]]
-name = "termion"
-version = "2.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "659c1f379f3408c7e5e84c7d0da6d93404e3800b6b9d063ba24436419302ec90"
-dependencies = [
- "libc",
- "numtoa",
- "redox_syscall",
- "redox_termios",
 ]
 
 [[package]]
