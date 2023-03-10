@@ -1,6 +1,8 @@
 
 use pasts::Loop;
 use std::{sync::mpsc, task::Poll::{self, Pending, Ready}};
+use std::thread::sleep;
+use std::time::Duration;
 use stick::{Controller, Event, Listener};
 
 type Exit = usize;
@@ -28,12 +30,12 @@ pub struct State {
 /// or exit (Ready with an exit code).
 impl State {
     pub fn connect(&mut self, controller: Controller) -> Poll<Exit> {
-        println!(
-            "\rConnected p{}, id: {:016X}, name: {}",
-            self.controllers.len() + 1,
-            controller.id(),
-            controller.name(),
-        );
+        // println!(
+        //     "\rConnected p{}, id: {:016X}, name: {}",
+        //     self.controllers.len() + 1,
+        //     controller.id(),
+        //     controller.name(),
+        // );
         self.controllers.push(controller);
         Pending
     }
@@ -77,13 +79,18 @@ impl State {
                 self.sender.send(self.mapped).unwrap();
             }
 
+            Event::CamX(z) => {
+                self.mapped.yaw = ((z + 1.0) / 2.0 * (u16::MAX as f64)) as u16;
+                self.sender.send(self.mapped).unwrap();
+            }
+
             Event::CamZ(z) => {
                 self.mapped.yaw = ((z + 1.0) / 2.0 * (u16::MAX as f64)) as u16;
                 self.sender.send(self.mapped).unwrap();
             }
 
-            Event::JoyZ(z) => {
-                self.mapped.lift = ((z + 1.0) / 2.0 * (u16::MAX as f64)) as u16;
+            Event::Throttle(z) => {
+                self.mapped.lift = u16::MAX - (z * (u16::MAX as f64)) as u16;
                 self.sender.send(self.mapped).unwrap();
             }
 
@@ -99,6 +106,7 @@ impl State {
 
             _ => {}
         }
+        sleep(Duration::from_millis(10));
         Pending
     }
 }

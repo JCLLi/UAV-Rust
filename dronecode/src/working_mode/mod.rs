@@ -1,21 +1,21 @@
-use tudelft_quadrupel::uart::send_bytes;
 use crate::drone::{Drone, Getter, Setter};
 use crate::working_mode::panic_mode::panic_mode;
+use protocol::WorkingModes;
 
 pub mod manual_mode;
 pub mod panic_mode;
 pub mod safe_mode;
 pub mod yawcontrolled_mode;
 
-pub enum WorkingModes {
-    SafeMode,
-    PanicMode,
-    ManualMode,
-    CalibrationMode,
-    YawMode,
-    FullControlMode,
-    Motion
-}
+// pub enum WorkingModes {
+//     SafeMode,
+//     PanicMode,
+//     ManualMode,
+//     CalibrationMode,
+//     YawMode,
+//     FullControlMode,
+//     Motion
+// }
 
 
 //Switch drone working mode according to the present working mode

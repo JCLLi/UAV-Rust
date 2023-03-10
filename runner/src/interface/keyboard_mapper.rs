@@ -31,6 +31,7 @@ pub enum Commands {
     RollPitchControlP1Down,
     RollPitchControlP2Up,
     RollPitchControlP2Down,
+    ResetToZeroPoint
 }
 
 // Convert Commands enum to string
@@ -57,6 +58,7 @@ impl fmt::Display for Commands {
             Commands::RollPitchControlP1Down => write!(f, "RollPitchControlP1Down"),
             Commands::RollPitchControlP2Up => write!(f, "RollPitchControlP2Up"),
             Commands::RollPitchControlP2Down => write!(f, "RollPitchControlP2Down"),
+            Commands::ResetToZeroPoint => write!(f, "ResetToZeroPoint"),
             _ => write!(f, "InvalidCommand")
         }
     }
@@ -84,6 +86,7 @@ pub fn keymapper(sender: mpsc::Sender<KeyboardCommand>) -> crossterm::Result<()>
                     KeyCode::Char('3') => KeyboardCommand {command: Commands::CalibrationMode, argument: 0},
                     KeyCode::Char('4') => KeyboardCommand {command: Commands::YawControlledMode, argument: 0},
                     KeyCode::Char('5') => KeyboardCommand {command: Commands::FullControlMode, argument: 0},
+                    KeyCode::Char('8') => KeyboardCommand {command: Commands::ResetToZeroPoint, argument: 0},
                     KeyCode::Char('a') => KeyboardCommand {command: Commands::LiftUp, argument: STATIC_OFFSET_UP},
                     KeyCode::Char('z') => KeyboardCommand {command: Commands::LiftDown, argument: STATIC_OFFSET_DOWN},
                     KeyCode::Left      => KeyboardCommand {command: Commands::RollDown, argument: STATIC_OFFSET_DOWN},

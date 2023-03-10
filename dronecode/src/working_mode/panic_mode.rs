@@ -1,7 +1,7 @@
 use tudelft_quadrupel::battery::read_battery;
 use tudelft_quadrupel::motor::{get_motors, set_motors};
 use tudelft_quadrupel::time::assembly_delay;
-use crate::working_mode::WorkingModes;
+use protocol::WorkingModes;
 
 //Mode switch function for panic mode
 pub fn panic_mode() -> WorkingModes{

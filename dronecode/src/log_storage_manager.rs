@@ -2,7 +2,9 @@ use core::mem::size_of;
 use alloc::borrow::ToOwned;
 use alloc::string::ToString;
 use alloc::vec::Vec;
+use alloc::format;
 use postcard::{to_allocvec, from_bytes};
+use serde::{Deserialize, Serialize};
 use protocol::{Packet, Message, PacketManager};
 use crate::drone_transmission::{write_packet};
 use tudelft_quadrupel::flash::{flash_read_bytes, flash_write_bytes, FlashError, flash_chip_erase};
@@ -13,7 +15,6 @@ pub struct LogStorageManager {
     remaining_flash_size: usize,
     pub written_packets: usize,
 }
-
 
 impl LogStorageManager {
 
@@ -30,7 +31,7 @@ impl LogStorageManager {
 
     pub fn store_logging(&mut self, log: Message) -> Result<(), FlashError> {
         //check whether we can still write to the flash
-        if self.remaining_flash_size.saturating_sub(size_of::<Message>()) > 1 {
+        if self.remaining_flash_size.saturating_sub(size_of::<Message>()) > 0 {
             // Convert the log struct to a byte slice
             let log_bytes = to_allocvec(&log).unwrap();
 
@@ -62,16 +63,16 @@ impl LogStorageManager {
         let address = index * size_of::<Message>() as usize;
 
         // Allocate a buffer to store the log bytes
-        let mut log_bytes = [0u8; size_of::<Message>()];
+        let mut packet_bytes = [0u8; size_of::<Message>()];
 
         // Read the log bytes from the flash memory into the buffer
-        if let Err(_err) = flash_read_bytes(address as u32, &mut log_bytes) {
+        if let Err(_err) = flash_read_bytes(address as u32, &mut packet_bytes) {
             // Return None if the read operation failed
             return None;
         }
 
-        // Convert the log bytes back to a log struct
-        let log = from_bytes::<Message>(&log_bytes).unwrap();
+        // Convert the packet bytes back to a message struct
+        let log = from_bytes::<Message>(&packet_bytes).unwrap();
 
         Some(log)
     }
@@ -82,6 +83,7 @@ impl LogStorageManager {
             match  self.retrieve_logging(message) {
                 Some(log) => write_packet(log),
                 None => {
+                    send_bytes(format!("Erasing flash\n").as_bytes());
                     flash_chip_erase().unwrap();
                     break;
                 },
@@ -90,10 +92,8 @@ impl LogStorageManager {
     }
 
     pub fn dump_loggins(&mut self) {
-        self.retrieve_loggings(self.written_packets);
+        self.retrieve_loggings(self.written_packets + 1);
         self.written_packets = 0;
         self.remaining_flash_size = self.max_flash_size;
     }
-
-
 }
