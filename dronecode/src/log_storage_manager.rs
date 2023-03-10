@@ -10,7 +10,6 @@ use crate::drone_transmission::{write_packet};
 use tudelft_quadrupel::flash::{flash_read_bytes, flash_write_bytes, FlashError, flash_chip_erase};
 use tudelft_quadrupel::uart::send_bytes;
 
-
 pub struct LogStorageManager {
     max_flash_size: usize,
     remaining_flash_size: usize,

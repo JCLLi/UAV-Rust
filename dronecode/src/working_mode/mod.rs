@@ -5,6 +5,7 @@ use protocol::WorkingModes;
 pub mod manual_mode;
 pub mod panic_mode;
 pub mod safe_mode;
+pub mod yawcontrolled_mode;
 
 // pub enum WorkingModes {
 //     SafeMode,
@@ -23,6 +24,7 @@ pub fn mode_switch(drone: &mut Drone, new: WorkingModes){
         WorkingModes::SafeMode => drone.set_mode(safe_mode::switch(new)),
         WorkingModes::PanicMode => drone.set_mode(panic_mode()),
         WorkingModes::ManualMode => drone.set_mode(manual_mode::switch(new)),
+        WorkingModes::YawMode => drone.set_mode(manual_mode::switch(new)),
         _ => (),//TODO:add new operation with new modes
     }
 }

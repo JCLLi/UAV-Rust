@@ -1,13 +1,14 @@
 use crate::drone::Drone;
 use crate::drone::motors::{angle_to_pwm, motor_assign};
-use protocol::WorkingModes;
-use protocol::WorkingModes::{ManualMode, PanicMode};
+use crate::working_mode::WorkingModes;
+use crate::working_mode::WorkingModes::{ManualMode, PanicMode, YawMode};
 
 ///Mode switch function for manual mode
 pub fn switch(new: WorkingModes) -> WorkingModes{
     match new {
         WorkingModes::SafeMode | PanicMode => PanicMode,
         WorkingModes::ManualMode => ManualMode,
+        WorkingModes::YawMode => YawMode,
         _ => WorkingModes::SafeMode,//TODO:add new operation with new modes
     }
 }
