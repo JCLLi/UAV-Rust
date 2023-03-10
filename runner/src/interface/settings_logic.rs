@@ -1,4 +1,6 @@
+use core::fmt;
 use std::sync::mpsc::TryRecvError;
+
 use std::{thread, sync::mpsc};
 use crossterm::terminal::enable_raw_mode;
 
@@ -13,6 +15,20 @@ pub enum Modes {
     CalibrationMode,
     YawControlledMode,
     FullControlMode,
+}
+
+// Convert Modes enum to string
+impl fmt::Display for Modes {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Modes::SafeMode => write!(f, "SafeMode"),
+            Modes::PanicMode => write!(f, "PanicMode"),
+            Modes::ManualMode => write!(f, "ManualMode"),
+            Modes::CalibrationMode => write!(f, "CalibrationMode"),
+            Modes::YawControlledMode => write!(f, "YawControlledMode"),
+            Modes::FullControlMode => write!(f, "FullControllMode"),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -42,7 +58,7 @@ pub struct SettingsBundle {
     pub roll: u16,
     pub yaw: u16,
     pub lift: u16,
-    pub abort: bool,
+    pub exit: bool,
     pub mode: Modes,
     pub yaw_control_p: u16,
     pub roll_pitch_control_p1: u16,
@@ -57,7 +73,7 @@ impl Default for SettingsBundle {
             roll: 32767, 
             yaw: 8263,
             lift: 0,
-            abort: false, 
+            exit: false, 
             mode: Modes::SafeMode, 
             yaw_control_p: 0, 
             roll_pitch_control_p1: 0, 
@@ -83,6 +99,7 @@ impl DeviceListener {
 
         return DeviceListener { bundle: SettingsBundle::default(), receiver_joystick_channel: receiver_js, receiver_keyboard_channel: receiver_kb }
     }
+    
     /// make sure that this function runs in a loop..
     pub fn get_combined_settings(&mut self) -> Result<SettingsBundle, DeviceError> {
 
@@ -94,7 +111,9 @@ impl DeviceListener {
                 self.bundle.roll   = mapped_coordinates.roll;
                 self.bundle.yaw    = mapped_coordinates.yaw;
 
-                self.bundle.abort = mapped_coordinates.abort | self.bundle.abort;
+                if mapped_coordinates.abort == true {
+                    self.bundle.mode = Modes::SafeMode;
+                }
             },
             Err(TryRecvError::Disconnected) => {
                 return Err(DeviceError::DisconnectedJoystickRunner);
@@ -106,7 +125,7 @@ impl DeviceListener {
         match self.receiver_keyboard_channel.try_recv() {
             Ok(keyboardcommand) => {
                 match keyboardcommand.command {
-                    Commands::Exit                  => self.bundle.abort = true,
+                    Commands::Exit                  => self.bundle.exit = true,
                     Commands::SafeMode              => self.bundle.mode = Modes::SafeMode,
                     Commands::PanicMode             => self.bundle.mode = Modes::PanicMode,
                     Commands::ManualMode            => self.bundle.mode = Modes::ManualMode,
@@ -156,7 +175,7 @@ mod tests {
                         println!("\r{:?}", bundle);
                         bundle_new = bundle;
 
-                        if bundle.abort == true {
+                        if bundle.exit == true {
                             break;
                         }
                     } 

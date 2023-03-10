@@ -37,6 +37,7 @@ impl State {
         //     controller.name(),
         // );
         self.controllers.push(controller);
+        self.mapped.abort = false;
         Pending
     }
 
@@ -47,7 +48,7 @@ impl State {
         match event {
             Event::Disconnect => {
                 if self.controllers.len() > 0 {
-                    println!("\rJjoystick unplugged");
+                    // println!("\rJjoystick unplugged");
                     self.controllers.swap_remove(id);
                     self.mapped.abort = true;
                     self.sender.send(self.mapped).unwrap();
@@ -79,23 +80,29 @@ impl State {
                 self.sender.send(self.mapped).unwrap();
             }
 
-            Event::CamX(z) => {
-                self.mapped.yaw = ((z + 1.0) / 2.0 * (u16::MAX as f64)) as u16;
-                self.sender.send(self.mapped).unwrap();
-            }
-
+            // Yaw on real joystick
+            // 0 - 16000
+            // middle: 8000 - 8600
             Event::CamZ(z) => {
                 self.mapped.yaw = ((z + 1.0) / 2.0 * (u16::MAX as f64)) as u16;
                 self.sender.send(self.mapped).unwrap();
             }
 
-            Event::Throttle(z) => {
-                self.mapped.lift = u16::MAX - (z * (u16::MAX as f64)) as u16;
+            // Yaw on PS4 controller
+            Event::CamX(x) => {
+
+                self.mapped.yaw = ((x + 1.0) / 2.0 * (16000 as f64)) as u16;
+                self.sender.send(self.mapped).unwrap();
+            }
+
+            Event::JoyZ(z) => {
+                self.mapped.lift = ((z + 1.0) / 2.0 * (u16::MAX as f64)) as u16;
+                // self.mapped.lift = u16::MAX - (z * (u16::MAX as f64)) as u16;
                 self.sender.send(self.mapped).unwrap();
             }
 
             Event::Throttle(z) => {
-                self.mapped.lift = (u16::MAX - (z * (u16::MAX as f64)) as u16) + 32767;
+                self.mapped.lift = u16::MAX - (z * (u16::MAX as f64)) as u16;
                 self.sender.send(self.mapped).unwrap();
             }
 

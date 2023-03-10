@@ -1,7 +1,7 @@
-use alloc::format;
+
 use tudelft_quadrupel::motor::set_motors;
-use tudelft_quadrupel::uart::send_bytes;
-use crate::drone::{Drone, Setter};
+
+use crate::drone::{Drone};
 
 const MOTOR_MAX: u16 = 400;
 const ZERO_POINT: u16 = 32767;
@@ -70,7 +70,8 @@ pub fn angle_to_pwm(drone: &mut Drone, argument: [u16; 4]) -> [f32; 4]{
     }
 
     pwm_thrust = (argument[3]) as f32 * (1 as f32 / 65535 as f32) + FLOATING_SPEED as f32 * MOTOR_RESOLUTION;
-
+    if pwm_thrust > 1.0 {pwm_thrust = 1 as f32 }
+    
     drone.pitch = pwm_pitch * 180 as f32 / PI;
     drone.roll = pwm_roll * 180 as f32 / PI;
     drone.yaw = pwm_pitch * 180 as f32 / PI;//TODO: change into rate

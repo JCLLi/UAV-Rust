@@ -6,9 +6,8 @@ use tudelft_quadrupel::barometer::read_pressure;
 use tudelft_quadrupel::battery::read_battery;
 use tudelft_quadrupel::led::{Blue, Green, Red, Yellow};
 use tudelft_quadrupel::motor::get_motors;
-use tudelft_quadrupel::mpu::{read_dmp_bytes, read_raw};
+
 use tudelft_quadrupel::time::{set_tick_frequency, wait_for_next_tick, Instant};
-use tudelft_quadrupel::uart::{send_bytes, receive_bytes};
 
 use crate::drone_transmission::{write_packet, read_packet};
 use postcard::{take_from_bytes_cobs, from_bytes_cobs, to_allocvec, to_allocvec_cobs};
@@ -17,9 +16,9 @@ use crate::log_storage_manager::LogStorageManager;
 
 use crate::yaw_pitch_roll::YawPitchRoll;
 use crate::drone::{Drone, Getter, Setter};
-use crate::drone::motors::keep_floating;
-use crate::working_mode;
-use crate::working_mode::panic_mode::{panic_check, panic_mode};
+
+
+use crate::working_mode::panic_mode::{panic_mode};
 
 const FIXED_SIZE:usize = 64;
 const MOTION_DELAY:u16 = 100;//Set a big value for debugging
@@ -42,24 +41,34 @@ pub fn control_loop() -> ! {
         }
 
         let now = Instant::now();
-        let dt = now.duration_since(last);
+        let _dt = now.duration_since(last);
         last = now;
 
         let time = last.ns_since_start() / 1_000_000;
 
         Green.off();
-        Yellow.off();
+        Red.off();
 
-        let packet = read_package_block_until(&mut uart_buffer, 0);
-
-        match packet {
-            Ok(p) => message = p.message,
-            Err(mode) => drone.set_mode(mode),
+        // Read data, place packets in packetmanager, message in first packet is used
+        let mut packetmanager;
+        (packetmanager, shared_buf) = read_message(shared_buf);
+        
+        if packetmanager.packets.len() > 0 {
+            message = packetmanager.read_packet().unwrap().message;
+            new_message = true;
+            no_message = 0;
+        }else {
+            no_message += 1;
         }
 
         //First the control part
         match drone.get_mode() {
-            WorkingModes::PanicMode => drone.set_mode(panic_mode()),
+            WorkingModes::PanicMode => {
+                drone.set_mode(panic_mode());
+
+                Yellow.off();
+                Red.on();
+            },
             WorkingModes::SafeMode => {
                 drone.message_check(&message);
             },

@@ -23,13 +23,28 @@ pub enum WorkingModes {
     Motion
 }
 
+// Convert WorkingModes enum to string
+impl fmt::Display for WorkingModes {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            WorkingModes::SafeMode => write!(f, "SafeMode"),
+            WorkingModes::PanicMode => write!(f, "PanicMode"),
+            WorkingModes::ManualMode => write!(f, "ManualMode"),
+            WorkingModes::CalibrationMode => write!(f, "CalibrationMode"),
+            WorkingModes::YawMode => write!(f, "YawControlledMode"),
+            WorkingModes::FullControlMode => write!(f, "FullControllMode"),
+            WorkingModes::Motion => write!(f, "Motion")
+        }
+    }
+}
+
 /// Message enum with all possible messages
 /// Data order: pitch, roll, yaw, lift
 /// Datalogging order: Motor 1, Motor 2, Motor 3, Motor 4, Delay,
 /// ypr.yaw, ypr.pitch, ypr.roll, acc.x, acc.y, acc.z, bat, bar
 #[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq)]
 pub enum Message {
-    Check,
+    HeartBeat,
     SafeMode,
     PanicMode,
     ManualMode(u16, u16, u16, u16),
@@ -44,7 +59,7 @@ pub enum Message {
 impl fmt::Display for Message {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Message::Check => write!(f, "Check"),
+            Message::HeartBeat => write!(f, "HeartBeat"),
             Message::SafeMode => write!(f, "SafeMode"),
             Message::PanicMode => write!(f, "PanicMode"),
             Message::ManualMode(a, b, c, d) => write!(f, "ManualMode({}, {}, {}, {})", a, b, c, d),
@@ -190,7 +205,6 @@ impl Packet {
         end_byte_pos
     }
 }
-
 
 #[cfg(test)]
 mod tests {

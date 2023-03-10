@@ -1,4 +1,4 @@
-use tudelft_quadrupel::uart::send_bytes;
+
 use protocol::Message;
 use crate::drone::{Drone, Getter, Setter, motors::FLOATING_SPEED};
 use crate::drone::motors::keep_floating;
