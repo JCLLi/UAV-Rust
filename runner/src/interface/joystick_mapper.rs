@@ -1,6 +1,8 @@
 
 use pasts::Loop;
 use std::{sync::mpsc, task::Poll::{self, Pending, Ready}};
+use std::thread::sleep;
+use std::time::Duration;
 use stick::{Controller, Event, Listener};
 
 type Exit = usize;
@@ -111,6 +113,7 @@ impl State {
 
             _ => {}
         }
+        sleep(Duration::from_millis(10));
         Pending
     }
 }
@@ -146,7 +149,7 @@ use super::*;
             pasts::block_on(event_loop(tx));
         });
 
-        while let Ok(packet) = rx.recv(){
+        while let Ok(packet) = rx.recv() {
             println!("{:?}", packet);
         }
     }    

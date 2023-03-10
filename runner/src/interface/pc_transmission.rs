@@ -67,6 +67,8 @@ pub fn read_message(serial: &SerialPort, shared_buf: &mut Vec<u8>, packet_manage
         }
 
         // If packets have been received, deserialize them
+        println!("{:?}", std::str::from_utf8(&shared_buf).unwrap_or("").trim());
+
         if end_byte_vec.len() > 0 {
             for i in 0..end_byte_vec.len() {
                 let packet_result = read_packet(shared_buf.clone());

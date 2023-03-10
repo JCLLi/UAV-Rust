@@ -128,31 +128,10 @@ impl DeviceListener {
                     Commands::Exit                  => self.bundle.exit = true,
                     Commands::SafeMode              => self.bundle.mode = Modes::SafeMode,
                     Commands::PanicMode             => self.bundle.mode = Modes::PanicMode,
-                    Commands::ManualMode            => self.bundle.mode = {
-                                                        // If joystick is at zeropoint, go to manual mode, otherwise stay in old mode
-                                                        if (self.bundle.pitch == 32767) && (self.bundle.roll == 32767) && (self.bundle.yaw >= 8000 && self.bundle.yaw <= 8600) && (self.bundle.lift == 0) {
-                                                            Modes::ManualMode
-                                                        } else {
-                                                            self.bundle.mode
-                                                        }
-                                                    },
+                    Commands::ManualMode            => self.bundle.mode = Modes::ManualMode,
                     Commands::CalibrationMode       => self.bundle.mode = Modes::CalibrationMode,
-                    Commands::YawControlledMode     => self.bundle.mode = {
-                                                        // If joystick is at zeropoint, go to manual mode, otherwise stay in old mode
-                                                        if (self.bundle.pitch == 32767) && (self.bundle.roll == 32767) && (self.bundle.yaw >= 8000 && self.bundle.yaw <= 8600) && (self.bundle.lift == 0) {
-                                                            Modes::YawControlledMode
-                                                        } else {
-                                                            self.bundle.mode
-                                                        }
-                                                    },
-                    Commands::FullControlMode       => self.bundle.mode = {
-                                                        // If joystick is at zeropoint, go to manual mode, otherwise stay in old mode
-                                                        if (self.bundle.pitch == 32767) && (self.bundle.roll == 32767) && (self.bundle.yaw >= 8000 && self.bundle.yaw <= 8600) && (self.bundle.lift == 0) {
-                                                            Modes::FullControlMode
-                                                        } else {
-                                                            self.bundle.mode
-                                                        }
-                                                    },
+                    Commands::YawControlledMode     => self.bundle.mode = Modes::YawControlledMode,
+                    Commands::FullControlMode       => self.bundle.mode = Modes::FullControlMode,
                     Commands::ResetToZeroPoint      => self.bundle = SettingsBundle::default(),
                     Commands::LiftUp                => self.bundle.lift = self.bundle.lift.saturating_add(keyboardcommand.argument),
                     Commands::LiftDown              => self.bundle.lift = self.bundle.lift.saturating_sub(keyboardcommand.argument),
