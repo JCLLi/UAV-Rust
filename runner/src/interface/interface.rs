@@ -1,4 +1,4 @@
-use crossterm::{terminal::{disable_raw_mode, enable_raw_mode, self}, execute, cursor::{MoveTo, Hide, Show}, style::{SetAttribute, Attribute, Print}};
+use crossterm::{QueueableCommand, terminal::{disable_raw_mode, enable_raw_mode, self}, execute, cursor::{MoveTo, Hide, Show, self}, style::{SetAttribute, Attribute, Print, Color, SetForegroundColor, self, Stylize}};
 use std::{error::Error as OtherError, io::{self, stdout}, sync::mpsc::{self, Sender, Receiver}, time::{Instant}};
 use serial2::SerialPort;
 use protocol::{self, Message, PacketManager, Packet};
@@ -16,13 +16,17 @@ pub fn setup_interface(serial: &SerialPort) -> Result<(), Box<dyn OtherError>> {
     execute!(
         stdout(),
         terminal::Clear(terminal::ClearType::All),
-        MoveTo(80,0),
+        MoveTo(50,0),
         SetAttribute(Attribute::Bold),
+        SetForegroundColor(Color::Blue),
         Print("PC interface"),
-        MoveTo(120,1),
+        MoveTo(50,2),
+        SetForegroundColor(Color::White),
         Print("Drone data"),
-        MoveTo(0,1),
+        MoveTo(0,2),
         Print("Command to drone"),
+        MoveTo(108,2),
+        Print("Motors"),
         SetAttribute(Attribute::Reset),
         Hide,
     ).unwrap();
@@ -188,15 +192,15 @@ fn tui(rx_tui1: Receiver<SettingsBundle>, rx_tui2: Receiver<Packet>) {
 fn print_command(bundle: SettingsBundle) {
     execute!(
         stdout(),
-        MoveTo(0,2),
-        Print("Mode:  "), Print(bundle.mode), Print("       "),
-        MoveTo(0,3), 
-        Print("Pitch: "), Print(bundle.pitch), Print("       "),
+        MoveTo(0,3),
+        Print("Mode:  "), Print(bundle.mode), Print("         "),
         MoveTo(0,4), 
-        Print("Roll:  "), Print(bundle.roll), Print("       "),
+        Print("Pitch: "), Print(bundle.pitch), Print("       "),
         MoveTo(0,5), 
-        Print("Yaw:   "), Print(bundle.yaw), Print("       "),
+        Print("Rol:   "), Print(bundle.roll), Print("       "),
         MoveTo(0,6), 
+        Print("Yaw:   "), Print(bundle.yaw), Print("       "),
+        MoveTo(0,7), 
         Print("Lift:  "), Print(bundle.lift), Print("       "),
     ).unwrap(); 
 }   
@@ -207,20 +211,40 @@ fn print_datalog(packet: Packet) {
     if let Message::Datalogging(d) = packet.message {
         execute!(
             stdout(),
-            MoveTo(120,2),
+            MoveTo(50,3),
             Print("Motors:    "), Print(d.motor1), Print(", "), Print(d.motor2), Print( ", "), Print(d.motor3), Print(", "), Print(d.motor4), Print(" RPM"), Print("             "),
-            MoveTo(120,3),
+            MoveTo(50,4),
             Print("Time:      "), Print(d.rtc), Print("       "),
-            MoveTo(120,4),
+            MoveTo(50,5),
             Print("YPR:       "), Print(d.yaw), Print(", "), Print(d.pitch), Print(", "), Print(d.roll), Print("       "),
-            MoveTo(120,5),
+            MoveTo(50,6),
             Print("ACC:       "), Print(d.x), Print(", "), Print(d.y), Print(", "), Print(d.z), Print("       "),
-            MoveTo(120,6),
+            MoveTo(50,7),
             Print("Battery:   "), Print(d.bat), Print(" mV"), Print("       "),
-            MoveTo(120,7),
+            MoveTo(50,8),
             Print("Barometer: "), Print(d.bar), Print(" 10^-5 bar"), Print("       "),
-            MoveTo(120,8),
+            MoveTo(50,9),
             Print("Mode:      "), Print(d.workingmode), Print("       "), 
+
+            // Print motor display
+            MoveTo(110,3), Print(d.motor1), Print("  "),
+            MoveTo(111,4), Print("|"),
+            MoveTo(111,5), Print("1"),
+            MoveTo(111,6), Print("©"),
+            MoveTo(113,6), Print("2"),
+            MoveTo(114,6), Print("-"),
+            MoveTo(115,6), Print("-"),
+            MoveTo(116,6), Print("-"),
+            MoveTo(117,6), Print(d.motor2), Print("  "),
+            MoveTo(111,7), Print("3"),
+            MoveTo(111,8), Print("|"),
+            MoveTo(110,9), Print(d.motor3), Print("  "),
+            MoveTo(109,6), Print("4"),
+            MoveTo(108,6), Print("-"),
+            MoveTo(107,6), Print("-"),
+            MoveTo(106,6), Print("-"),
+            MoveTo(105,6), Print(d.motor4),
+
             MoveTo(0,0),
         ).unwrap();
     }
