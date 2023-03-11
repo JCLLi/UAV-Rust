@@ -1,5 +1,6 @@
 use tudelft_quadrupel::uart::send_bytes;
 use protocol::Message;
+use crate::controllers::PID;
 use crate::drone::{Drone, Getter, Setter, motors::FLOATING_SPEED};
 use crate::drone::motors::keep_floating;
 use crate::working_mode::{mode_switch, motions, WorkingModes};
@@ -14,7 +15,8 @@ impl Drone {
             pitch: 0 as f32,
             roll: 0 as f32,
             thrust: 0 as f32,
-            floating_speed: (FLOATING_SPEED as f32 * 0.8) as u16
+            floating_speed: (FLOATING_SPEED as f32 * 0.8) as u16,
+            yaw_controller: PID::new(1.4,0.0,0.01),
         }
     }
 
@@ -26,7 +28,10 @@ impl Drone {
             Message::ManualMode(pitch, roll, yaw, lift)
             => {
                 mode_switch(self, WorkingModes::ManualMode);
-                keep_floating(self);
+                motions(self, [*pitch, *roll, *yaw, *lift])
+            }
+            Message::YawControlledMode(pitch, roll, yaw, lift) => {
+                mode_switch(self, WorkingModes::YawMode);
                 motions(self, [*pitch, *roll, *yaw, *lift])
             }
             _ => mode_switch(self, WorkingModes::SafeMode),//TODO: add new mode and change the 'new' argument
@@ -51,6 +56,8 @@ impl Getter for Drone {
     fn get_floating_speed(&self) -> u16 {
         self.floating_speed
     }
+
+    fn get_yaw_controller(&self) -> PID { self.yaw_controller }
 }
 
 impl Setter for Drone {

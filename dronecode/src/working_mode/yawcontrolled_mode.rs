@@ -1,24 +1,25 @@
 use crate::working_mode::WorkingModes;
 use crate::working_mode::WorkingModes::{ManualMode, PanicMode, YawMode};
-use crate::controllers::PDController;
 use tudelft_quadrupel::mpu::structs::Gyro;
 use tudelft_quadrupel::mpu::{read_dmp_bytes, read_raw};
+use crate::drone::{Drone, Getter};
 use crate::yaw_pitch_roll::YawPitchRoll;
-use crate::drone::motors::{motor_assign};
+use crate::drone::motors::{angle_to_pwm, motor_assign};
 
 
 pub fn switch(new: WorkingModes) -> WorkingModes{
     match new {
         WorkingModes::SafeMode | PanicMode => PanicMode,
-        WorkingModes::ManualMode => ManualMode,
-        WorkingModes::YawMode => YawMode,
+        WorkingModes::ManualMode => new,
+        WorkingModes::YawMode => new,
         _ => WorkingModes::SafeMode,//TODO:add new operation with new modes
     }
 }
 
+
 fn map_velocity_to_f32(data: &Gyro) -> [f32;3] {
-    let min_i16 = -2000;
-    let max_i16 = 2000;
+    let min_i16 = -100;
+    let max_i16 = 100;
     let min_f32 = -1.0;
     let max_f32 = 1.0;
 
@@ -29,22 +30,27 @@ fn map_velocity_to_f32(data: &Gyro) -> [f32;3] {
     ]
 }
 
-pub fn yawing(yaw_setpoint: f32, thrust: f32, dt: f32, kp: f32, kd: f32) {
+///Do the motion according to the argument from command by changing motor speed
+pub fn motion(drone: &mut Drone, argument: [u16; 4]){
+    //Convert from u16 value to required pwm signal for different signal
+    let mut pwm = angle_to_pwm(drone, argument);
 
-    //PID values
-    let kp: [f32; 3] = [kp, kp, kp];
-    let kd: [f32; 3] = [kd, kd, kd];
-    let setpoint:[f32; 3] = [0.0, 0.0, yaw_setpoint];
+    //PID control
+    pwm[2] += yawing(drone, pwm[2]);
 
-    //create the yaw controller
-    let mut controller = PDController::new(kp, kd, dt);
+    //Assign motor speed according to the pwm signal
+    motor_assign(pwm);
+}
+
+//The input value drone has a parameter called yaw_controller, if you want to change the Kpid value
+//manually, go to drone.rs::initialize()
+pub fn yawing(drone: &mut Drone, setpoint: f32) -> f32{
 
     // Get sensor data
     let sensor_raw = read_raw().unwrap();
     let velocity = map_velocity_to_f32(&sensor_raw.1);
 
     // Calculate PID output
-    let tao = controller.step(setpoint, velocity, dt);
-
-    motor_assign([tao[0], tao[1], tao[2], thrust]);
+    let yaw_pwm = drone.get_yaw_controller().step(setpoint, velocity[2]);
+    yaw_pwm
 }

@@ -2,6 +2,8 @@ use alloc::format;
 use tudelft_quadrupel::motor::set_motors;
 use tudelft_quadrupel::uart::send_bytes;
 use crate::drone::{Drone, Setter};
+use crate::working_mode::WorkingModes;
+use crate::working_mode::yawcontrolled_mode::yawing;
 
 const MOTOR_MAX: u16 = 400;
 const ZERO_POINT: u16 = 32767;
@@ -35,8 +37,6 @@ pub fn motor_assign(pwm: [f32; 4]){
 
 ///Convert from a number between 0-65535 to a real angle(in manual mode, it is the speed). And according to the angle to set PWM
 /// signal from 0-1.
-///
-///In manual mode, tih
 pub fn angle_to_pwm(drone: &mut Drone, argument: [u16; 4]) -> [f32; 4]{
     let mut pwm_pitch = 0 as f32;
     let mut pwm_roll = 0 as f32;
@@ -46,7 +46,7 @@ pub fn angle_to_pwm(drone: &mut Drone, argument: [u16; 4]) -> [f32; 4]{
         pwm_pitch = (argument[0] - ZERO_POINT) as f32 * RESOLUTION;
     }else if argument[0] < ZERO_POINT {
         pwm_pitch = 0 as f32 - (ZERO_POINT - argument[0]) as f32 * RESOLUTION;
-    }else {}
+    }
 
     if argument[1] > ZERO_POINT {
         pwm_roll = (argument[1] - ZERO_POINT) as f32 * RESOLUTION;
@@ -61,12 +61,7 @@ pub fn angle_to_pwm(drone: &mut Drone, argument: [u16; 4]) -> [f32; 4]{
     }
 
     pwm_thrust = (argument[3] - ZERO_POINT) as f32 * RESOLUTION + FLOATING_SPEED as f32 * MOTOR_RESOLUTION;
-
-    drone.pitch = pwm_pitch * 180 as f32 / PI;
-    drone.roll = pwm_roll * 180 as f32 / PI;
-    drone.yaw = pwm_pitch * 180 as f32 / PI;//TODO: change into rate
-    drone.thrust = pwm_pitch;//TODO: extra control
-
+    if pwm_thrust > 1.0 {pwm_thrust = 1 as f32 }
 
     [pwm_pitch, pwm_roll, pwm_yaw, pwm_thrust]
 }

@@ -1,6 +1,7 @@
 mod drone;
 pub mod motors;
 
+use crate::controllers::PID;
 use crate::working_mode::WorkingModes;
 
 pub struct Drone{
@@ -10,12 +11,14 @@ pub struct Drone{
     roll: f32,
     thrust: f32,
     floating_speed: u16,
+    yaw_controller: PID,
 }
 
 pub trait Getter{
     fn get_mode(&self) -> WorkingModes;
     fn get_angles(&self) -> (f32, f32, f32);
     fn get_floating_speed(&self) -> u16;
+    fn get_yaw_controller(&self) -> PID;
 }
 
 pub trait Setter{

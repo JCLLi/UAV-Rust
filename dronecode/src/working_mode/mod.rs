@@ -24,7 +24,7 @@ pub fn mode_switch(drone: &mut Drone, new: WorkingModes){
         WorkingModes::SafeMode => drone.set_mode(safe_mode::switch(new)),
         WorkingModes::PanicMode => drone.set_mode(panic_mode()),
         WorkingModes::ManualMode => drone.set_mode(manual_mode::switch(new)),
-        WorkingModes::YawMode => drone.set_mode(manual_mode::switch(new)),
+        WorkingModes::YawMode => drone.set_mode(yawcontrolled_mode::switch(new)),
         _ => (),//TODO:add new operation with new modes
     }
 }
@@ -33,6 +33,7 @@ pub fn mode_switch(drone: &mut Drone, new: WorkingModes){
 pub fn motions(drone: &mut Drone, argument: [u16; 4]){
     match drone.get_mode() {
         WorkingModes::ManualMode => manual_mode::motion(drone, argument),
+        WorkingModes::YawMode => yawcontrolled_mode::motion(drone, argument),
         _ => (),//TODO:add new operation with new modes
     }
 }
