@@ -113,7 +113,6 @@ impl State {
 
             _ => {}
         }
-        sleep(Duration::from_millis(10));
         Pending
     }
 }

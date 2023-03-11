@@ -46,7 +46,7 @@ fn main() -> ! {
         // That's also the last thing that's turned off. If the yellow led stays on and your
         // program doesn't run, you know that the boot procedure has failed.
         
-        initialize(unsafe { &mut HEAP_MEMORY }, true);
+        initialize(unsafe { &mut HEAP_MEMORY }, false);
     }
 
     let storage = LogStorageManager::new(0x1FFF);

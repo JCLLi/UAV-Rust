@@ -28,6 +28,7 @@ impl Drone {
                 keep_floating(self);
                 motions(self, [*pitch, *roll, *yaw, *lift])
             }
+            Message::HeartBeat => (),
             _ => mode_switch(self, WorkingModes::SafeMode),//TODO: add new mode and change the 'new' argument
         }
     }

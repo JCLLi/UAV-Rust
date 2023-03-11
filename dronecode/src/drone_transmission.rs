@@ -25,52 +25,51 @@ pub fn read_packet(mut buf: Vec<u8>) -> Result<Packet, ()> {
     }
 }
 
-// /// Read message from the drone, if available
-// pub fn read_message(mut shared_buf: Vec<u8>) -> (PacketManager, Vec<u8>) {
-//     let mut read_buf = [1u8; 255];
-//     let mut end_byte_vec = Vec::new();
-//     let mut packetmanager = PacketManager::new();
+/// Read message from the drone, if available
+pub fn read_message(mut shared_buf: Vec<u8>) -> (PacketManager, Vec<u8>) {
+    let mut read_buf = [1u8; 255];
+    let mut end_byte_vec = Vec::new();
+    let mut packetmanager = PacketManager::new();
 
-//     let num = receive_bytes(&mut read_buf);
-//     if num > 0 {
-//         // Place received data into shared buffer
-//         shared_buf.extend_from_slice(&read_buf[0..num]);
+    let num = receive_bytes(&mut read_buf);
+    if num > 0 {
+        // Place received data into shared buffer
+        shared_buf.extend_from_slice(&read_buf[0..num]);
 
-//         // Check if packet is received by checking end byte
-//         for i in 0..shared_buf.len() {
-//             if shared_buf[i] == 0 {
-//                 end_byte_vec.push(i);
-//             }
-//         }
+        // Check if packet is received by checking end byte
+        for i in 0..shared_buf.len() {
+            if shared_buf[i] == 0 {
+                end_byte_vec.push(i);
+            }
+        }
 
-//         // If packets have been received, deserialize them
-//         if end_byte_vec.len() > 0 {
-//             for i in 0..end_byte_vec.len() {
-//                 let packet_result = read_packet(shared_buf.clone());
+        // If packets have been received, deserialize them
+        if end_byte_vec.len() > 0 {
+            for i in 0..end_byte_vec.len() {
+                let packet_result = read_packet(shared_buf.clone());
 
-//                 match packet_result {
-//                     Err(_) => {
-//                         Yellow.on();
-//                     },
-//                     Ok(_) => {
-//                         let packet = packet_result.unwrap();
-//                         packetmanager.add_packet(packet);
-//                         Green.on();
-//                     }
-//                 }
+                match packet_result {
+                    Err(_) => {
+                    },
+                    Ok(_) => {
+                        let packet = packet_result.unwrap();
+                        packetmanager.add_packet(packet);
+                        Green.on();
+                    }
+                }
 
-//                 // Remove deserialized packet from shared buffer
-//                 if i == 0 {
-//                     for _ in 0..(end_byte_vec[i]+1) {
-//                         shared_buf.remove(0);
-//                     }
-//                 } else {
-//                     for _ in 0..(end_byte_vec[i]-end_byte_vec[i-1]) {
-//                         shared_buf.remove(0);
-//                     }
-//                 }
-//             }
-//         }
-//     }
-//     (packetmanager, shared_buf)
-// }
+                // Remove deserialized packet from shared buffer
+                if i == 0 {
+                    for _ in 0..(end_byte_vec[i]+1) {
+                        shared_buf.remove(0);
+                    }
+                } else {
+                    for _ in 0..(end_byte_vec[i]-end_byte_vec[i-1]) {
+                        shared_buf.remove(0);
+                    }
+                }
+            }
+        }
+    }
+    (packetmanager, shared_buf)
+}

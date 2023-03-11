@@ -6,23 +6,21 @@ use tudelft_quadrupel::barometer::read_pressure;
 use tudelft_quadrupel::battery::read_battery;
 use tudelft_quadrupel::led::{Blue, Green, Red, Yellow};
 use tudelft_quadrupel::motor::get_motors;
-
+use tudelft_quadrupel::mpu::read_dmp_bytes;
+use tudelft_quadrupel::mpu::read_raw;
 use tudelft_quadrupel::time::{set_tick_frequency, wait_for_next_tick, Instant};
-
-use crate::drone_transmission::{write_packet, read_packet};
+use tudelft_quadrupel::uart::receive_bytes;
+use tudelft_quadrupel::block;
+use crate::drone_transmission::{write_packet, read_packet, read_message};
 use postcard::{take_from_bytes_cobs, from_bytes_cobs, to_allocvec, to_allocvec_cobs};
 
 use crate::log_storage_manager::LogStorageManager;
-
 use crate::yaw_pitch_roll::YawPitchRoll;
 use crate::drone::{Drone, Getter, Setter};
-
-
 use crate::working_mode::panic_mode::{panic_mode};
 
 const FIXED_SIZE:usize = 64;
 const MOTION_DELAY:u16 = 100;//Set a big value for debugging
-
 const FIXED_FREQUENCY:u64 = 100; //100 Hz
 
 pub fn control_loop() -> ! {
@@ -30,12 +28,21 @@ pub fn control_loop() -> ! {
     let mut last = Instant::now();
     let mut drone = Drone::initialize();
     let mut message = Message::SafeMode;
-    let mut packet_manager = PacketManager::new();
+
+    //flag for recording the duration of no new message
+    let mut no_message = 0;
+
+    //flag for detecting if there is new message
+    let mut new_message = false;
+
+    // Buffer to store received bytes
+    let mut shared_buf = Vec::new();
+
+    let mut angles = YawPitchRoll { yaw: 0.0, pitch: 0.0, roll: 0.0};
+
     let mut storage_manager = LogStorageManager::new(0x1FFF);
-    let mut uart_buffer = [1u8; 255];
 
     for i in 0.. {
-
         if i % 50 == 0 {
             Blue.toggle();
         }
@@ -47,7 +54,6 @@ pub fn control_loop() -> ! {
         let time = last.ns_since_start() / 1_000_000;
 
         Green.off();
-        Red.off();
 
         // Read data, place packets in packetmanager, message in first packet is used
         let mut packetmanager;
@@ -70,10 +76,19 @@ pub fn control_loop() -> ! {
                 Red.on();
             },
             WorkingModes::SafeMode => {
-                drone.message_check(&message);
+                if new_message {
+                    drone.message_check(&message);
+                }
+
+                Yellow.on();
+                Red.off();
             },
             WorkingModes::ManualMode => {
-                ()
+                if new_message {
+                    drone.message_check(&message);
+                }
+
+                Yellow.off();
             },
             WorkingModes::CalibrationMode => {
                 ()
@@ -84,71 +99,60 @@ pub fn control_loop() -> ! {
             WorkingModes::YawMode => {
                 ()
             },
-            _ => ()
+            _ => {
+                if new_message {
+                    drone.message_check(&message);
+                }
+            }
         };
 
-        let sensor_data = read_dmp_bytes().unwrap();
+        // Read motor and sensor values
+        let motors = get_motors();
+        // let sensor_data = block!(read_dmp_bytes());
+        // match sensor_data {
+        //     Ok(data) => {
+        //         angles = YawPitchRoll::from(data);
 
+        //     },
+        //     Err(_) => {
+        //     }
+        // }
         let (accel, _) = read_raw().unwrap();
-
-        let angles = YawPitchRoll::from(sensor_data);
-
+        
         //Store the log files
         let log = Message::Datalogging(Datalog 
             { 
-                motor1: 0, 
-                motor2: 0, 
-                motor3: 0, 
-                motor4: 0, 
+                motor1: motors[0], 
+                motor2: motors[1], 
+                motor3: motors[2], 
+                motor4: motors[3], 
                 rtc: time, 
-                yaw: angles.yaw, 
-                pitch: angles.pitch, 
-                roll: angles.roll, 
+                // yaw: angles.yaw, 
+                // pitch: angles.pitch, 
+                // roll: angles.roll, 
+                yaw: 0.0, 
+                pitch: 0.0, 
+                roll: 0.0, 
                 x: accel.x, 
                 y: accel.y, 
                 z: accel.z, 
+                // x: 0, 
+                // y: 0, 
+                // z: 0, 
                 bat: read_battery(), 
-                bar: read_pressure(), 
+                bar: 100, 
                 workingmode: drone.get_mode()
             });
-        storage_manager.store_logging(log).unwrap();
-
+            
+            // Store log on drone flash
+            // storage_manager.store_logging(log).unwrap();
+            
+        if i % 5 == 0 {
+            write_packet(log);
+        }
         // wait until the timer interrupt goes off again
         // based on the frequency set above
         wait_for_next_tick();
     }
     unreachable!();
-}
-
-fn read_package_block_until(uart_buffer: &mut [u8], time: u128) -> Result<Packet, WorkingModes> {
-    let start_time = Instant::now();
-    let mut message_buffer = Vec::new();
-
-    loop {
-        let run_time = Instant::now();
-        let num = receive_bytes(uart_buffer);
-        if num > 0 {
-            // Append received data to shared buffer
-            message_buffer.extend_from_slice(&uart_buffer[0..num]);
-
-            // Deserialize packets until no more end bytes are found
-            while let Some(end_byte_index) = message_buffer.iter().position(|&b| b == 0 ) {
-                match read_packet(message_buffer[0..=end_byte_index].to_vec()) {
-                    Ok(packet) => {
-                        Green.on();
-                        return Ok(packet);
-
-                    },
-                    Err(_) => {
-                        Yellow.on();
-                    }
-                }
-                message_buffer = message_buffer[(end_byte_index + 1)..].to_vec();
-            }
-        }
-
-        if run_time.duration_since(start_time).as_millis() >= time {
-            return Err(WorkingModes::PanicMode);
-        }
-    }
 }

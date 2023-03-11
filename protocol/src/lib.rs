@@ -49,10 +49,9 @@ pub enum Message {
     PanicMode,
     ManualMode(u16, u16, u16, u16),
     CalibrationMode,
-    YawControlledMode(u16, u16, u16, u16),
-    FullControlMode(u16, u16, u16, u16),
-    Acknowledgement(bool),
-    Datalogging(Datalog)
+    YawControlledMode(u16, u16, u16, u16, u16), // last value is yaw control P
+    FullControlMode(u16, u16, u16, u16, u16, u16, u16), // last three values are yaw control P, roll pitch control P1 and P2
+    Datalogging(Datalog),
 }
 
 // Convert Message enum to string
@@ -64,9 +63,8 @@ impl fmt::Display for Message {
             Message::PanicMode => write!(f, "PanicMode"),
             Message::ManualMode(a, b, c, d) => write!(f, "ManualMode({}, {}, {}, {})", a, b, c, d),
             Message::CalibrationMode => write!(f, "CalibrationMode"),
-            Message::YawControlledMode(a, b, c, d) => write!(f, "YawControlledMode({}, {}, {}, {})", a, b, c, d),
-            Message::FullControlMode(a, b, c, d) => write!(f, "FullControllMode({}, {}, {}, {})", a, b, c, d),
-            Message::Acknowledgement(a) => write!(f, "Acknowledgement({})", a),
+            Message::YawControlledMode(a, b, c, d, e) => write!(f, "YawControlledMode({}, {}, {}, {}, {})", a, b, c, d, e),
+            Message::FullControlMode(_,_,_,_,_,_,_) => write!(f, "FullControllMode()"),
             Message::Datalogging(_) => write!(f, "Datalogging()"),
         }
     }

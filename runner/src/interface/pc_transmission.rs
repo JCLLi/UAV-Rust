@@ -42,8 +42,8 @@ pub fn write_message(serial: &SerialPort, bundle: SettingsBundle) {
         Modes::PanicMode => Message::PanicMode,
         Modes::ManualMode => Message::ManualMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift),
         Modes::CalibrationMode => Message::CalibrationMode,
-        Modes::YawControlledMode => Message::YawControlledMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift),
-        Modes::FullControlMode => Message::FullControlMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift),
+        Modes::YawControlledMode => Message::YawControlledMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift, bundle.yaw_control_p),
+        Modes::FullControlMode => Message::FullControlMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift, bundle.yaw_control_p, bundle.roll_pitch_control_p1, bundle.roll_pitch_control_p2),
     };
 
     // Write message over serial
@@ -67,7 +67,7 @@ pub fn read_message(serial: &SerialPort, shared_buf: &mut Vec<u8>, packet_manage
         }
 
         // If packets have been received, deserialize them
-        println!("{:?}", std::str::from_utf8(&shared_buf).unwrap_or("").trim());
+        // println!("{:?}", std::str::from_utf8(&shared_buf).unwrap_or("").trim());
 
         if end_byte_vec.len() > 0 {
             for i in 0..end_byte_vec.len() {
@@ -75,8 +75,6 @@ pub fn read_message(serial: &SerialPort, shared_buf: &mut Vec<u8>, packet_manage
 
                 match packet_result {
                     Err(_) => (),
-                        // println!("\rpacket error: {:?}", packet_result);
-                    // },
                     Ok(_) => {
                         let packet = packet_result.unwrap();
                         packet_manager.add_packet(packet);
