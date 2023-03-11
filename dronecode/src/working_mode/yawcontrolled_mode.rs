@@ -1,5 +1,5 @@
 use crate::working_mode::WorkingModes;
-use crate::working_mode::WorkingModes::{ManualMode, PanicMode, YawMode};
+use crate::working_mode::WorkingModes::{ManualMode, PanicMode, YawControlMode};
 use tudelft_quadrupel::mpu::structs::Gyro;
 use tudelft_quadrupel::mpu::{read_dmp_bytes, read_raw};
 use crate::drone::{Drone, Getter};
@@ -11,7 +11,7 @@ pub fn switch(new: WorkingModes) -> WorkingModes{
     match new {
         WorkingModes::SafeMode | PanicMode => PanicMode,
         WorkingModes::ManualMode => new,
-        WorkingModes::YawMode => new,
+        WorkingModes::YawControlMode => new,
         _ => WorkingModes::SafeMode,//TODO:add new operation with new modes
     }
 }

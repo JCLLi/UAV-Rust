@@ -3,14 +3,14 @@ use tudelft_quadrupel::motor::set_motors;
 use crate::drone::{Drone, motors, Setter};
 use crate::drone::motors::{angle_to_pwm, motor_assign};
 use crate::working_mode::WorkingModes;
-use crate::working_mode::WorkingModes::{ManualMode, PanicMode, YawMode};
+use crate::working_mode::WorkingModes::{ManualMode, PanicMode, YawControlMode};
 
 ///Mode switch function for manual mode
 pub fn switch(new: WorkingModes) -> WorkingModes{
     match new {
         WorkingModes::SafeMode | PanicMode => PanicMode,
-        WorkingModes::ManualMode => ManualMode,
-        WorkingModes::YawMode => YawMode,
+        WorkingModes::ManualMode => new,
+        WorkingModes::YawControlMode => new,
         _ => WorkingModes::SafeMode,//TODO:add new operation with new modes
     }
 }

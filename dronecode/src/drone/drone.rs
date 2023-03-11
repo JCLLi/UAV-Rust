@@ -31,7 +31,7 @@ impl Drone {
                 motions(self, [*pitch, *roll, *yaw, *lift])
             }
             Message::YawControlledMode(pitch, roll, yaw, lift) => {
-                mode_switch(self, WorkingModes::YawMode);
+                mode_switch(self, WorkingModes::YawControlMode);
                 motions(self, [*pitch, *roll, *yaw, *lift])
             }
             _ => mode_switch(self, WorkingModes::SafeMode),//TODO: add new mode and change the 'new' argument
