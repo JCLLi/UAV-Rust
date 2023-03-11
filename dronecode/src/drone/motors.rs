@@ -1,13 +1,16 @@
-
+use alloc::format;
 use tudelft_quadrupel::motor::set_motors;
-
-use crate::drone::{Drone};
+use tudelft_quadrupel::uart::send_bytes;
+use crate::drone::{Drone, Setter};
+use protocol::WorkingModes;
+use crate::working_mode::yawcontrolled_mode::yawing;
 
 const MOTOR_MAX: u16 = 400;
 const ZERO_POINT: u16 = 32767;
+const ZERO_POINT_YAW: u16 = 8000;
 const RESOLUTION: f32 = 1 as f32 / ZERO_POINT as f32; //Convert from 0-65535 to 0-1
 const MOTOR_RESOLUTION: f32 = 1 as f32 / MOTOR_MAX as f32; //Convert from 0-1 to 0-MOTORMAX
-pub(crate) const FLOATING_SPEED: u16 = 250;
+pub(crate) const FLOATING_SPEED: u16 = 100;
 const PI: f32 = 3.1415826 as f32;
 
 
@@ -35,8 +38,6 @@ pub fn motor_assign(pwm: [f32; 4]){
 
 ///Convert from a number between 0-65535 to a real angle(in manual mode, it is the speed). And according to the angle to set PWM
 /// signal from 0-1.
-///
-///In manual mode, tih
 pub fn angle_to_pwm(drone: &mut Drone, argument: [u16; 4]) -> [f32; 4]{
     let mut pwm_pitch = 0 as f32;
     let mut pwm_roll = 0 as f32;
@@ -46,7 +47,7 @@ pub fn angle_to_pwm(drone: &mut Drone, argument: [u16; 4]) -> [f32; 4]{
         pwm_pitch = (argument[0] - ZERO_POINT) as f32 * RESOLUTION;
     }else if argument[0] < ZERO_POINT {
         pwm_pitch = 0 as f32 - (ZERO_POINT - argument[0]) as f32 * RESOLUTION;
-    }else {}
+    }
 
     if argument[1] > ZERO_POINT {
         pwm_roll = (argument[1] - ZERO_POINT) as f32 * RESOLUTION;
@@ -54,29 +55,14 @@ pub fn angle_to_pwm(drone: &mut Drone, argument: [u16; 4]) -> [f32; 4]{
         pwm_roll = 0 as f32 - (ZERO_POINT - argument[1]) as f32 * RESOLUTION;
     }
 
-    // if argument[2] > ZERO_POINT {
-    //     pwm_yaw = (argument[2] - ZERO_POINT) as f32 * RESOLUTION;
-    // }else if argument[2] < ZERO_POINT {
-    //     pwm_yaw = 0 as f32 - (ZERO_POINT - argument[2]) as f32 * RESOLUTION;
-    // }
-    //
-    // pwm_thrust = (argument[3] - ZERO_POINT) as f32 * RESOLUTION + FLOATING_SPEED as f32 * MOTOR_RESOLUTION;
-
-
-    if argument[2] > 8263 {
-        pwm_yaw = (argument[2] - 8263) as f32 * RESOLUTION;
-    }else if argument[2] < 8263 {
-        pwm_yaw = 0 as f32 - (8263 - argument[2]) as f32 * RESOLUTION;
+    if argument[2] > ZERO_POINT_YAW {
+        pwm_yaw = (argument[2] - ZERO_POINT_YAW) as f32 * RESOLUTION;
+    }else if argument[2] < ZERO_POINT_YAW {
+        pwm_yaw = 0 as f32 - (ZERO_POINT_YAW - argument[2]) as f32 * RESOLUTION;
     }
 
-    pwm_thrust = (argument[3]) as f32 * (1 as f32 / 65535 as f32) + FLOATING_SPEED as f32 * MOTOR_RESOLUTION;
+    pwm_thrust = argument[3] as f32 * RESOLUTION + FLOATING_SPEED as f32 * MOTOR_RESOLUTION;
     if pwm_thrust > 1.0 {pwm_thrust = 1 as f32 }
-    
-    drone.pitch = pwm_pitch * 180 as f32 / PI;
-    drone.roll = pwm_roll * 180 as f32 / PI;
-    drone.yaw = pwm_pitch * 180 as f32 / PI;//TODO: change into rate
-    drone.thrust = pwm_pitch;//TODO: extra control
-
 
     [pwm_pitch, pwm_roll, pwm_yaw, pwm_thrust]
 }

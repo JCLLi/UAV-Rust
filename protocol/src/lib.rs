@@ -18,7 +18,7 @@ pub enum WorkingModes {
     PanicMode,
     ManualMode,
     CalibrationMode,
-    YawMode,
+    YawControlMode,
     FullControlMode,
     Motion
 }
@@ -31,7 +31,7 @@ impl fmt::Display for WorkingModes {
             WorkingModes::PanicMode => write!(f, "PanicMode"),
             WorkingModes::ManualMode => write!(f, "ManualMode"),
             WorkingModes::CalibrationMode => write!(f, "CalibrationMode"),
-            WorkingModes::YawMode => write!(f, "YawControlledMode"),
+            WorkingModes::YawControlMode => write!(f, "YawControlMode"),
             WorkingModes::FullControlMode => write!(f, "FullControllMode"),
             WorkingModes::Motion => write!(f, "Motion")
         }
@@ -49,7 +49,7 @@ pub enum Message {
     PanicMode,
     ManualMode(u16, u16, u16, u16),
     CalibrationMode,
-    YawControlledMode(u16, u16, u16, u16, u16), // last value is yaw control P
+    YawControlMode(u16, u16, u16, u16, u16), // last value is yaw control P
     FullControlMode(u16, u16, u16, u16, u16, u16, u16), // last three values are yaw control P, roll pitch control P1 and P2
     Datalogging(Datalog),
 }
@@ -63,7 +63,7 @@ impl fmt::Display for Message {
             Message::PanicMode => write!(f, "PanicMode"),
             Message::ManualMode(a, b, c, d) => write!(f, "ManualMode({}, {}, {}, {})", a, b, c, d),
             Message::CalibrationMode => write!(f, "CalibrationMode"),
-            Message::YawControlledMode(a, b, c, d, e) => write!(f, "YawControlledMode({}, {}, {}, {}, {})", a, b, c, d, e),
+            Message::YawControlMode(a, b, c, d, e) => write!(f, "YawControlMode({}, {}, {}, {}, {})", a, b, c, d, e),
             Message::FullControlMode(_,_,_,_,_,_,_) => write!(f, "FullControllMode()"),
             Message::Datalogging(_) => write!(f, "Datalogging()"),
         }
@@ -87,6 +87,7 @@ pub struct Datalog {
     pub bat: u16, 
     pub bar: u32,
     pub workingmode: WorkingModes,
+    pub arguments: [u16; 4]
 }
 
 /// A Packet is the message format that contains a command, an argument and a checksum.

@@ -21,6 +21,7 @@ use crate::working_mode::panic_mode::{panic_mode};
 
 const FIXED_SIZE:usize = 64;
 const MOTION_DELAY:u16 = 100;//Set a big value for debugging
+const NO_CONNECTION_PANIC:u16 = 100; // Counts how often heartbeats are not detected
 const FIXED_FREQUENCY:u64 = 100; //100 Hz
 
 pub fn control_loop() -> ! {
@@ -67,6 +68,12 @@ pub fn control_loop() -> ! {
             no_message += 1;
         }
 
+        // Check usb connection with PC
+        if no_message == NO_CONNECTION_PANIC {
+            drone.set_mode(WorkingModes::SafeMode);
+            no_message = 0;
+        }
+
         //First the control part
         match drone.get_mode() {
             WorkingModes::PanicMode => {
@@ -96,7 +103,7 @@ pub fn control_loop() -> ! {
             WorkingModes::FullControlMode => {
                 ()
             },
-            WorkingModes::YawMode => {
+            WorkingModes::YawControlMode => {
                 ()
             },
             _ => {
@@ -141,7 +148,8 @@ pub fn control_loop() -> ! {
                 // z: 0, 
                 bat: read_battery(), 
                 bar: 100, 
-                workingmode: drone.get_mode()
+                workingmode: drone.get_mode(),
+                arguments: [0,0,0,0]
             });
             
             // Store log on drone flash

@@ -1,19 +1,11 @@
-pub struct AngularController {
-    kp: [f32; 3],
-    ki: [f32; 3],
-    kd: [f32; 3],
-    ki_sat: [f32; 3],
-    integral: [f32; 3],
-    dt: f32,
+#[derive(Copy, Clone)]
+pub struct PID {
+    pub(crate) kp: f32,
+    pub(crate) ki: f32,
+    pub(crate) kd: f32,
+    pub(crate) last_error: f32,
+    pub(crate) previous_error: f32,
 }
-
-pub struct PDController {
-    kp: [f32; 3],
-    kd: [f32; 3],
-    last_error: [f32; 3],
-    dt: f32,    
-}
-
 
 fn signum_f32(x: f32) -> f32 {
     if x > 0.0 {
@@ -26,69 +18,40 @@ fn signum_f32(x: f32) -> f32 {
 }
 
 
-//Note: the angularcontroller can become a Yaw controller by setting the setpoins roll and pitch to zero
-impl AngularController {
 
-    //Create an instant of for the angular controller
-    pub fn new(kp: [f32; 3], ki:[f32; 3], kd:[f32; 3], ki_sat: [f32; 3], dt:f32) -> AngularController {
-        AngularController {
-            kp: kp,
-            ki: ki,
-            kd: kd,
-            ki_sat: ki_sat,
-            integral: [0.0, 0.0, 0.0],
-            dt: dt,
-        }
-    }
-    //Update the controller
-    pub fn update(&mut self, attitude_error: [f32; 3], angular_velocity: [f32; 3]) -> [f32; 3] {
-        
-        //Update intergal controller
-        for i in 0..3 {
-            self.integral[i] += attitude_error[i] * self.dt;
-        }
-
-        //Prevent windup
-        for i in 0..3 {
-            if self.integral[i] > self.ki_sat[i] {
-                self.integral[i] = signum_f32(self.integral[i]) * self.ki_sat[i];
-            }
-        }
-
-        //Calculate controller input for desired accelartion
-        [
-            self.kp[0] * attitude_error[0] + self.ki[0] * self.integral[0] + self.kd[0] * angular_velocity[0],
-            self.kp[1] * attitude_error[1] + self.ki[1] * self.integral[1] + self.kd[1] * angular_velocity[1],
-            self.kp[2] * attitude_error[2] + self.ki[2] * self.integral[2] + self.kd[2] * angular_velocity[2],
-        ]
-    }
-}
-
-
-impl PDController {
-    pub fn new(kp: [f32; 3], kd: [f32; 3], dt: f32) -> Self {
+impl PID {
+    pub fn new(kp: f32, ki: f32, kd: f32) -> Self {
         Self {
             kp,
+            ki,
             kd,
-            last_error: [0.0, 0.0, 0.0],
-            dt
+            last_error: 0 as f32,
+            previous_error: 0 as f32,
         }
     }
 
-    pub fn step(&mut self, target_pos: [f32; 3], current_pos: [f32; 3], dt: f32) -> [f32; 3] {
-        let mut error = [0.0; 3];
-        for i in 0..3 {
-            error[i] = target_pos[i] - current_pos[i];
-        }
-        let mut derivative = [0.0; 3];
-        for i in 0..3 {
-            derivative[i] = (error[i] - self.last_error[i]) / dt;
-        }
-        self.last_error = error;
-        let mut output = [0.0; 3];
-        for i in 0..3 {
-            output[i] = self.kp[i] * error[i] + self.kd[i] * derivative[i];
-        }
+    ///NEW:
+    ///Incremental PID controller: Kp * (e(k) - e(k-1)) + Ki * e(k)    + Kd * (e(k) - 2e(k-1) + e(k-2))
+    ///OLD:
+    ///Positional PID controller: Kp * e(k)             + Ki * ∑e(k..) + Kd * (e(k) - e(k-1))
+    ///
+    ///Those to types of PID are almost same when I controller is not used, except the output.
+    ///Pos PID outputs a direct controlled value but Inc PID output a difference value
+    ///For example: if we want to control the car speed from 0km/h to 9 and to 0 again.
+    ///Output from Pos PID: 9km/h -> 5km/h -> 3km/h -> 0km/h (real speed)
+    ///Output from Inc PID: +9km/h -> -4km/h -> -2km/h -> -3km/h (Δ value, variation)
+    ///
+    ///The big difference between two types of controllers is the I controller. Pos PID needs more computations
+    ///on summing all errors together but Inc PID doesn't. In case we might us I controller, Inc PID
+    ///is chosen
+    pub fn step(&mut self, target: f32, current: f32) -> f32{
+        let mut current_err = target - current as f32;
+        let output = self.kp * (current_err - self.last_error)
+            //+ self.ki * current_err
+            + self.kd * (current_err - 2 as f32 * self.last_error + self.previous_error);
+        self.previous_error = self.last_error;
+        self.last_error = current_err;
+
         output
     }
     
