@@ -20,4 +20,3 @@ target for `runner` is `x86_64-unknown-linux-gnu`.
 The `dronecode` will run on your drone, and contains an example on how to write some basic code for the 
 drone. `runner` is responsible for uploading the program to your drone, and can then also start any
 code that needs to run on the PC to communicate with the drone.
-

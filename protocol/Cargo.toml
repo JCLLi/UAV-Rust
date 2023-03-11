@@ -1,14 +1,14 @@
+cargo-features = ["per-package-target"]
 [package]
-name = "eslgroup14"
+name = "protocol"
 version = "0.1.0"
 edition = "2021"
+
+forced-target = "x86_64-unknown-linux-gnu"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tudelft-quadrupel = {version="2"}
-micromath = "2.0.0"
-postcard = "1.0.0"
+postcard = {version = "1.0.0", features = ["alloc"]}
 serde = { version = "1.0.*", features = ["derive"], default-features = false }
 crc = "2.0"
-protocol = {path = "../protocol"}
