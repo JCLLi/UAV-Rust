@@ -4,7 +4,7 @@ use serial2::{SerialPort, Settings};
 use protocol::{self, Message, PacketManager, Packet, Datalog, WorkingModes};
 use crate::interface::{pc_transmission::{write_packet, write_message}, settings_logic::{DeviceListener, SettingsBundle}};
 use single_value_channel::{channel, Updater};
-use super::{pc_transmission::read_message, database::DatabaseManager, settings_logic::Modes};
+use super::{pc_transmission::read_message, database::DatabaseManager};
 
 /// Setup PC terminal interface for PC-drone communication
 pub fn setup_interface(serial: &SerialPort) -> Result<(), Box<dyn OtherError>> {
@@ -138,11 +138,11 @@ fn write_serial(serial: &SerialPort, tx_exit: Sender<bool>, tx_tui1: Sender<Sett
                 
                 // Check if panic mode command is given, command is changed to safe mode after one iteration,
                 // to not repeatedly send panic command
-                if bundle.mode == Modes::PanicMode {
+                if bundle.mode == WorkingModes::PanicMode {
                     if paniced_once == false {
                         paniced_once = true;
                     } else {
-                        bundle.mode = Modes::SafeMode;
+                        bundle.mode = WorkingModes::SafeMode;
                     }
                 } else {
                     paniced_once = false;
@@ -318,8 +318,6 @@ fn print_datalog(packet: Packet) {
 mod tests {
     use protocol::{Packet, Datalog, WorkingModes};
 
-    use crate::interface::settings_logic::Modes;
-
     use super::*;
 
     #[test]
@@ -389,12 +387,12 @@ mod tests {
         
                         // Match user input with drone message
                         let message = match bundle.mode {
-                            Modes::SafeMode => Message::SafeMode,
-                            Modes::PanicMode => Message::PanicMode,
-                            Modes::ManualMode => Message::ManualMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift),
-                            Modes::CalibrationMode => Message::CalibrationMode,
-                            Modes::YawControlledMode => Message::YawControlMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift, bundle.yaw_control_p),
-                            Modes::FullControlMode => Message::FullControlMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift, bundle.yaw_control_p, bundle.roll_pitch_control_p1, bundle.roll_pitch_control_p2),
+                            WorkingModes::SafeMode => Message::SafeMode,
+                            WorkingModes::PanicMode => Message::PanicMode,
+                            WorkingModes::ManualMode => Message::ManualMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift),
+                            WorkingModes::CalibrationMode => Message::CalibrationMode,
+                            WorkingModes::YawControlMode => Message::YawControlMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift, bundle.yaw_control_p),
+                            WorkingModes::FullControlMode => Message::FullControlMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift, bundle.yaw_control_p, bundle.roll_pitch_control_p1, bundle.roll_pitch_control_p2),
                          };
 
                         // Add message to messagevec, to show in terminal

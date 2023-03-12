@@ -3,9 +3,7 @@
 
 
 use serial2::SerialPort;
-use protocol::{self, Packet, Message, PacketManager};
-
-use crate::interface::settings_logic::Modes;
+use protocol::{self, Packet, Message, PacketManager, WorkingModes};
 use super::settings_logic::{SettingsBundle};
 
 /// Write packet to the drone. Used by the function 'write_message'
@@ -38,12 +36,12 @@ pub fn write_message(serial: &SerialPort, bundle: SettingsBundle) {
 
     // Match user input with drone message
     let message = match bundle.mode {
-        Modes::SafeMode => Message::SafeMode,
-        Modes::PanicMode => Message::PanicMode,
-        Modes::ManualMode => Message::ManualMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift),
-        Modes::CalibrationMode => Message::CalibrationMode,
-        Modes::YawControlledMode => Message::YawControlMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift, bundle.yaw_control_p),
-        Modes::FullControlMode => Message::FullControlMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift, bundle.yaw_control_p, bundle.roll_pitch_control_p1, bundle.roll_pitch_control_p2),
+        WorkingModes::SafeMode => Message::SafeMode,
+        WorkingModes::PanicMode => Message::PanicMode,
+        WorkingModes::ManualMode => Message::ManualMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift),
+        WorkingModes::CalibrationMode => Message::CalibrationMode,
+        WorkingModes::YawControlMode => Message::YawControlMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift, bundle.yaw_control_p),
+        WorkingModes::FullControlMode => Message::FullControlMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift, bundle.yaw_control_p, bundle.roll_pitch_control_p1, bundle.roll_pitch_control_p2),
     };
 
     // Write message over serial

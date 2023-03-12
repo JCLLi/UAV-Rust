@@ -19,8 +19,7 @@ pub enum WorkingModes {
     ManualMode,
     CalibrationMode,
     YawControlMode,
-    FullControlMode,
-    Motion
+    FullControlMode
 }
 
 // Convert WorkingModes enum to string
@@ -33,7 +32,6 @@ impl fmt::Display for WorkingModes {
             WorkingModes::CalibrationMode => write!(f, "CalibrationMode"),
             WorkingModes::YawControlMode => write!(f, "YawControlMode"),
             WorkingModes::FullControlMode => write!(f, "FullControllMode"),
-            WorkingModes::Motion => write!(f, "Motion")
         }
     }
 }
