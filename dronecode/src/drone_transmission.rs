@@ -18,7 +18,8 @@ pub fn write_packet(message: Message) {
 
 /// Read message from the data
 pub fn read_packet(mut buf: Vec<u8>) -> Result<Packet, ()> {      
-    if let Ok(packet) = Packet::from_bytes(&mut buf) {                       
+    if let Ok(packet) = Packet::from_bytes(&mut buf) {    
+        // write_packet(packet.message);                   
         Ok(packet)
     } else {
         Err(())
@@ -54,7 +55,6 @@ pub fn read_message(mut shared_buf: Vec<u8>) -> (PacketManager, Vec<u8>) {
                     Ok(_) => {
                         let packet = packet_result.unwrap();
                         packetmanager.add_packet(packet);
-                        Green.on();
                     }
                 }
 

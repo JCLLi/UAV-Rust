@@ -21,7 +21,7 @@ use crate::working_mode::panic_mode::{panic_mode};
 
 const FIXED_SIZE:usize = 64;
 const MOTION_DELAY:u16 = 100;//Set a big value for debugging
-const NO_CONNECTION_PANIC:u16 = 100; // Counts how often heartbeats are not detected
+const NO_CONNECTION_PANIC:u16 = 10; // Counts how often messages are not received
 const FIXED_FREQUENCY:u64 = 100; //100 Hz
 
 pub fn control_loop() -> ! {
@@ -38,11 +38,15 @@ pub fn control_loop() -> ! {
 
     // Buffer to store received bytes
     let mut shared_buf = Vec::new();
+    
+    // Read data, place packets in packetmanager
+    let mut packetmanager = PacketManager::new();
 
     let mut angles = YawPitchRoll { yaw: 0.0, pitch: 0.0, roll: 0.0};
 
     let mut storage_manager = LogStorageManager::new(0x1FFF);
-
+    
+    
     for i in 0.. {
         if i % 50 == 0 {
             Blue.toggle();
@@ -54,24 +58,23 @@ pub fn control_loop() -> ! {
 
         let time = last.ns_since_start() / 1_000_000;
 
-        Green.off();
-
-        // Read data, place packets in packetmanager, message in first packet is used
-        let mut packetmanager;
+        // Read data, place packets in packetmanager
         (packetmanager, shared_buf) = read_message(shared_buf);
         
-        if packetmanager.packets.len() > 0 {
-            message = packetmanager.read_packet().unwrap().message;
-            new_message = true;
-            no_message = 0;
-        }else {
-            no_message += 1;
+        let packet_result = packetmanager.read_packet();
+
+        match packet_result {
+            None => no_message += 1,
+            Some(packet) => {
+                message = packet.message;
+                new_message = true;
+                no_message = 0;
+            }
         }
 
         // Check usb connection with PC
-        if no_message == NO_CONNECTION_PANIC {
+        if no_message >= NO_CONNECTION_PANIC {
             drone.set_mode(WorkingModes::SafeMode);
-            no_message = 0;
         }
 
         //First the control part
@@ -81,6 +84,7 @@ pub fn control_loop() -> ! {
 
                 Yellow.off();
                 Red.on();
+                Green.off();
             },
             WorkingModes::SafeMode => {
                 if new_message {
@@ -89,6 +93,7 @@ pub fn control_loop() -> ! {
 
                 Yellow.on();
                 Red.off();
+                Green.off();
             },
             WorkingModes::ManualMode => {
                 if new_message {
@@ -96,6 +101,7 @@ pub fn control_loop() -> ! {
                 }
 
                 Yellow.off();
+                Green.on();
             },
             WorkingModes::CalibrationMode => {
                 ()
@@ -125,7 +131,7 @@ pub fn control_loop() -> ! {
         //     }
         // }
         let (accel, _) = read_raw().unwrap();
-        
+
         //Store the log files
         let log = Message::Datalogging(Datalog 
             { 
@@ -143,13 +149,10 @@ pub fn control_loop() -> ! {
                 x: accel.x, 
                 y: accel.y, 
                 z: accel.z, 
-                // x: 0, 
-                // y: 0, 
-                // z: 0, 
                 bat: read_battery(), 
                 bar: 100, 
                 workingmode: drone.get_mode(),
-                arguments: [0,0,0,0]
+                arguments: drone.get_arguments()
             });
             
             // Store log on drone flash
@@ -158,6 +161,7 @@ pub fn control_loop() -> ! {
         if i % 5 == 0 {
             write_packet(log);
         }
+
         // wait until the timer interrupt goes off again
         // based on the frequency set above
         wait_for_next_tick();

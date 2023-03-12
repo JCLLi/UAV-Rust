@@ -15,6 +15,7 @@ impl Drone {
             thrust: 0 as f32,
             floating_speed: (FLOATING_SPEED as f32 * 0.8) as u16,
             yaw_controller: PID::new(1.4,0.0,0.01),
+            arguments: [0, 0, 0, 0]
         }
     }
 
@@ -26,11 +27,13 @@ impl Drone {
             Message::ManualMode(pitch, roll, yaw, lift)
             => {
                 mode_switch(self, WorkingModes::ManualMode);
-                motions(self, [*pitch, *roll, *yaw, *lift])
+                motions(self, [*pitch, *roll, *yaw, *lift]);
+                self.arguments = [*pitch, *roll, *yaw, *lift]
             }
             Message::YawControlMode(pitch, roll, yaw, lift, P) => {
                 mode_switch(self, WorkingModes::YawControlMode);
-                motions(self, [*pitch, *roll, *yaw, *lift])
+                motions(self, [*pitch, *roll, *yaw, *lift]);
+                self.arguments = [*pitch, *roll, *yaw, *lift]
             }
             Message::HeartBeat => (),
             _ => mode_switch(self, WorkingModes::SafeMode),//TODO: add new mode and change the 'new' argument
@@ -57,6 +60,8 @@ impl Getter for Drone {
     }
 
     fn get_yaw_controller(&self) -> PID { self.yaw_controller }
+
+    fn get_arguments(&self) -> [u16; 4] {self.arguments}
 }
 
 impl Setter for Drone {
