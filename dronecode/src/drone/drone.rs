@@ -4,18 +4,18 @@ use crate::controllers::PID;
 use crate::drone::{Drone, Getter, Setter};
 use crate::drone::motors::keep_floating;
 use crate::working_mode::{mode_switch, motions};
-use fixed::{consts, types::I18F14};
+use fixed::{types::extra::U14, FixedI32};
 
 impl Drone {
     pub fn initialize() -> Drone {
         Drone{
             mode: WorkingModes::SafeMode,
-            yaw: I18F14::from_num(0),
-            pitch: I18F14::from_num(0),
-            roll: I18F14::from_num(0),
-            thrust: I18F14::from_num(0),
+            yaw: FixedI32::<U14>::from_num(0),
+            pitch: FixedI32::<U14>::from_num(0),
+            roll: FixedI32::<U14>::from_num(0),
+            thrust: FixedI32::<U14>::from_num(0),
             floating_speed: 80 as u16,
-            yaw_controller: PID::new(I18F14::from_num(7) / 5,I18F14::from_num(0),I18F14::from_num(1) / 100),
+            yaw_controller: PID::new(FixedI32::<U14>::from_num(7) / 5,FixedI32::<U14>::from_num(0),FixedI32::<U14>::from_num(1) / 100),
             arguments: [0, 0, 0, 0]
         }
     }
@@ -52,7 +52,7 @@ impl Getter for Drone {
         }
     }
 
-    fn get_angles(&self) -> (I18F14, I18F14, I18F14) {
+    fn get_angles(&self) -> (FixedI32<U14>, FixedI32<U14>, FixedI32<U14>) {
         (self.yaw, self.pitch, self.roll)
     }
 
@@ -70,7 +70,7 @@ impl Setter for Drone {
         self.mode = mode;
     }
 
-    fn set_angles(&mut self, angles: (I18F14, I18F14, I18F14)){
+    fn set_angles(&mut self, angles: (FixedI32<U14>, FixedI32<U14>, FixedI32<U14>)){
         self.yaw = angles.0;
         self.pitch = angles.1;
         self.roll = angles.2;

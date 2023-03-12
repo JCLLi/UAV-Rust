@@ -1,34 +1,34 @@
-use fixed::{consts, types::I18F14};
+use fixed::{types::extra::U14, FixedI32};
 
 #[derive(Copy, Clone)]
 pub struct PID {
-    pub(crate) kp: I18F14,
-    pub(crate) ki: I18F14,
-    pub(crate) kd: I18F14,
-    pub(crate) last_error: I18F14,
-    pub(crate) previous_error: I18F14,
+    pub(crate) kp: FixedI32<U14>,
+    pub(crate) ki: FixedI32<U14>,
+    pub(crate) kd: FixedI32<U14>,
+    pub(crate) last_error: FixedI32<U14>,
+    pub(crate) previous_error: FixedI32<U14>,
 }
 
-fn signum_I18F14(x: I18F14) -> I18F14 {
+fn signum_FixedI32(x: FixedI32<U14>) -> FixedI32<U14> {
     if x > 0 {
-        I18F14::from_num(1)
+        FixedI32::<U14>::from_num(1)
     } else if x < 0 {
-        I18F14::from_num(-1)
+        FixedI32::<U14>::from_num(-1)
     } else {
-        I18F14::from_num(0)
+        FixedI32::<U14>::from_num(0)
     }
 }
 
 
 
 impl PID {
-    pub fn new(kp: I18F14, ki: I18F14, kd: I18F14) -> Self {
+    pub fn new(kp: FixedI32<U14>, ki: FixedI32<U14>, kd: FixedI32<U14>) -> Self {
         Self {
             kp,
             ki,
             kd,
-            last_error: I18F14::from_num(0),
-            previous_error: I18F14::from_num(0),
+            last_error: FixedI32::<U14>::from_num(0),
+            previous_error: FixedI32::<U14>::from_num(0),
         }
     }
 
@@ -46,7 +46,7 @@ impl PID {
     ///The big difference between two types of controllers is the I controller. Pos PID needs more computations
     ///on summing all errors together but Inc PID doesn't. In case we might us I controller, Inc PID
     ///is chosen
-    pub fn step(&mut self, target: I18F14, current: I18F14) -> I18F14{
+    pub fn step(&mut self, target: FixedI32<U14>, current: FixedI32<U14>) -> FixedI32<U14>{
         let mut current_err = target - current;
         let output = self.kp * (current_err - self.last_error)
             //+ self.ki * current_err
