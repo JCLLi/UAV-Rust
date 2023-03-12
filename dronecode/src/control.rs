@@ -1,19 +1,11 @@
-
 use alloc::vec::Vec;
-
 use protocol::{self, PacketManager, Message, Datalog, WorkingModes};
-
 use tudelft_quadrupel::battery::read_battery;
 use tudelft_quadrupel::led::{Blue, Green, Red, Yellow};
 use tudelft_quadrupel::motor::get_motors;
-
 use tudelft_quadrupel::mpu::read_raw;
 use tudelft_quadrupel::time::{set_tick_frequency, wait_for_next_tick, Instant};
-
-
 use crate::drone_transmission::{write_packet, read_message};
-
-
 use crate::log_storage_manager::LogStorageManager;
 use crate::yaw_pitch_roll::YawPitchRoll;
 use crate::drone::{Drone, Getter, Setter};

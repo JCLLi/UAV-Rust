@@ -27,7 +27,7 @@ pub fn read_packet(mut buf: Vec<u8>) -> Result<Packet, ()> {
 
             Ok(packet)
         } else {
-            Err(())
+            Err(())     
         }
 }
 
