@@ -1,8 +1,8 @@
-use tudelft_quadrupel::uart::send_bytes;
+
 use protocol::{Message, WorkingModes};
 use crate::controllers::PID;
 use crate::drone::{Drone, Getter, Setter, motors::FLOATING_SPEED};
-use crate::drone::motors::keep_floating;
+
 use crate::working_mode::{mode_switch, motions};
 
 impl Drone {
@@ -30,7 +30,7 @@ impl Drone {
                 motions(self, [*pitch, *roll, *yaw, *lift]);
                 self.arguments = [*pitch, *roll, *yaw, *lift]
             }
-            Message::YawControlMode(pitch, roll, yaw, lift, P) => {
+            Message::YawControlMode(pitch, roll, yaw, lift, _P) => {
                 mode_switch(self, WorkingModes::YawControlMode);
                 motions(self, [*pitch, *roll, *yaw, *lift]);
                 self.arguments = [*pitch, *roll, *yaw, *lift]

@@ -1,9 +1,9 @@
-use crossterm::{QueueableCommand, terminal::{disable_raw_mode, enable_raw_mode, self}, execute, cursor::{MoveTo, Hide, Show, self}, style::{SetAttribute, Attribute, Print, Color, SetForegroundColor, self, Stylize}};
-use std::{error::Error as OtherError, io::{self, stdout}, sync::mpsc::{self, Sender, Receiver}, time::{Instant, Duration}, thread::sleep};
-use serial2::{SerialPort, Settings};
-use protocol::{self, Message, PacketManager, Packet, Datalog, WorkingModes};
+use crossterm::{terminal::{disable_raw_mode, enable_raw_mode, self}, execute, cursor::{MoveTo, Hide, Show}, style::{SetAttribute, Attribute, Print, Color, SetForegroundColor}};
+use std::{error::Error as OtherError, io::{self, stdout}, sync::mpsc::{self, Sender, Receiver}, time::{Instant, Duration}};
+use serial2::{SerialPort};
+use protocol::{self, Message, PacketManager, Packet, WorkingModes};
 use crate::interface::{pc_transmission::{write_packet, write_message}, settings_logic::{DeviceListener, SettingsBundle}};
-use single_value_channel::{channel, Updater};
+use single_value_channel::{Updater};
 use super::{pc_transmission::read_message, database::DatabaseManager};
 
 /// Setup PC terminal interface for PC-drone communication
@@ -289,6 +289,8 @@ fn print_datalog(packet: Packet) {
             Print("Mode:      "), Print(d.workingmode), Print("       "), 
             MoveTo(50,10),
             Print("Arguments: "), Print(d.arguments[0]),Print(", "),  Print(d.arguments[1]),Print(", "),  Print(d.arguments[2]),Print(", "),  Print(d.arguments[3]), Print("          "),
+            MoveTo(50,11),
+            Print("Loop time: "), Print(d.control_loop_time), Print(" us                      "),
 
             // Print motor display
             MoveTo(110,3), Print(d.motor1), Print("  "),
@@ -335,7 +337,7 @@ mod tests {
             Print("Command to drone")
         ).unwrap();
 
-        let datalog = Datalog {motor1: 0, motor2: 0, motor3: 0, motor4: 0, rtc: 0, yaw: 0.0, pitch: 0.0, roll: 0.0, x: 0, y: 0, z: 0, bat: 0, bar: 0, workingmode: WorkingModes::ManualMode, arguments: [0, 0, 0, 0] };
+        let datalog = Datalog {motor1: 0, motor2: 0, motor3: 0, motor4: 0, rtc: 0, yaw: 0.0, pitch: 0.0, roll: 0.0, x: 0, y: 0, z: 0, bat: 0, bar: 0, workingmode: WorkingModes::ManualMode, arguments: [0, 0, 0, 0], control_loop_time: 0  };
         let message = Message::Datalogging(datalog);
         let packet = Packet::new(message);
 

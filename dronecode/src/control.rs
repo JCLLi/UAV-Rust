@@ -1,18 +1,18 @@
 
 use alloc::vec::Vec;
-use alloc::{format, string::String};
-use protocol::{self, Packet, PacketManager, Message, Datalog, WorkingModes};
-use tudelft_quadrupel::barometer::read_pressure;
+
+use protocol::{self, PacketManager, Message, Datalog, WorkingModes};
+
 use tudelft_quadrupel::battery::read_battery;
 use tudelft_quadrupel::led::{Blue, Green, Red, Yellow};
 use tudelft_quadrupel::motor::get_motors;
-use tudelft_quadrupel::mpu::read_dmp_bytes;
+
 use tudelft_quadrupel::mpu::read_raw;
 use tudelft_quadrupel::time::{set_tick_frequency, wait_for_next_tick, Instant};
-use tudelft_quadrupel::uart::receive_bytes;
-use tudelft_quadrupel::block;
-use crate::drone_transmission::{write_packet, read_packet, read_message};
-use postcard::{take_from_bytes_cobs, from_bytes_cobs, to_allocvec, to_allocvec_cobs};
+
+
+use crate::drone_transmission::{write_packet, read_message};
+
 
 use crate::log_storage_manager::LogStorageManager;
 use crate::yaw_pitch_roll::YawPitchRoll;
@@ -26,7 +26,7 @@ const FIXED_FREQUENCY:u64 = 100; //100 Hz
 
 pub fn control_loop() -> ! {
     set_tick_frequency(FIXED_FREQUENCY);
-    let mut last = Instant::now();
+    let begin_loop = Instant::now();
     let mut drone = Drone::initialize();
     let mut message = Message::SafeMode;
 
@@ -42,21 +42,20 @@ pub fn control_loop() -> ! {
     // Read data, place packets in packetmanager
     let mut packetmanager = PacketManager::new();
 
-    let mut angles = YawPitchRoll { yaw: 0.0, pitch: 0.0, roll: 0.0};
+    let _angles = YawPitchRoll { yaw: 0.0, pitch: 0.0, roll: 0.0};
 
-    let mut storage_manager = LogStorageManager::new(0x1FFF);
+    let _storage_manager = LogStorageManager::new(0x1FFF);
     
     
     for i in 0.. {
+        // Measure time of loop iteration
+        let begin = Instant::now();
+
         if i % 50 == 0 {
             Blue.toggle();
         }
 
-        let now = Instant::now();
-        let _dt = now.duration_since(last);
-        last = now;
-
-        let time = last.ns_since_start() / 1_000_000;
+        let time = begin_loop.ns_since_start() / 1_000_000;
 
         // Read data, place packets in packetmanager
         (packetmanager, shared_buf) = read_message(shared_buf);
@@ -132,6 +131,10 @@ pub fn control_loop() -> ! {
         // }
         let (accel, _) = read_raw().unwrap();
 
+        // Measure time of loop iteration
+        let end = Instant::now();
+        let control_loop_time = end.duration_since(begin).as_micros();
+
         //Store the log files
         let log = Message::Datalogging(Datalog 
             { 
@@ -152,7 +155,8 @@ pub fn control_loop() -> ! {
                 bat: read_battery(), 
                 bar: 100, 
                 workingmode: drone.get_mode(),
-                arguments: drone.get_arguments()
+                arguments: drone.get_arguments(),
+                control_loop_time: control_loop_time
             });
             
             // Store log on drone flash

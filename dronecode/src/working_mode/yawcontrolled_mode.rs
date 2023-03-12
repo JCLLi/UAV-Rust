@@ -1,9 +1,9 @@
 use crate::working_mode::WorkingModes;
-use crate::working_mode::WorkingModes::{ManualMode, PanicMode, YawControlMode};
+use crate::working_mode::WorkingModes::{PanicMode};
 use tudelft_quadrupel::mpu::structs::Gyro;
-use tudelft_quadrupel::mpu::{read_dmp_bytes, read_raw};
+use tudelft_quadrupel::mpu::{read_raw};
 use crate::drone::{Drone, Getter};
-use crate::yaw_pitch_roll::YawPitchRoll;
+
 use crate::drone::motors::{angle_to_pwm, motor_assign};
 
 

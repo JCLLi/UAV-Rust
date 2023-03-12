@@ -1,9 +1,9 @@
-use tudelft_quadrupel::motor::set_motors;
 
-use crate::drone::{Drone, motors, Setter};
+
+use crate::drone::{Drone};
 use crate::drone::motors::{angle_to_pwm, motor_assign};
 use crate::working_mode::WorkingModes;
-use crate::working_mode::WorkingModes::{ManualMode, PanicMode, YawControlMode};
+use crate::working_mode::WorkingModes::{PanicMode};
 
 ///Mode switch function for manual mode
 pub fn switch(new: WorkingModes) -> WorkingModes{

@@ -1,8 +1,5 @@
-
 use pasts::Loop;
 use std::{sync::mpsc, task::Poll::{self, Pending, Ready}};
-use std::thread::sleep;
-use std::time::Duration;
 use stick::{Controller, Event, Listener};
 
 type Exit = usize;

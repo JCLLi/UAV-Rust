@@ -1,9 +1,9 @@
-use alloc::format;
+
 use tudelft_quadrupel::motor::set_motors;
-use tudelft_quadrupel::uart::send_bytes;
-use crate::drone::{Drone, Setter};
-use protocol::WorkingModes;
-use crate::working_mode::yawcontrolled_mode::yawing;
+
+use crate::drone::{Drone};
+
+
 
 const MOTOR_MAX: u16 = 400;
 const ZERO_POINT: u16 = 32767;
@@ -38,7 +38,7 @@ pub fn motor_assign(pwm: [f32; 4]){
 
 ///Convert from a number between 0-65535 to a real angle(in manual mode, it is the speed). And according to the angle to set PWM
 /// signal from 0-1.
-pub fn angle_to_pwm(drone: &mut Drone, argument: [u16; 4]) -> [f32; 4]{
+pub fn angle_to_pwm(_drone: &mut Drone, argument: [u16; 4]) -> [f32; 4]{
     let mut pwm_pitch = 0 as f32;
     let mut pwm_roll = 0 as f32;
     let mut pwm_yaw = 0 as f32;

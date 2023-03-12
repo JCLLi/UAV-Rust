@@ -85,7 +85,8 @@ pub struct Datalog {
     pub bat: u16, 
     pub bar: u32,
     pub workingmode: WorkingModes,
-    pub arguments: [u16; 4]
+    pub arguments: [u16; 4],
+    pub control_loop_time: u128
 }
 
 /// A Packet is the message format that contains a command, an argument and a checksum.

@@ -129,11 +129,11 @@ use super::*;
             keymapper(tx).unwrap();
         });
 
-        while let Ok(KeyboardCommand) = rx.recv(){
-            println!("\rKeyboardCommand: {:?}", KeyboardCommand);
-            println!("\rCommands.to_string(): {}", KeyboardCommand.command.to_string());
+        while let Ok(keyboarcommand) = rx.recv(){
+            println!("\rKeyboardCommand: {:?}", keyboarcommand);
+            println!("\rCommands.to_string(): {}", keyboarcommand.command.to_string());
     
-            if KeyboardCommand.command == Commands::Exit {
+            if keyboarcommand.command == Commands::Exit {
                 break;
             }
         }
