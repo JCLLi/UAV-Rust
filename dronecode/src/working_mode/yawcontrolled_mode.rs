@@ -5,7 +5,7 @@ use tudelft_quadrupel::mpu::{read_dmp_bytes, read_raw};
 use crate::drone::{Drone, Getter};
 use crate::yaw_pitch_roll::YawPitchRoll;
 use crate::drone::motors::{angle_to_pwm, motor_assign};
-
+use fixed::{consts, types::I18F14};
 
 pub fn switch(new: WorkingModes) -> WorkingModes{
     match new {
@@ -17,16 +17,29 @@ pub fn switch(new: WorkingModes) -> WorkingModes{
 }
 
 
-fn map_velocity_to_f32(data: &Gyro) -> [f32;3] {
-    let min_i16 = -100;
-    let max_i16 = 100;
-    let min_f32 = -1.0;
-    let max_f32 = 1.0;
+// fn map_velocity_to_f32(data: &Gyro) -> [f32;3] {
+//     let min_i16 = -100;
+//     let max_i16 = 100;
+//     let min_f32 = -1.0;
+//     let max_f32 = 1.0;
+
+//     [
+//         (data.x - min_i16) as f32 / (max_i16 - min_i16) as f32 * (max_f32 - min_f32) + min_f32,
+//         (data.y - min_i16) as f32 / (max_i16 - min_i16) as f32 * (max_f32 - min_f32) + min_f32,
+//         (data.z - min_i16) as f32 / (max_i16 - min_i16) as f32 * (max_f32 - min_f32) + min_f32,
+//     ]
+// }
+
+fn map_velocity_to_I18F14(data: &Gyro) -> [I18F14; 3] {
+    let min_i16 = I18F14::from_num(-100);
+    let max_i16 = I18F14::from_num(100);
+    let min_f32 = I18F14::from_num(-1);
+    let max_f32 = I18F14::from_num(1);
 
     [
-        (data.x - min_i16) as f32 / (max_i16 - min_i16) as f32 * (max_f32 - min_f32) + min_f32,
-        (data.y - min_i16) as f32 / (max_i16 - min_i16) as f32 * (max_f32 - min_f32) + min_f32,
-        (data.z - min_i16) as f32 / (max_i16 - min_i16) as f32 * (max_f32 - min_f32) + min_f32,
+        (I18F14::from_num(data.x) - min_i16) / (max_i16 - min_i16) * (max_f32 - min_f32) + min_f32,
+        (I18F14::from_num(data.y) - min_i16) / (max_i16 - min_i16) * (max_f32 - min_f32) + min_f32,
+        (I18F14::from_num(data.z) - min_i16) / (max_i16 - min_i16) * (max_f32 - min_f32) + min_f32,
     ]
 }
 
@@ -44,11 +57,11 @@ pub fn motion(drone: &mut Drone, argument: [u16; 4]){
 
 //The input value drone has a parameter called yaw_controller, if you want to change the Kpid value
 //manually, go to drone.rs::initialize()
-pub fn yawing(drone: &mut Drone, setpoint: f32) -> f32{
+pub fn yawing(drone: &mut Drone, setpoint: I18F14) -> I18F14 {
 
     // Get sensor data
     let sensor_raw = read_raw().unwrap();
-    let velocity = map_velocity_to_f32(&sensor_raw.1);
+    let velocity = map_velocity_to_I18F14(&sensor_raw.1);
 
     // Calculate PID output
     let yaw_pwm = drone.get_yaw_controller().step(setpoint, velocity[2]);

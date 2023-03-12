@@ -1,20 +1,21 @@
 use tudelft_quadrupel::uart::send_bytes;
 use protocol::{Message, WorkingModes};
 use crate::controllers::PID;
-use crate::drone::{Drone, Getter, Setter, motors::FLOATING_SPEED};
+use crate::drone::{Drone, Getter, Setter};
 use crate::drone::motors::keep_floating;
 use crate::working_mode::{mode_switch, motions};
+use fixed::{consts, types::I18F14};
 
 impl Drone {
-    pub fn initialize() -> Drone{
+    pub fn initialize() -> Drone {
         Drone{
             mode: WorkingModes::SafeMode,
-            yaw: 0 as f32,
-            pitch: 0 as f32,
-            roll: 0 as f32,
-            thrust: 0 as f32,
-            floating_speed: (FLOATING_SPEED as f32 * 0.8) as u16,
-            yaw_controller: PID::new(1.4,0.0,0.01),
+            yaw: I18F14::from_num(0),
+            pitch: I18F14::from_num(0),
+            roll: I18F14::from_num(0),
+            thrust: I18F14::from_num(0),
+            floating_speed: 80 as u16,
+            yaw_controller: PID::new(I18F14::from_num(7) / 5,I18F14::from_num(0),I18F14::from_num(1) / 100),
             arguments: [0, 0, 0, 0]
         }
     }
@@ -51,7 +52,7 @@ impl Getter for Drone {
         }
     }
 
-    fn get_angles(&self) -> (f32, f32, f32) {
+    fn get_angles(&self) -> (I18F14, I18F14, I18F14) {
         (self.yaw, self.pitch, self.roll)
     }
 
@@ -69,7 +70,7 @@ impl Setter for Drone {
         self.mode = mode;
     }
 
-    fn set_angles(&mut self, angles: (f32, f32, f32)){
+    fn set_angles(&mut self, angles: (I18F14, I18F14, I18F14)){
         self.yaw = angles.0;
         self.pitch = angles.1;
         self.roll = angles.2;

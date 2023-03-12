@@ -1,4 +1,3 @@
-
 use alloc::vec::Vec;
 use alloc::{format, string::String};
 use protocol::{self, Packet, PacketManager, Message, Datalog, WorkingModes};
@@ -26,13 +25,14 @@ const FIXED_FREQUENCY:u64 = 100; //100 Hz
 
 pub fn control_loop() -> ! {
     set_tick_frequency(FIXED_FREQUENCY);
-    let mut last = Instant::now();
+    let mut begin_loop = Instant::now();
+
     let mut drone = Drone::initialize();
     let mut message = Message::SafeMode;
 
     //flag for recording the duration of no new message
     let mut no_message = 0;
-
+    
     //flag for detecting if there is new message
     let mut new_message = false;
 
@@ -43,20 +43,19 @@ pub fn control_loop() -> ! {
     let mut packetmanager = PacketManager::new();
 
     let mut angles = YawPitchRoll { yaw: 0.0, pitch: 0.0, roll: 0.0};
-
+    
     let mut storage_manager = LogStorageManager::new(0x1FFF);
     
     
     for i in 0.. {
+        // Measure time of loop iteration
+        let mut begin = Instant::now();
+
         if i % 50 == 0 {
             Blue.toggle();
         }
 
-        let now = Instant::now();
-        let _dt = now.duration_since(last);
-        last = now;
-
-        let time = last.ns_since_start() / 1_000_000;
+        let time = begin_loop.ns_since_start() / 1_000_000;
 
         // Read data, place packets in packetmanager
         (packetmanager, shared_buf) = read_message(shared_buf);
@@ -132,6 +131,10 @@ pub fn control_loop() -> ! {
         // }
         let (accel, _) = read_raw().unwrap();
 
+        // Measure time of loop iteration
+        let mut end = Instant::now();
+        let control_loop_time = end.duration_since(begin).as_micros();
+
         //Store the log files
         let log = Message::Datalogging(Datalog 
             { 
@@ -152,7 +155,8 @@ pub fn control_loop() -> ! {
                 bat: read_battery(), 
                 bar: 100, 
                 workingmode: drone.get_mode(),
-                arguments: drone.get_arguments()
+                arguments: drone.get_arguments(),
+                control_loop_time: control_loop_time
             });
             
             // Store log on drone flash

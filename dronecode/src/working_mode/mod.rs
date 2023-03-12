@@ -8,17 +8,6 @@ pub mod panic_mode;
 pub mod safe_mode;
 pub mod yawcontrolled_mode;
 
-// pub enum WorkingModes {
-//     SafeMode,
-//     PanicMode,
-//     ManualMode,
-//     CalibrationMode,
-//     YawControlMode,
-//     FullControlMode,
-//     Motion
-// }
-
-
 //Switch drone working mode according to the present working mode
 pub fn mode_switch(drone: &mut Drone, new: WorkingModes){
     match drone.get_mode() {
