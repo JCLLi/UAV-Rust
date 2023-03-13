@@ -47,17 +47,25 @@ pub fn write_message(serial: &SerialPort, bundle: SettingsBundle) {
     write_packet(serial, message);             
 }
 
-// If packets have been received, deserialize them
-// println!("{:?}", std::str::from_utf8(&shared_buf).unwrap_or("").trim());
+
 
 /// Read message from the drone, if available
 pub fn read_message(serial: &SerialPort, shared_buf: &mut Vec<u8>) -> Option<Packet> {
+    // If packets have been received, deserialize them
     let mut end_byte_idx = shared_buf.iter().position(|&byte| byte == 0);
     if end_byte_idx.is_none() {
         let mut read_buf = [1u8; 255];
-        let num = serial.read(&mut read_buf).unwrap();
+        let num = serial.read(&mut read_buf).unwrap_or(0);
+
         if num > 0 {
             shared_buf.extend_from_slice(&read_buf[0..num]);
+            match std::str::from_utf8(&shared_buf) {
+                Ok(debug) => { 
+                    println!("\n\r {}", debug.trim());
+                }
+    
+                Err(_) => (),
+            }
             end_byte_idx = shared_buf.iter().position(|&byte| byte == 0);
         }
     }

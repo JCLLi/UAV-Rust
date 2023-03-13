@@ -1,5 +1,5 @@
 use alloc::vec::Vec;
-use protocol::{self, PacketManager, Message, Datalog, WorkingModes};
+use protocol::{self, Message, Datalog, WorkingModes};
 use tudelft_quadrupel::battery::read_battery;
 use tudelft_quadrupel::led::{Blue, Green, Red, Yellow};
 use tudelft_quadrupel::motor::get_motors;
@@ -100,6 +100,10 @@ pub fn control_loop() -> ! {
                 Green.on();
             },
             WorkingModes::YawControlMode => {
+                if new_message {
+                    drone.message_check(&message);
+                }
+
                 Yellow.off();
                 Red.off();
                 Green.on();
