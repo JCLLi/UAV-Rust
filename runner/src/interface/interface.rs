@@ -187,11 +187,8 @@ fn read_serial(serial: &SerialPort, rx_exit: Receiver<bool>, tx_tui2: Sender<Pac
             }
 
         } else {
-            // Read packets sent by the drone and place them in the packetmanager
-            read_message(serial, &mut shared_buf, &mut packetmanager);
-
-            // Read one packet from the packetmanager and use it
-            let packet_result = packetmanager.read_packet();
+            // Read the packet that is sent by the drone
+            let packet_result = read_message(serial, &mut shared_buf);
 
             // Check if packet is received correctly
             match packet_result {

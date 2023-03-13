@@ -30,9 +30,6 @@ pub fn control_loop() -> ! {
 
     // Buffer to store received bytes
     let mut shared_buf = Vec::new();
-    
-    // Read data, place packets in packetmanager
-    let mut packetmanager = PacketManager::new();
 
     let _angles = YawPitchRoll { yaw: 0.0, pitch: 0.0, roll: 0.0};
 
@@ -49,10 +46,8 @@ pub fn control_loop() -> ! {
 
         let time = begin_loop.ns_since_start() / 1_000_000;
 
-        // Read data, place packets in packetmanager
-        (packetmanager, shared_buf) = read_message(shared_buf);
-        
-        let packet_result = packetmanager.read_packet();
+        // Read data
+        let packet_result = read_message(&mut shared_buf);
 
         match packet_result {
             None => no_message += 1,
@@ -95,13 +90,19 @@ pub fn control_loop() -> ! {
                 Green.on();
             },
             WorkingModes::CalibrationMode => {
-                ()
+                Yellow.on();
+                Red.off();
+                Green.off();
             },
             WorkingModes::FullControlMode => {
-                ()
+                Yellow.off();
+                Red.off();
+                Green.on();
             },
             WorkingModes::YawControlMode => {
-                ()
+                Yellow.off();
+                Red.off();
+                Green.on();
             },
             _ => {
                 if new_message {
