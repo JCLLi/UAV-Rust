@@ -3,8 +3,6 @@ use crate::working_mode::WorkingModes::{PanicMode};
 use tudelft_quadrupel::mpu::structs::Gyro;
 use tudelft_quadrupel::mpu::{read_raw};
 use crate::drone::{Drone, Getter};
-use tudelft_quadrupel::uart::send_bytes;
-use alloc::format;
 
 use crate::drone::motors::{angle_to_pwm, motor_assign};
 
@@ -33,15 +31,13 @@ fn map_velocity_to_f32(data: &Gyro) -> [f32;3] {
 }
 
 ///Do the motion according to the argument from command by changing motor speed
-pub fn motion(drone: &mut Drone, argument: [u16; 4]){
-    send_bytes(format!("\ntest").as_bytes());
+pub fn motion(drone: &mut Drone, argument: [u16; 4]) {
+
     //Convert from u16 value to required pwm signal for different signal
     let mut pwm = angle_to_pwm(drone, argument);
 
     //PID control
     pwm[2] += yawing(drone, pwm[2]);
-
-    send_bytes(format!("pwm[0]: {}, pwm[1]: {}, pwm[2]: {}, pwm[3]: {}\n\r", pwm[0], pwm[1], pwm[2], pwm[3]).as_bytes());
 
     //Assign motor speed according to the pwm signal
     motor_assign(pwm);

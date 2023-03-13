@@ -126,7 +126,7 @@ pub fn control_loop() -> ! {
         //     Err(_) => {
         //     }
         // }
-        let (accel, _) = read_raw().unwrap();
+        let (_, gyro) = read_raw().unwrap();
 
         // Measure time of loop iteration
         let end = Instant::now();
@@ -146,9 +146,9 @@ pub fn control_loop() -> ! {
                 yaw: 0.0, 
                 pitch: 0.0, 
                 roll: 0.0, 
-                x: accel.x, 
-                y: accel.y, 
-                z: accel.z, 
+                x: gyro.x, 
+                y: gyro.y, 
+                z: gyro.z, 
                 bat: read_battery(), 
                 bar: 100, 
                 workingmode: drone.get_mode(),

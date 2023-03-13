@@ -247,6 +247,11 @@ fn tui(rx_tui1: Receiver<SettingsBundle>, rx_tui2: Receiver<Packet>) {
     }
 }
 
+fn u16_to_f32(u16_value: u16) -> f32 {
+    let f32_value = u16_value as f32 / 10000.0;
+    f32_value
+}
+
 /// Show command to drone in tui
 fn print_command(bundle: SettingsBundle) {
     execute!(
@@ -261,6 +266,9 @@ fn print_command(bundle: SettingsBundle) {
         Print("Yaw:   "), Print(bundle.yaw), Print("       "),
         MoveTo(0,7), 
         Print("Lift:  "), Print(bundle.lift), Print("       "),
+        MoveTo(0, 8),
+        Print("P_yaw: "), Print(u16_to_f32(bundle.yaw_control_p)), Print("       "),
+
     ).unwrap(); 
 }   
 
@@ -414,10 +422,7 @@ mod tests {
                     }
                 },
                 Err(device) => println!("{:?}", device),    
-            }
-    
-            
+            }           
         }
-
     }
 }

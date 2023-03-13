@@ -20,7 +20,7 @@ pub mod yawcontrolled_mode;
 
 
 //Switch drone working mode according to the present working mode
-pub fn mode_switch(drone: &mut Drone, new: WorkingModes){
+pub fn mode_switch(drone: &mut Drone, new: WorkingModes) {
     match drone.get_mode() {
         WorkingModes::SafeMode => drone.set_mode(safe_mode::switch(new)),
         WorkingModes::PanicMode => drone.set_mode(panic_mode()),
@@ -31,7 +31,7 @@ pub fn mode_switch(drone: &mut Drone, new: WorkingModes){
 }
 
 //Function used to set the motion of the drone according to the arguments from commands
-pub fn motions(drone: &mut Drone, argument: [u16; 4]){
+pub fn motions(drone: &mut Drone, argument: [u16; 4]) {
     match drone.get_mode() {
         WorkingModes::ManualMode => manual_mode::motion(drone, argument),
         WorkingModes::YawControlMode => yawcontrolled_mode::motion(drone, argument),

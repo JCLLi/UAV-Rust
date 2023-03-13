@@ -59,13 +59,13 @@ pub fn read_message(serial: &SerialPort, shared_buf: &mut Vec<u8>) -> Option<Pac
 
         if num > 0 {
             shared_buf.extend_from_slice(&read_buf[0..num]);
-            match std::str::from_utf8(&shared_buf) {
-                Ok(debug) => { 
-                    println!("\n\r {}", debug.trim());
-                }
+            // match std::str::from_utf8(&shared_buf) {
+            //     Ok(debug) => { 
+            //         println!("\n\r {}", debug.trim());
+            //     }
     
-                Err(_) => (),
-            }
+            //     Err(_) => (),
+            // }
             end_byte_idx = shared_buf.iter().position(|&byte| byte == 0);
         }
     }

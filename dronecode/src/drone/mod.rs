@@ -11,7 +11,7 @@ pub struct Drone{
     roll: f32,
     thrust: f32,
     floating_speed: u16,
-    yaw_controller: PID,
+    controller: PID,
     arguments: [u16; 4]
 }
 
@@ -27,6 +27,7 @@ pub trait Setter{
     fn set_mode(&mut self, mode: WorkingModes);
     fn set_angles(&mut self, angles: (f32, f32, f32));
     fn set_floating_speed(&mut self, speed: u16);
+    fn set_gain_controller(&mut self, gain: (f32, f32, f32));
 }
 
 
