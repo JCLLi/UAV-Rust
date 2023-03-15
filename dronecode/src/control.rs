@@ -45,6 +45,7 @@ pub fn control_loop() -> ! {
             Some(first_packet) => {
                 new_message = true;
                 message = first_packet.message;
+                write_packet(Message::Acknowledgement(true));
                 break;
             }
             None => (),

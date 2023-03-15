@@ -130,10 +130,14 @@ fn write_serial(serial: &SerialPort, tx_exit: Sender<bool>, tx_tui1: Sender<Sett
     let mut time = Instant::now();
     let mut paniced_once = false;
 
+    let mut shared_buf = Vec::new();
+
     // Wait for initial message
-    loop {
+    'initial: loop {
         // println!("\rWaiting for initial message");
         let default_bundle = *rx_input.latest();
+        println!("\r{:?}", default_bundle);
+
         match default_bundle {
             None => (),
             Some(bundle) => {
@@ -141,11 +145,34 @@ fn write_serial(serial: &SerialPort, tx_exit: Sender<bool>, tx_tui1: Sender<Sett
                 write_message(serial, bundle);
                 
                 tx_tui1.send(bundle).unwrap();
-                break;
+
+                // Check for acknowledgement
+                let packet_result = read_message(serial, &mut shared_buf);
+                println!("{:?}", packet_result);
+                // Check if packet is received correctly
+                match packet_result {
+                    None => (),
+                    Some(packet) => { 
+                        match packet.message {
+                            Message::Acknowledgement(bool) => {
+                                if bool == true {
+                                    break 'initial;
+                                }
+                                // Store datalog in json format
+                                // DatabaseManager::create_json(&packet);
+                                
+                                // Send datalog to terminal interface
+                                // tx_tui2.send(packet).unwrap();
+                            }
+                            _ => ()
+                        }
+                    }
+                }
+                // break;
             },
         }
     }
-    // println!("initial message received");
+    println!("initial message received");
     // Write messages to drone until exit command is given
     loop {
 

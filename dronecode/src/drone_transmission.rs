@@ -23,6 +23,7 @@ pub fn read_packet(buf: &mut [u8]) -> Result<Packet, ()> {
         // write_packet(packet.message);                   
         Ok(packet)
     } else {
+        Green.on();
         Err(())
     }
 }

@@ -50,6 +50,7 @@ pub enum Message {
     YawControlMode(u16, u16, u16, u16, u16), // last value is yaw control P
     FullControlMode(u16, u16, u16, u16, u16, u16, u16), // last three values are yaw control P, roll pitch control P1 and P2
     Datalogging(Datalog),
+    Acknowledgement(bool),
 }
 
 // Convert Message enum to string
@@ -64,6 +65,7 @@ impl fmt::Display for Message {
             Message::YawControlMode(a, b, c, d, e) => write!(f, "YawControlMode({}, {}, {}, {}, {})", a, b, c, d, e),
             Message::FullControlMode(_,_,_,_,_,_,_) => write!(f, "FullControllMode()"),
             Message::Datalogging(_) => write!(f, "Datalogging()"),
+            Message::Acknowledgement(bool) => write!(f, "Acknowledgement({})", bool),
         }
     }
 }
