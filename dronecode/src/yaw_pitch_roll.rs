@@ -1,4 +1,7 @@
+use core::fmt::Debug;
 use tudelft_quadrupel::mpu::structs::Quaternion;
+use tudelft_quadrupel::time::Instant;
+use crate::drone::{Drone, Getter, Setter};
 
 /// This struct holds the yaw, pitch, and roll that the drone things it is in.
 /// The struct is currently implemented using `f32`, you may want to change this to use fixed point arithmetic.
@@ -33,5 +36,20 @@ impl From<Quaternion> for YawPitchRoll {
         let roll = micromath::F32Ext::atan2(gy, gz);
 
         Self { yaw, pitch, roll }
+    }
+
+}
+
+impl YawPitchRoll {
+    pub fn yaw_rate(&self, drone: &mut Drone) -> f32{
+        let time = Instant::now();
+        let time_diff = time.duration_since(drone.get_sample_time()).as_secs();
+
+        let current_yaw = drone.get_calibration().yaw_compensation(self.yaw);
+
+        drone.set_angles([0.0, 0.0, current_yaw]);
+        drone.set_sample_time(time);
+
+        ((current_yaw - drone.get_angles().yaw) * 180 as f32 / 3.1415926) / time_diff as f32
     }
 }

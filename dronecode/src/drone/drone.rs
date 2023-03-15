@@ -1,9 +1,12 @@
-
+use tudelft_quadrupel::time::Instant;
 use protocol::{Message, WorkingModes};
 use crate::controllers::PID;
 use crate::drone::{Drone, Getter, Setter, motors::FLOATING_SPEED};
 
 use crate::working_mode::{mode_switch, motions};
+use crate::working_mode::calibration_mode::Calibration;
+use crate::working_mode::panic_mode::panic_mode;
+use crate::yaw_pitch_roll::YawPitchRoll;
 
 fn gain_u16_to_f32(u16_value: u16) -> f32 {
     let f32_value = u16_value as f32 / 10000.0;
@@ -14,13 +17,15 @@ impl Drone {
     pub fn initialize() -> Drone{
         Drone{
             mode: WorkingModes::SafeMode,
-            yaw: 0 as f32,
-            pitch: 0 as f32,
-            roll: 0 as f32,
-            thrust: 0 as f32,
-            floating_speed: (FLOATING_SPEED as f32 * 0.8) as u16,
             controller: PID::new(0.0,0.0,0.00),
-            arguments: [0, 0, 0, 0]
+            arguments: [0, 0, 0, 0],
+            calibration: Calibration::new(),
+            sample_time: Instant::now(),
+            angles: YawPitchRoll{
+                yaw: 0.0,
+                pitch: 0.0,
+                roll: 0.0,
+            }
         }
     }
 
@@ -34,6 +39,10 @@ impl Drone {
                 mode_switch(self, WorkingModes::ManualMode);
                 motions(self, [*pitch, *roll, *yaw, *lift]);
                 self.arguments = [*pitch, *roll, *yaw, *lift]
+            }
+            Message::CalibrationMode => {
+                panic_mode();
+                mode_switch(self, WorkingModes::CalibrationMode);
             }
             Message::YawControlMode(pitch, roll, yaw, lift, p) => {
                 mode_switch(self, WorkingModes::YawControlMode);
@@ -57,38 +66,33 @@ impl Getter for Drone {
             _ => WorkingModes::SafeMode
         }
     }
-
-    fn get_angles(&self) -> (f32, f32, f32) {
-        (self.yaw, self.pitch, self.roll)
-    }
-
-    fn get_floating_speed(&self) -> u16 {
-        self.floating_speed
-    }
-
     fn get_yaw_controller(&self) -> PID { self.controller }
 
     fn get_arguments(&self) -> [u16; 4] {self.arguments}
+
+    fn get_calibration(&self) -> Calibration { self.calibration }
+
+    fn get_sample_time(&self) -> Instant { self.sample_time }
+
+    fn get_angles(&self) -> YawPitchRoll { self.angles }
 }
 
 impl Setter for Drone {
-    fn set_mode(&mut self, mode: WorkingModes){
-        self.mode = mode;
-    }
-
-    fn set_angles(&mut self, angles: (f32, f32, f32)){
-        self.yaw = angles.0;
-        self.pitch = angles.1;
-        self.roll = angles.2;
-    }
-
-    fn set_floating_speed(&mut self, speed: u16) {
-        self.floating_speed = speed;
-    }
+    fn set_mode(&mut self, mode: WorkingModes){ self.mode = mode; }
 
     fn set_gain_controller(&mut self, gain: (f32, f32, f32)) {
         self.controller.kp = gain.0;
         self.controller.ki = gain.1;
         self.controller.kd = gain.2;
+    }
+
+    fn set_calibration(&mut self, calibration: Calibration) { self.calibration = calibration }
+
+    fn set_sample_time(&mut self, time: Instant) { self.sample_time = time }
+
+    fn set_angles(&mut self, angles: [f32; 3]) {
+        self.angles.yaw = angles[0];
+        self.angles.pitch = angles[1];
+        self.angles.roll = angles[2];
     }
 }

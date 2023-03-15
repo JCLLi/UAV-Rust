@@ -7,6 +7,7 @@ pub mod manual_mode;
 pub mod panic_mode;
 pub mod safe_mode;
 pub mod yawcontrolled_mode;
+pub mod calibration_mode;
 
 // pub enum WorkingModes {
 //     SafeMode,
@@ -35,6 +36,7 @@ pub fn motions(drone: &mut Drone, argument: [u16; 4]) {
     match drone.get_mode() {
         WorkingModes::ManualMode => manual_mode::motion(drone, argument),
         WorkingModes::YawControlMode => yawcontrolled_mode::motion(drone, argument),
+        WorkingModes::CalibrationMode => calibration_mode::calibrate(drone),
         _ => (),//TODO:add new operation with new modes
     }
 }

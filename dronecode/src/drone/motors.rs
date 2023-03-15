@@ -67,9 +67,5 @@ pub fn angle_to_pwm(_drone: &mut Drone, argument: [u16; 4]) -> [f32; 4]{
     [pwm_pitch, pwm_roll, pwm_yaw, pwm_thrust]
 }
 
-pub fn keep_floating(drone: &Drone){
-    set_motors([drone.floating_speed; 4]);
-}
-
 
 //add angle limit

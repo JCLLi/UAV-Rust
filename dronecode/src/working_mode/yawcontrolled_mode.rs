@@ -1,10 +1,14 @@
+use tudelft_quadrupel::block;
 use crate::working_mode::WorkingModes;
 use crate::working_mode::WorkingModes::{PanicMode};
 use tudelft_quadrupel::mpu::structs::Gyro;
 use tudelft_quadrupel::mpu::{read_raw};
+use tudelft_quadrupel::time::Instant;
+use tudelft_quadrupel::mpu::read_dmp_bytes;
 use crate::drone::{Drone, Getter};
 
 use crate::drone::motors::{angle_to_pwm, motor_assign};
+use crate::yaw_pitch_roll::YawPitchRoll;
 
 
 pub fn switch(new: WorkingModes) -> WorkingModes{
@@ -17,19 +21,18 @@ pub fn switch(new: WorkingModes) -> WorkingModes{
 }
 
 
-fn map_velocity_to_f32(data: &Gyro) -> [f32;3] {
+fn map_velocity_to_f32(data: &Gyro) -> f32 {
     let min_i16 = -2000;
     let max_i16 = 2000;
     let min_f32 = -1.0;
     let max_f32 = 1.0;
 
-    [
-        (data.x - min_i16) as f32 / (max_i16 - min_i16) as f32 * (max_f32 - min_f32) + min_f32,
-        (data.y - min_i16) as f32 / (max_i16 - min_i16) as f32 * (max_f32 - min_f32) + min_f32,
-        (data.z - min_i16) as f32 / (max_i16 - min_i16) as f32 * (max_f32 - min_f32) + min_f32,
-    ]
+    (data.z - min_i16) as f32 / (max_i16 - min_i16) as f32 * (max_f32 - min_f32) + min_f32
 }
 
+fn map_velocity(yaw_rate: f32) -> f32{
+    0.0 //TODO
+}
 ///Do the motion according to the argument from command by changing motor speed
 pub fn motion(drone: &mut Drone, argument: [u16; 4]) {
 
@@ -51,12 +54,13 @@ pub fn yawing(drone: &mut Drone, setpoint: f32) -> f32 {
     let yaw_setpoint = setpoint / 50.0;
 
     // Get sensor data
-    let sensor_raw = read_raw().unwrap(); //Required filtering..
-
-    let velocity = map_velocity_to_f32(&sensor_raw.1);
+    let quaternion = block!(read_dmp_bytes()).unwrap();
+    let angles = YawPitchRoll::from(quaternion);
+    let yaw_rate = angles.yaw_rate(drone);
+    let velocity = map_velocity(yaw_rate);
 
     // Calculate PID output
-    let mut yaw_pwm = drone.get_yaw_controller().step(setpoint, velocity[2]);
+    let mut yaw_pwm = drone.get_yaw_controller().step(yaw_setpoint, velocity);
 
     yaw_pwm
 }
