@@ -9,7 +9,8 @@ use crate::drone_transmission::{write_packet, read_message};
 use crate::log_storage_manager::LogStorageManager;
 use crate::yaw_pitch_roll::YawPitchRoll;
 use crate::drone::{Drone, Getter, Setter};
-use crate::working_mode::panic_mode::{panic_mode};
+use crate::working_mode::panic_mode::{panic_mode, panic_check};
+use tudelft_quadrupel::time::assembly_delay;
 
 const FIXED_SIZE:usize = 64;
 const MOTION_DELAY:u16 = 100;//Set a big value for debugging
@@ -21,6 +22,8 @@ pub fn control_loop() -> ! {
     let begin_loop = Instant::now();
     let mut drone = Drone::initialize();
     let mut message = Message::SafeMode;
+
+    let mut connection = true;
 
     //flag for recording the duration of no new message
     let mut no_message = 0;
@@ -35,7 +38,18 @@ pub fn control_loop() -> ! {
 
     let _storage_manager = LogStorageManager::new(0x1FFF);
     
-    
+    // Wait for first message from PC
+    loop {
+        match read_message(&mut shared_buf) {
+            Some(first_packet) => {
+                new_message = true;
+                message = first_packet.message;
+                break;
+            }
+            None => (),
+        };
+    }
+
     for i in 0.. {
         // Measure time of loop iteration
         let begin = Instant::now();
@@ -46,21 +60,33 @@ pub fn control_loop() -> ! {
 
         let time = begin_loop.ns_since_start() / 1_000_000;
 
+        // Check battery voltage
+        if !panic_check() {
+            drone.set_mode(panic_mode());
+        }
+
         // Read data
         let packet_result = read_message(&mut shared_buf);
 
         match packet_result {
-            None => no_message += 1,
+            None => {
+                no_message += 1; 
+                new_message = false
+            },
             Some(packet) => {
                 message = packet.message;
                 new_message = true;
                 no_message = 0;
+                connection = true;
             }
         }
 
         // Check usb connection with PC
-        if no_message >= NO_CONNECTION_PANIC {
-            drone.set_mode(WorkingModes::SafeMode);
+        if connection == true {
+            if no_message >= 3 {
+                drone.set_mode(panic_mode());
+                connection = false;
+            }
         }
 
         //First the control part

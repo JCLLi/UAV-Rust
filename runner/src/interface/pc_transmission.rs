@@ -1,7 +1,3 @@
-
-
-
-
 use serial2::SerialPort;
 use protocol::{self, Packet, Message, WorkingModes};
 use super::settings_logic::{SettingsBundle};
@@ -17,7 +13,10 @@ pub fn write_packet(serial: &SerialPort, message: Message) {
     let serialized_packet = packet.to_bytes();
 
     // Send data over serial port
-    serial.write_all(&serialized_packet).unwrap();
+    match serial.write_all(&serialized_packet) {
+        Ok(_) => (),
+        Err(_) => return
+    };
 }
 
 /// Read message from the data
