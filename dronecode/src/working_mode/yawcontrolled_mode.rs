@@ -1,9 +1,9 @@
 use crate::working_mode::WorkingModes;
 use crate::working_mode::WorkingModes::{PanicMode};
 use tudelft_quadrupel::mpu::structs::Gyro;
-use tudelft_quadrupel::mpu::{read_raw};
+use tudelft_quadrupel::mpu::{read_raw, read_dmp_bytes};
 use crate::drone::{Drone, Getter};
-
+use tudelft_quadrupel::block;
 use crate::drone::motors::{angle_to_pwm, motor_assign};
 
 
@@ -50,6 +50,7 @@ pub fn yawing(drone: &mut Drone, setpoint: f32) -> f32 {
     //Scale down the setpoint where the maximum is 40 deg/s
     let yaw_setpoint = setpoint / 50.0;
 
+    let sensor = block!(read_dmp_bytes()).unwrap();
     // Get sensor data
     let sensor_raw = read_raw().unwrap(); //Required filtering..
 

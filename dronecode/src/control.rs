@@ -40,6 +40,7 @@ pub fn control_loop() -> ! {
     
     // Wait for first message from PC
     loop {
+        Red.on();
         match read_message(&mut shared_buf) {
             Some(first_packet) => {
                 new_message = true;

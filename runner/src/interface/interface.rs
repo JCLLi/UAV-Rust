@@ -98,6 +98,9 @@ fn get_user_input(tx_input: Updater<Option<SettingsBundle>>) {
     let mut device_listener = DeviceListener::new();
     let mut bundle_new = SettingsBundle::default();
     
+    // Send default message
+    tx_input.update(Some(bundle_new));
+
     loop {
         // Receive user input
         let bundle_result = device_listener.get_combined_settings();
@@ -127,6 +130,23 @@ fn write_serial(serial: &SerialPort, tx_exit: Sender<bool>, tx_tui1: Sender<Sett
     let mut time = Instant::now();
     let mut paniced_once = false;
 
+    // Wait for initial message
+    loop {
+        // println!("\rWaiting for initial message");
+        let default_bundle = *rx_input.latest();
+        match default_bundle {
+            None => (),
+            Some(bundle) => {
+                // Send message to drone
+                write_message(serial, bundle);
+                
+                tx_tui1.send(bundle).unwrap();
+                break;
+            },
+        }
+    }
+    // println!("initial message received");
+    // Write messages to drone until exit command is given
     loop {
 
         // Receive user input from get_user_input thread
