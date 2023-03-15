@@ -99,7 +99,7 @@ fn get_user_input(tx_input: Updater<Option<SettingsBundle>>) {
     let mut bundle_new = SettingsBundle::default();
     
     // Send default message
-    tx_input.update(Some(bundle_new));
+    // tx_input.update(Some(bundle_new));
 
     loop {
         // Receive user input
@@ -130,22 +130,23 @@ fn write_serial(serial: &SerialPort, tx_exit: Sender<bool>, tx_tui1: Sender<Sett
     let mut time = Instant::now();
     let mut paniced_once = false;
 
-    // Wait for initial message
-    loop {
-        // println!("\rWaiting for initial message");
-        let default_bundle = *rx_input.latest();
-        match default_bundle {
-            None => (),
-            Some(bundle) => {
-                // Send message to drone
-                write_message(serial, bundle);
+    // // Wait for initial message
+    // loop {
+    //     // println!("\rWaiting for initial message");
+    //     let default_bundle = *rx_input.latest();
+    //     match default_bundle {
+    //         None => (),
+    //         Some(bundle) => {
+    //             // Send message to drone
+    //             write_message(serial, bundle);
                 
-                tx_tui1.send(bundle).unwrap();
-                break;
-            },
-        }
-    }
+    //             tx_tui1.send(bundle).unwrap();
+    //             break;
+    //         },
+    //     }
+    // }
     // println!("initial message received");
+    
     // Write messages to drone until exit command is given
     loop {
 
@@ -203,7 +204,7 @@ fn read_serial(serial: &SerialPort, rx_exit: Receiver<bool>, tx_tui2: Sender<Pac
         // Either print panic messages or show TUI
         if debug == true {
             if let Ok(num) = serial.read(&mut buf) {
-                print!("{:?}", String::from_utf8_lossy(&buf[0..num]));
+                println!("{:?}", String::from_utf8_lossy(&buf[0..num]));
             }
 
         } else {

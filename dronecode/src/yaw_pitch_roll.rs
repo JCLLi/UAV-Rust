@@ -39,16 +39,18 @@ impl From<Quaternion> for YawPitchRoll {
 }
 
 impl YawPitchRoll {
-    pub fn yaw_rate(&self, drone: &mut Drone) -> f32{
+    pub fn yaw_rate(&self, drone: &mut Drone, angles: f32) -> f32{
         let time = Instant::now();
         let time_diff = time.duration_since(drone.get_sample_time()).as_secs();
 
-        let current_yaw = drone.get_calibration().yaw_compensation(self.yaw);
+        //let current_yaw = drone.get_calibration().yaw_compensation(self.yaw);
 
-        drone.set_angles((0.0, 0.0, current_yaw));
+        
         drone.set_sample_time(time);
 
-        ((current_yaw - drone.get_angles().yaw) * 180 as f32 / 3.1415926) / time_diff as f32
+        let a = ((angles - drone.get_angles().yaw) * 180 as f32 / 3.1415926) / time_diff as f32;
+        drone.set_angles((0.0, 0.0, current_yaw));
+        return a;
     }
 }
 

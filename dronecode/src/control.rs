@@ -39,17 +39,17 @@ pub fn control_loop() -> ! {
     let _storage_manager = LogStorageManager::new(0x1FFF);
     
     // Wait for first message from PC
-    loop {
-        Red.on();
-        match read_message(&mut shared_buf) {
-            Some(first_packet) => {
-                new_message = true;
-                message = first_packet.message;
-                break;
-            }
-            None => (),
-        };
-    }
+    // loop {
+    //     Red.on();
+    //     match read_message(&mut shared_buf) {
+    //         Some(first_packet) => {
+    //             new_message = true;
+    //             message = first_packet.message;
+    //             break;
+    //         }
+    //         None => (),
+    //     };
+    // }
 
     for i in 0.. {
         // Measure time of loop iteration

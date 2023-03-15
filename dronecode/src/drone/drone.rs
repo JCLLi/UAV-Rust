@@ -47,7 +47,6 @@ impl Drone {
                 self.set_gain_controller((gain_u16_to_f32(*p), 0.0, 0.1));
                 self.arguments = [*pitch, *roll, *yaw, *lift]
             }
-            Message::HeartBeat => (),
             _ => mode_switch(self, WorkingModes::SafeMode),//TODO: add new mode and change the 'new' argument
         }
     }
