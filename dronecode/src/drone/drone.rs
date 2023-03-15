@@ -6,6 +6,7 @@ use crate::yaw_pitch_roll::YawPitchRoll;
 use tudelft_quadrupel::time::Instant;
 
 use crate::working_mode::{mode_switch, motions};
+use crate::working_mode::calibration_mode::Calibration;
 
 fn gain_u16_to_f32(u16_value: u16) -> f32 {
     let f32_value = u16_value as f32 / 10000.0;
@@ -25,6 +26,7 @@ impl Drone {
             controller: PID::new(0.0,0.0,0.00),
             arguments: [0, 0, 0, 0],
             sample_time: Instant::now(),
+            calibration: Calibration::new(),
         }
     }
 
@@ -73,6 +75,9 @@ impl Getter for Drone {
     fn get_sample_time(&self) -> Instant {
         self.sample_time
     }
+    fn get_calibration(&self) -> Calibration { self.calibration }
+
+
 }
 
 impl Setter for Drone {
@@ -95,4 +100,6 @@ impl Setter for Drone {
     fn set_sample_time(&mut self, time: Instant) {
         self.sample_time = time;
     }
+
+    fn set_calibration(&mut self, calibration: Calibration) { self.calibration = calibration }
 }

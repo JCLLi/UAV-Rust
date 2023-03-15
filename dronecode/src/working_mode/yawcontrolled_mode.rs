@@ -5,6 +5,7 @@ use tudelft_quadrupel::mpu::{read_raw, read_dmp_bytes};
 use crate::drone::{Drone, Getter};
 use tudelft_quadrupel::block;
 use crate::drone::motors::{angle_to_pwm, motor_assign};
+use crate::yaw_pitch_roll::YawPitchRoll;
 
 
 pub fn switch(new: WorkingModes) -> WorkingModes{
@@ -50,14 +51,14 @@ pub fn yawing(drone: &mut Drone, setpoint: f32) -> f32 {
     //Scale down the setpoint where the maximum is 40 deg/s
     let yaw_setpoint = setpoint / 50.0;
 
-    let sensor = block!(read_dmp_bytes()).unwrap();
     // Get sensor data
-    let sensor_raw = read_raw().unwrap(); //Required filtering..
-
-    let velocity = map_velocity_to_f32(&sensor_raw.1);
+    let quaternion = block!(read_dmp_bytes()).unwrap();
+    let angles = YawPitchRoll::from(quaternion);
+    let yaw_rate = angles.yaw_rate(drone);
+    let velocity = 0.0;//map_velocity(yaw_rate);
 
     // Calculate PID output
-    let mut yaw_pwm = drone.get_yaw_controller().step(setpoint, velocity[2]);
+    let mut yaw_pwm = drone.get_yaw_controller().step(yaw_setpoint, velocity);
 
     yaw_pwm
 }

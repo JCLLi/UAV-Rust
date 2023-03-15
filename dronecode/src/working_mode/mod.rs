@@ -7,7 +7,7 @@ pub mod manual_mode;
 pub mod panic_mode;
 pub mod safe_mode;
 pub mod yawcontrolled_mode;
-
+pub mod calibration_mode;
 // pub enum WorkingModes {
 //     SafeMode,
 //     PanicMode,
