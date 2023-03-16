@@ -1,10 +1,12 @@
 use alloc::vec::Vec;
 use protocol::{self, Message, Datalog, WorkingModes};
 use tudelft_quadrupel::battery::read_battery;
+use tudelft_quadrupel::block;
 use tudelft_quadrupel::led::{Blue, Green, Red, Yellow};
 use tudelft_quadrupel::motor::get_motors;
 use tudelft_quadrupel::mpu::read_raw;
 use tudelft_quadrupel::time::{set_tick_frequency, wait_for_next_tick, Instant};
+use tudelft_quadrupel::mpu::read_dmp_bytes;
 use crate::drone_transmission::{write_packet, read_message};
 use crate::log_storage_manager::LogStorageManager;
 use crate::yaw_pitch_roll::YawPitchRoll;
@@ -34,7 +36,7 @@ pub fn control_loop() -> ! {
     // Buffer to store received bytes
     let mut shared_buf = Vec::new();
 
-    let _angles = YawPitchRoll { yaw: 0.0, pitch: 0.0, roll: 0.0};
+    let mut angles = YawPitchRoll { yaw: 0.0, pitch: 0.0, roll: 0.0};
 
     let _storage_manager = LogStorageManager::new(0x1FFF);
     
@@ -144,15 +146,9 @@ pub fn control_loop() -> ! {
 
         // Read motor and sensor values
         let motors = get_motors();
-        // let sensor_data = block!(read_dmp_bytes());
-        // match sensor_data {
-        //     Ok(data) => {
-        //         angles = YawPitchRoll::from(data);
+        let sensor_data = block!(read_dmp_bytes()).unwrap();
+        angles = YawPitchRoll::from(sensor_data);
 
-        //     },
-        //     Err(_) => {
-        //     }
-        // }
         let (_, gyro) = read_raw().unwrap();
 
         // Measure time of loop iteration
@@ -167,12 +163,12 @@ pub fn control_loop() -> ! {
                 motor3: motors[2], 
                 motor4: motors[3], 
                 rtc: time, 
-                // yaw: angles.yaw, 
-                // pitch: angles.pitch, 
-                // roll: angles.roll, 
-                yaw: 0.0, 
-                pitch: 0.0, 
-                roll: 0.0, 
+                // yaw: angles.yaw,
+                // pitch: angles.pitch,
+                // roll: angles.roll,
+                yaw: drone.get_test()[0],
+                pitch: 0.0,
+                roll: 0.0,
                 x: gyro.x, 
                 y: gyro.y, 
                 z: gyro.z, 

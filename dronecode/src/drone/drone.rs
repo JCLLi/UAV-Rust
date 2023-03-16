@@ -27,6 +27,7 @@ impl Drone {
             arguments: [0, 0, 0, 0],
             sample_time: Instant::now(),
             calibration: Calibration::new(),
+            test: [0.0, 0.0],
         }
     }
 
@@ -63,20 +64,14 @@ impl Getter for Drone {
         }
     }
 
-    fn get_angles(&self) -> YawPitchRoll {
-        self.angles
-    }
-
+    fn get_angles(&self) -> YawPitchRoll { self.angles }
     fn get_yaw_controller(&self) -> PID { self.controller }
-
     fn get_arguments(&self) -> [u16; 4] {self.arguments}
-
     fn get_sample_time(&self) -> Instant {
         self.sample_time
     }
     fn get_calibration(&self) -> Calibration { self.calibration }
-
-
+    fn get_test(&self) -> [f32; 2] { self.test }
 }
 
 impl Setter for Drone {
@@ -90,15 +85,20 @@ impl Setter for Drone {
         self.angles.roll = angles.2;
     }
 
+    fn set_yaw_controller(&mut self, errors: (f32, f32)) {
+        self.controller.last_error = errors.0;
+        self.controller.previous_error = errors.1;
+    }
+
     fn set_gain_controller(&mut self, gain: (f32, f32, f32)) {
         self.controller.kp = gain.0;
         self.controller.ki = gain.1;
         self.controller.kd = gain.2;
     }
-
+    
     fn set_sample_time(&mut self, time: Instant) {
         self.sample_time = time;
     }
-
     fn set_calibration(&mut self, calibration: Calibration) { self.calibration = calibration }
+    fn set_test(&mut self, test_value: [f32; 2]) { self.test = test_value }
 }

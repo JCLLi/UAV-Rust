@@ -44,15 +44,14 @@ impl PID {
     ///The big difference between two types of controllers is the I controller. Pos PID needs more computations
     ///on summing all errors together but Inc PID doesn't. In case we might us I controller, Inc PID
     ///is chosen
-    pub fn step(&mut self, target: f32, current: f32) -> f32{
+    pub fn step(&mut self, target: f32, current: f32) -> (f32, f32, f32){
         let current_err = target - current as f32;
         let output = self.kp * (current_err - self.last_error)
             //+ self.ki * current_err
             + self.kd * (current_err - 2 as f32 * self.last_error + self.previous_error);
         self.previous_error = self.last_error;
         self.last_error = current_err;
-
-        output
+        (output, current_err, self.last_error)
     }
     
 }
