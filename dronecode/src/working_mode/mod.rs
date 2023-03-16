@@ -5,7 +5,6 @@ use protocol::WorkingModes;
 
 pub mod manual_mode;
 pub mod panic_mode;
-pub mod safe_mode;
 pub mod yawcontrolled_mode;
 pub mod calibration_mode;
 // pub enum WorkingModes {
@@ -19,22 +18,30 @@ pub mod calibration_mode;
 // }
 
 
-//Switch drone working mode according to the present working mode
 pub fn mode_switch(drone: &mut Drone, new: WorkingModes) {
     match drone.get_mode() {
-        WorkingModes::SafeMode => drone.set_mode(safe_mode::switch(new)),
+        WorkingModes::SafeMode | WorkingModes::CalibrationMode => drone.set_mode(new),
         WorkingModes::PanicMode => drone.set_mode(panic_mode()),
-        WorkingModes::ManualMode => drone.set_mode(manual_mode::switch(new)),
-        WorkingModes::YawControlMode => drone.set_mode(yawcontrolled_mode::switch(new)),
+        WorkingModes::ManualMode | WorkingModes::YawControlMode | WorkingModes::FullControlMode => {
+            match new {
+                WorkingModes::CalibrationMode
+                | WorkingModes::SafeMode
+                | WorkingModes::PanicMode => {let temp = panic_mode();}
+                _ => ()
+            }
+            drone.set_mode(new);
+        },
         _ => (),//TODO:add new operation with new modes
     }
 }
+
 
 //Function used to set the motion of the drone according to the arguments from commands
 pub fn motions(drone: &mut Drone, argument: [u16; 4]) {
     match drone.get_mode() {
         WorkingModes::ManualMode => manual_mode::motion(drone, argument),
         WorkingModes::YawControlMode => yawcontrolled_mode::motion(drone, argument),
+        WorkingModes::CalibrationMode => calibration_mode::calibrate(drone),
         _ => (),//TODO:add new operation with new modes
     }
 }

@@ -35,7 +35,7 @@ pub trait Setter{
     fn set_yaw_controller(&mut self, errors: (f32, f32));
     fn set_gain_controller(&mut self, gain: (f32, f32, f32));
     fn set_sample_time(&mut self, time: Instant);
-    fn set_calibration(&mut self, calibration: Calibration);
+    fn set_calibration(&mut self, yaw: [f32; 2], pitch: [f32; 2], roll: [f32; 2]);
     fn set_test(&mut self, test_value: [f32; 2]);
 }
 

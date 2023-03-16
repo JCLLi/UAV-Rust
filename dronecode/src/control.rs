@@ -119,6 +119,9 @@ pub fn control_loop() -> ! {
                 Green.on();
             },
             WorkingModes::CalibrationMode => {
+                if new_message {
+                    drone.message_check(&message);
+                }
                 Yellow.on();
                 Red.off();
                 Green.off();
@@ -167,7 +170,7 @@ pub fn control_loop() -> ! {
                 // pitch: angles.pitch,
                 // roll: angles.roll,
                 yaw: drone.get_test()[0],
-                pitch: 0.0,
+                pitch: drone.get_test()[1],
                 roll: 0.0,
                 x: gyro.x, 
                 y: gyro.y, 

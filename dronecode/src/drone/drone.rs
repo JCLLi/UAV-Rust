@@ -48,6 +48,10 @@ impl Drone {
                 self.set_gain_controller((gain_u16_to_f32(*p), 0.0, 0.1));
                 self.arguments = [*pitch, *roll, *yaw, *lift]
             }
+            Message::CalibrationMode => {
+                mode_switch(self, WorkingModes::CalibrationMode);
+                motions(self, [0, 0, 0, 0]);
+            }
             _ => mode_switch(self, WorkingModes::SafeMode),//TODO: add new mode and change the 'new' argument
         }
     }
@@ -60,6 +64,7 @@ impl Getter for Drone {
             WorkingModes::PanicMode => WorkingModes::PanicMode,
             WorkingModes::ManualMode => WorkingModes::ManualMode,
             WorkingModes::YawControlMode => WorkingModes::YawControlMode,
+            WorkingModes::CalibrationMode => WorkingModes::CalibrationMode,
             _ => WorkingModes::SafeMode
         }
     }
@@ -99,6 +104,10 @@ impl Setter for Drone {
     fn set_sample_time(&mut self, time: Instant) {
         self.sample_time = time;
     }
-    fn set_calibration(&mut self, calibration: Calibration) { self.calibration = calibration }
+    fn set_calibration(&mut self, yaw: [f32; 2], pitch: [f32; 2], roll: [f32; 2]) {
+        self.calibration.yaw = yaw;
+        self.calibration.pitch = pitch;
+        self.calibration.roll = roll;
+    }
     fn set_test(&mut self, test_value: [f32; 2]) { self.test = test_value }
 }

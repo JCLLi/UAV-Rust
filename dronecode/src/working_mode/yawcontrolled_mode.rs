@@ -9,15 +9,6 @@ use crate::yaw_pitch_roll::YawPitchRoll;
 use tudelft_quadrupel::led::{Blue, Green, Red, Yellow};
 use tudelft_quadrupel::time::assembly_delay;
 
-pub fn switch(new: WorkingModes) -> WorkingModes{
-    match new {
-        WorkingModes::SafeMode | PanicMode => PanicMode,
-        WorkingModes::ManualMode => new,
-        WorkingModes::YawControlMode => new,
-        _ => WorkingModes::SafeMode,//TODO:add new operation with new modes
-    }
-}
-
 fn map_velocity_to_f32(data: f32) -> f32 {
     let min_i16 = -360.0;
     let max_i16 = 360.0;
@@ -49,7 +40,10 @@ pub fn yawing(drone: &mut Drone, setpoint: f32) -> f32 {
     
     let angles = YawPitchRoll::from(quaternion);
 
-    let yaw_rate = angles.yaw_rate(drone, angles.yaw);
+    let calibrated_yaw = drone.get_calibration().yaw_compensation(angles.yaw);
+    drone.set_test([angles.yaw, calibrated_yaw]);
+    let yaw_rate = angles.yaw_rate(drone, calibrated_yaw);
+
     let velocity = map_velocity_to_f32(yaw_rate);
 
     // Calculate PID output
