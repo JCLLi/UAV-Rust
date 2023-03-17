@@ -2,7 +2,7 @@ use alloc::vec::Vec;
 use protocol::{self, Message, Datalog, WorkingModes};
 use tudelft_quadrupel::battery::read_battery;
 use tudelft_quadrupel::led::{Blue, Green, Red, Yellow};
-use tudelft_quadrupel::motor::get_motors;
+use tudelft_quadrupel::motor::{get_motors, set_motor_max};
 use tudelft_quadrupel::mpu::read_raw;
 use tudelft_quadrupel::time::{set_tick_frequency, wait_for_next_tick, Instant};
 use crate::drone_transmission::{write_packet, read_message};
@@ -16,46 +16,44 @@ const FIXED_SIZE:usize = 64;
 const MOTION_DELAY:u16 = 100;//Set a big value for debugging
 const NO_CONNECTION_PANIC:u16 = 10; // Counts how often messages are not received
 const FIXED_FREQUENCY:u64 = 100; //100 Hz
+const MOTOR_MAX: u16 = 400;
 
 pub fn control_loop() -> ! {
     set_tick_frequency(FIXED_FREQUENCY);
+
+    // Record time of each loop iteration
     let begin_loop = Instant::now();
+
+    // Initialize drone
     let mut drone = Drone::initialize();
+
+    // Initial message
     let mut message = Message::SafeMode;
 
+    // Flag for detecting if there is connection
     let mut connection = true;
 
-    //flag for recording the duration of no new message
+    // Flag for recording the duration of no new message
     let mut no_message = 0;
 
-    //flag for detecting if there is new message
+    //F lag for detecting if there is new message
     let mut new_message = false;
 
     // Buffer to store received bytes
     let mut shared_buf = Vec::new();
 
+    // Set maximum value of motors
+    set_motor_max(MOTOR_MAX);
+
     let _angles = YawPitchRoll { yaw: 0.0, pitch: 0.0, roll: 0.0};
 
     let _storage_manager = LogStorageManager::new(0x1FFF);
     
-    // Wait for first message from PC
-    loop {
-        Red.on();
-        match read_message(&mut shared_buf) {
-            Some(first_packet) => {
-                new_message = true;
-                message = first_packet.message;
-                write_packet(Message::Acknowledgement(true));
-                break;
-            }
-            None => (),
-        };
-    }
-
     for i in 0.. {
         // Measure time of loop iteration
         let begin = Instant::now();
 
+        // Indicate that the loop is running
         if i % 50 == 0 {
             Blue.toggle();
         }
@@ -183,9 +181,6 @@ pub fn control_loop() -> ! {
                 arguments: drone.get_arguments(),
                 control_loop_time: control_loop_time
             });
-            
-            // Store log on drone flash
-            // storage_manager.store_logging(log).unwrap();
             
         if i % 5 == 0 {
             write_packet(log);

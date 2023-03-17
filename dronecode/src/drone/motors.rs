@@ -10,7 +10,8 @@ const MOTOR_RESOLUTION: f32 = 1 as f32 / MOTOR_MAX as f32; //Convert from 0-1 to
 pub(crate) const FLOATING_SPEED: u16 = 100;
 const PI: f32 = 3.1415926 as f32;
 
-///
+/// Set the motors to a certain speed, based on the pitch, roll, yaw and lift
+/// Maximum motor speed is set in control.rs
 pub fn motor_assign(pwm: [f32; 4]){
     //        m1
     //        |
@@ -21,13 +22,9 @@ pub fn motor_assign(pwm: [f32; 4]){
     //        m3
 
     let mut m1 = ((0.2 * (- pwm[0] + pwm[2]) + 0.8 * pwm[3]) / MOTOR_RESOLUTION) as u16;
-    if m1 > MOTOR_MAX {m1 = MOTOR_MAX;}
     let mut m2 = ((0.2 * (- pwm[1] - pwm[2]) + 0.8 * pwm[3]) / MOTOR_RESOLUTION) as u16;
-    if m2 > MOTOR_MAX {m2 = MOTOR_MAX;}
     let mut m3 = ((0.2 * (pwm[0] + pwm[2]) + 0.8 * pwm[3]) / MOTOR_RESOLUTION) as u16;
-    if m3 > MOTOR_MAX {m3 = MOTOR_MAX;}
     let mut m4 = ((0.2 * (pwm[1] - pwm[2]) + 0.8 * pwm[3]) / MOTOR_RESOLUTION) as u16;
-    if m4 > MOTOR_MAX {m4 = MOTOR_MAX;}
 
     set_motors([m1, m2, m3, m4]);
 }

@@ -130,49 +130,6 @@ fn write_serial(serial: &SerialPort, tx_exit: Sender<bool>, tx_tui1: Sender<Sett
     let mut time = Instant::now();
     let mut paniced_once = false;
 
-    let mut shared_buf = Vec::new();
-
-    // Wait for initial message
-    'initial: loop {
-        // println!("\rWaiting for initial message");
-        let default_bundle = *rx_input.latest();
-        println!("\r{:?}", default_bundle);
-
-        match default_bundle {
-            None => (),
-            Some(bundle) => {
-                // Send message to drone
-                write_message(serial, bundle);
-                
-                tx_tui1.send(bundle).unwrap();
-
-                // Check for acknowledgement
-                let packet_result = read_message(serial, &mut shared_buf);
-                println!("{:?}", packet_result);
-                // Check if packet is received correctly
-                match packet_result {
-                    None => (),
-                    Some(packet) => { 
-                        match packet.message {
-                            Message::Acknowledgement(bool) => {
-                                if bool == true {
-                                    break 'initial;
-                                }
-                                // Store datalog in json format
-                                // DatabaseManager::create_json(&packet);
-                                
-                                // Send datalog to terminal interface
-                                // tx_tui2.send(packet).unwrap();
-                            }
-                            _ => ()
-                        }
-                    }
-                }
-                // break;
-            },
-        }
-    }
-    println!("initial message received");
     // Write messages to drone until exit command is given
     loop {
 
@@ -221,9 +178,6 @@ fn read_serial(serial: &SerialPort, rx_exit: Receiver<bool>, tx_tui2: Sender<Pac
     let mut shared_buf = Vec::new();
     let mut buf = [0u8; 255];
     let debug = false;
-
-    // Read data, place packets in packetmanager
-    let mut packetmanager = PacketManager::new();
 
     loop {
 
