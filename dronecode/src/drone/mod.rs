@@ -1,5 +1,6 @@
 mod drone;
 pub mod motors;
+pub mod height_control;
 
 use crate::controllers::PID;
 use protocol::WorkingModes;

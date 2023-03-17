@@ -1,5 +1,6 @@
 use alloc::vec::Vec;
 use protocol::{self, Message, Datalog, WorkingModes};
+use tudelft_quadrupel::barometer::read_pressure;
 use tudelft_quadrupel::battery::read_battery;
 use tudelft_quadrupel::led::{Blue, Green, Red, Yellow};
 use tudelft_quadrupel::motor::{get_motors, set_motor_max};
@@ -45,10 +46,15 @@ pub fn control_loop() -> ! {
     // Set maximum value of motors
     set_motor_max(MOTOR_MAX);
 
+    // Initialize angles
     let _angles = YawPitchRoll { yaw: 0.0, pitch: 0.0, roll: 0.0};
 
     let _storage_manager = LogStorageManager::new(0x1FFF);
     
+    // Height control variables
+    let mut old_lift = 0;
+    let mut old_pressure = read_pressure();
+
     for i in 0.. {
         // Measure time of loop iteration
         let begin = Instant::now();
@@ -140,6 +146,10 @@ pub fn control_loop() -> ! {
                 }
             }
         };
+
+        // Control height of drone if lift input is constant
+        let new_lift = Drone::get_arguments(&self)[3];
+        control_height(old_lift, new_lift, old_pressure);
 
         // Read motor and sensor values
         let motors = get_motors();
