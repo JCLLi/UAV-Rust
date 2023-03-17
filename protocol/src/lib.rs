@@ -19,7 +19,8 @@ pub enum WorkingModes {
     ManualMode,
     CalibrationMode,
     YawControlMode,
-    FullControlMode
+    FullControlMode,
+    RawSensorReadings,
 }
 
 // Convert WorkingModes enum to string
@@ -32,6 +33,7 @@ impl fmt::Display for WorkingModes {
             WorkingModes::CalibrationMode => write!(f, "CalibrationMode"),
             WorkingModes::YawControlMode => write!(f, "YawControlMode"),
             WorkingModes::FullControlMode => write!(f, "FullControllMode"),
+            WorkingModes::RawSensorReadings => write!(f, "RawSensorReadings"),
         }
     }
 }
@@ -42,13 +44,13 @@ impl fmt::Display for WorkingModes {
 /// ypr.yaw, ypr.pitch, ypr.roll, acc.x, acc.y, acc.z, bat, bar
 #[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq)]
 pub enum Message {
-    HeartBeat,
     SafeMode,
     PanicMode,
     ManualMode(u16, u16, u16, u16),
     CalibrationMode,
     YawControlMode(u16, u16, u16, u16, u16), // last value is yaw control P
     FullControlMode(u16, u16, u16, u16, u16, u16, u16), // last three values are yaw control P, roll pitch control P1 and P2
+    RawSensorReadings(u16, u16, u16), // Kalman filter variables
     Datalogging(Datalog),
 }
 
@@ -56,13 +58,13 @@ pub enum Message {
 impl fmt::Display for Message {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Message::HeartBeat => write!(f, "HeartBeat"),
             Message::SafeMode => write!(f, "SafeMode"),
             Message::PanicMode => write!(f, "PanicMode"),
             Message::ManualMode(a, b, c, d) => write!(f, "ManualMode({}, {}, {}, {})", a, b, c, d),
             Message::CalibrationMode => write!(f, "CalibrationMode"),
             Message::YawControlMode(a, b, c, d, e) => write!(f, "YawControlMode({}, {}, {}, {}, {})", a, b, c, d, e),
             Message::FullControlMode(_,_,_,_,_,_,_) => write!(f, "FullControllMode()"),
+            Message::RawSensorReadings(_,_,_) => write!(f, "RawSensorReadings"),
             Message::Datalogging(_) => write!(f, "Datalogging()"),
         }
     }

@@ -9,7 +9,7 @@ struct KalmanFilter {
    angle: f32,              // The angle caclulated by the Kalman filter, part of the 2x1 state vector
    bias: f32,               // The gyro bias calculated by the Kalman filter, part of the 2x1 state vector
    rate: f32,               // Unbiased rate caclulated from the rate and the caclulated bias 
-   p_error: [[f32; 2]; 2], // The error covariance 2x2 matrix
+   p_error: [[f32; 2]; 2],  // The error covariance 2x2 matrix
    k_gain: [f32; 2],        // Kalman gain a 2x1 vector
    y:f32,                   // Angle difference
    s:f32,                   // Estimate error
@@ -35,6 +35,7 @@ impl Default for KalmanFilter {
 impl KalmanFilter {
     // The variables can be tuned
     pub fn new(q_angle: f32, q_bias: f32, r_measure: f32) -> Self {
+        
         KalmanFilter{
             q_angle: q_angle,
             q_bias: q_bias,
