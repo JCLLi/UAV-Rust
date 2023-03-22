@@ -34,7 +34,7 @@ pub fn motor_assign(pwm: [f32; 4]){
 
 ///Convert from a number between 0-65535 to a real angle(in manual mode, it is the speed). And according to the angle to set PWM
 /// signal from 0-1.
-pub fn angle_to_pwm(_drone: &mut Drone, argument: [u16; 4]) -> [f32; 4]{
+pub fn angle_to_pwm(argument: [u16; 4]) -> [f32; 4]{
     let mut pwm_pitch = 0 as f32;
     let mut pwm_roll = 0 as f32;
     let mut pwm_yaw = 0 as f32;
@@ -42,9 +42,9 @@ pub fn angle_to_pwm(_drone: &mut Drone, argument: [u16; 4]) -> [f32; 4]{
 
     // Pitch
     if argument[0] > ZERO_POINT {
-        pwm_pitch = -1.0*(argument[0] - ZERO_POINT) as f32 * RESOLUTION;
+        pwm_pitch = -1.0 * (argument[0] - ZERO_POINT) as f32 * RESOLUTION;
     }else if argument[0] < ZERO_POINT {
-        pwm_pitch = -1.0*(0 as f32 - (ZERO_POINT - argument[0]) as f32 * RESOLUTION);
+        pwm_pitch = -1.0 * (0 as f32 - (ZERO_POINT - argument[0]) as f32 * RESOLUTION);
     }
 
     // Roll

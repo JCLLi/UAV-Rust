@@ -23,12 +23,25 @@ pub fn calibrate(drone: &mut Drone){
     let ypr = YawPitchRoll::from(quaternion);
 
     let last_calibration = drone.get_calibration();
-
-    drone.set_calibration(
-        [last_calibration.yaw[1] - ypr.yaw, ypr.yaw],
-        [last_calibration.pitch[1] - ypr.pitch, ypr.pitch],
-        [last_calibration.roll[1] - ypr.roll, ypr.roll]
-    )
+    if last_calibration.pitch[0] == 0.0000000{
+        drone.set_calibration(
+            [ypr.yaw, ypr.yaw],
+            [ypr.pitch, ypr.pitch],
+            [ypr.roll, ypr.roll]
+        );
+    }
+    else {
+        drone.set_calibration(
+        [(last_calibration.yaw[0] + ypr.yaw) / 2.0, ypr.yaw],
+        [(last_calibration.pitch[0] + ypr.pitch) / 2.0, ypr.pitch],
+        [(last_calibration.roll[0] + ypr.roll) / 2.0, ypr.roll]
+        );
+    }
+    // drone.set_calibration(
+    //     [last_calibration.yaw[1] - ypr.yaw, ypr.yaw],
+    //     [last_calibration.pitch[1] - ypr.pitch, ypr.pitch],
+    //     [last_calibration.roll[1] - ypr.roll, ypr.roll]
+    // )
 }
 
 impl Calibration {
@@ -42,10 +55,11 @@ impl Calibration {
 
     pub fn yaw_compensation(&self, yaw: f32) -> f32 { yaw - self.yaw[0] }
 
-    pub fn full_compensation(&self, full: YawPitchRoll) -> [f32; 3] {
-        [   full.yaw - self.yaw[0],
-            full.pitch - self.pitch[0],
-            full.roll - self.roll[0],
-        ]
+    pub fn full_compensation(&self, full: YawPitchRoll) -> YawPitchRoll {
+        YawPitchRoll{
+            yaw: full.yaw - self.yaw[0],
+            pitch: full.pitch - self.pitch[0],
+            roll: full.roll - self.roll[0],
+        }
     }
 }
