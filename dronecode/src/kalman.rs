@@ -2,7 +2,7 @@ use tudelft_quadrupel::mpu::read_raw;
 use tudelft_quadrupel::mpu::structs::{Accel, Gyro};
 
 // Kalman filter variables
-struct KalmanFilter {
+pub struct KalmanFilter {
    q_angle:f32,             // Process noise variance for the accelerometer
    q_bias: f32,             // Process noise variance for the gyro bias
    r_measure: f32,          // Measurement noise variance, the actual variance of the measurement noise
@@ -18,9 +18,9 @@ struct KalmanFilter {
 impl Default for KalmanFilter {
     fn default() -> Self {
         KalmanFilter{
-            q_angle: 0.001,
-            q_bias: 0.003,
-            r_measure: 0.01,
+            q_angle: 50.0,
+            q_bias: 0.3,
+            r_measure: 100.0,
             angle: 0.0,
             bias: 0.0,
             rate: 0.0,
@@ -57,15 +57,15 @@ impl KalmanFilter {
         self.angle += dt * self.rate;
 
         // Update the estimation error covariance matrix
-        self.p_error[0][0] += dt * (dt*self.p_error[1][1] - self.p_error[1][0] + self.q_angle);
+        self.p_error[0][0] += dt * (dt*self.p_error[1][1] - self.p_error[0][1] - self.p_error[1][0] + self.q_angle);
         self.p_error[0][1] -= dt * self.p_error[1][1];
         self.p_error[1][0] -= dt * self.p_error[1][1];
         self.p_error[1][1] += dt * self.q_bias;
 
         // Compute the Kalman gain
         self.s = self.p_error[0][0] + self.r_measure;
-        self.k_gain[0] = self.p_error[0][0] / s;
-        self.k_gain[1] = self.p_error[1][0] / s;
+        self.k_gain[0] = self.p_error[0][0] / self.s;
+        self.k_gain[1] = self.p_error[1][0] / self.s;
 
         // Compute the angle and bias and update them with measurement zk
         self.y = new_angle - self.angle;
@@ -75,8 +75,8 @@ impl KalmanFilter {
         // Compute the estimation error covariance
         self.p_error[0][0] -= self.k_gain[0] * self.p_error[0][0];
         self.p_error[0][1] -= self.k_gain[0] * self.p_error[0][1];
-        self.p_error[1][0] -= self.k_gain[1] * self.p_error[1][0];
-        self.p_error[1][1] -= self.k_gain[1] * self.p_error[1][1];
+        self.p_error[1][0] -= self.k_gain[1] * self.p_error[0][0];
+        self.p_error[1][1] -= self.k_gain[1] * self.p_error[0][1];
 
         return (self.angle, self.rate)
     }

@@ -12,6 +12,7 @@ use crate::log_storage_manager::LogStorageManager;
 use crate::yaw_pitch_roll::YawPitchRoll;
 use crate::drone::{Drone, Getter, Setter};
 use crate::working_mode::panic_mode::{panic_mode, panic_check};
+use crate::kalman::KalmanFilter;
 use tudelft_quadrupel::time::assembly_delay;
 
 const FIXED_SIZE:usize = 64;
@@ -40,6 +41,15 @@ pub fn control_loop() -> ! {
 
     let _storage_manager = LogStorageManager::new(0x1FFF);
     
+    let mut kalman = KalmanFilter::default();
+
+    let sensor_data = block!(read_dmp_bytes()).unwrap();
+    angles = YawPitchRoll::from(sensor_data);
+
+    kalman.set_angle(angles.pitch);
+
+
+
     // Wait for first message from PC
     // loop {
     //     Red.on();
@@ -64,9 +74,9 @@ pub fn control_loop() -> ! {
         let time = begin_loop.ns_since_start() / 1_000_000;
 
         // Check battery voltage
-        if !panic_check() {
-            drone.set_mode(panic_mode());
-        }
+        // if !panic_check() {
+        //     drone.set_mode(panic_mode());
+        // }
 
         // Read data
         let packet_result = read_message(&mut shared_buf);
@@ -146,15 +156,31 @@ pub fn control_loop() -> ! {
 
         // Read motor and sensor values
         let motors = get_motors();
-        let sensor_data = block!(read_dmp_bytes()).unwrap();
-        angles = YawPitchRoll::from(sensor_data);
-
-        let (_, gyro) = read_raw().unwrap();
 
         // Measure time of loop iteration
         let end = Instant::now();
         let control_loop_time = end.duration_since(begin).as_micros();
 
+        let dt = end.duration_since(begin_loop).as_millis();
+
+        let sensor_data = block!(read_dmp_bytes()).unwrap();
+        angles = YawPitchRoll::from(sensor_data);
+
+        let (acc, gyro) = read_raw().unwrap();
+
+
+        let pitch_rate =  acc.x as f32;
+        let roll_rate = acc.y as f32;
+        let yaw_rate = acc.z as f32;
+
+        let pitch_angle = micromath::F32Ext::atan2(pitch_rate, micromath::F32Ext::sqrt(roll_rate * roll_rate + yaw_rate*yaw_rate));
+
+        let (angle_f, rate_f) = kalman.update(pitch_angle, gyro.x as f32, dt as f32);
+
+
+        //Store the log files
+        let (accel, _) = read_raw().unwrap();
+        
         //Store the log files
         let log = Message::Datalogging(Datalog 
             { 
@@ -163,21 +189,32 @@ pub fn control_loop() -> ! {
                 motor3: motors[2], 
                 motor4: motors[3], 
                 rtc: time, 
-                // yaw: angles.yaw,
-                // pitch: angles.pitch,
-                // roll: angles.roll,
-                yaw: drone.get_test()[0],
-                pitch: 0.0,
-                roll: 0.0,
-                x: gyro.x, 
-                y: gyro.y, 
-                z: gyro.z, 
+                // yaw: angles.yaw, 
+                // pitch: angles.pitch, 
+                // roll: angles.roll, 
+                yaw: 0.0, 
+                pitch: angles.pitch, 
+                roll: 0.0, 
+                yaw_f: 0.0,
+                pitch_f: angle_f,
+                roll_f: 0.0,
+                x: accel.x, 
+                y: accel.y, 
+                z: accel.z, 
+                // x: 0, 
+                // y: 0, 
+                // z: 0, 
                 bat: read_battery(), 
                 bar: 100, 
                 workingmode: drone.get_mode(),
-                arguments: drone.get_arguments(),
-                control_loop_time: control_loop_time
+                arguments: [0,0,0,0],
+                control_loop_time: control_loop_time,
+                yaw_r: 0.0,
+                pitch_r: pitch_angle,
+                roll_r: 0.0,
             });
+            
+
             
             // Store log on drone flash
             // storage_manager.store_logging(log).unwrap();

@@ -197,7 +197,7 @@ fn read_serial(serial: &SerialPort, rx_exit: Receiver<bool>, tx_tui2: Sender<Pac
     let debug = false;
 
     // Read data, place packets in packetmanager
-    let mut packetmanager = PacketManager::new();
+    let mut _packetmanager = PacketManager::new();
 
     loop {
 
@@ -219,7 +219,7 @@ fn read_serial(serial: &SerialPort, rx_exit: Receiver<bool>, tx_tui2: Sender<Pac
                         Message::Datalogging(_) => {
 
                             // Store datalog in json format
-                            DatabaseManager::create_json(&packet);
+                            // DatabaseManager::create_json(&packet);
                             
                             // Send datalog to terminal interface
                             tx_tui2.send(packet).unwrap();
@@ -306,16 +306,20 @@ fn print_datalog(packet: Packet) {
             MoveTo(50,5),
             Print("YPR:       "), Print(d.yaw), Print(", "), Print(d.pitch), Print(", "), Print(d.roll), Print("       "),
             MoveTo(50,6),
-            Print("ACC:       "), Print(d.x), Print(", "), Print(d.y), Print(", "), Print(d.z), Print("       "),
+            Print("Filterd:   "), Print(d.yaw_f), Print(", "), Print(d.pitch_f), Print(", "), Print(d.roll_f),
             MoveTo(50,7),
-            Print("Battery:   "), Print(d.bat), Print(" mV"), Print("       "),
+            Print("Raw:       "), Print(d.yaw_r), Print(", "), Print(d.pitch_r), Print(", "), Print(d.roll_r),
             MoveTo(50,8),
-            Print("Barometer: "), Print(d.bar), Print(" 10^-5 bar"), Print("       "),
+            Print("ACC:       "), Print(d.x), Print(", "), Print(d.y), Print(", "), Print(d.z), Print("       "),
             MoveTo(50,9),
-            Print("Mode:      "), Print(d.workingmode), Print("       "), 
+            Print("Battery:   "), Print(d.bat), Print(" mV"), Print("       "),
             MoveTo(50,10),
-            Print("Arguments: "), Print(d.arguments[0]),Print(", "),  Print(d.arguments[1]),Print(", "),  Print(d.arguments[2]),Print(", "),  Print(d.arguments[3]), Print("          "),
+            Print("Barometer: "), Print(d.bar), Print(" 10^-5 bar"), Print("       "),
             MoveTo(50,11),
+            Print("Mode:      "), Print(d.workingmode), Print("       "), 
+            MoveTo(50,12),
+            Print("Arguments: "), Print(d.arguments[0]),Print(", "),  Print(d.arguments[1]),Print(", "),  Print(d.arguments[2]),Print(", "),  Print(d.arguments[3]), Print("          "),
+            MoveTo(50,13),
             Print("Loop time: "), Print(d.control_loop_time), Print(" us                      "),
 
             // Print motor display
@@ -363,7 +367,7 @@ mod tests {
             Print("Command to drone")
         ).unwrap();
 
-        let datalog = Datalog {motor1: 0, motor2: 0, motor3: 0, motor4: 0, rtc: 0, yaw: 0.0, pitch: 0.0, roll: 0.0, x: 0, y: 0, z: 0, bat: 0, bar: 0, workingmode: WorkingModes::ManualMode, arguments: [0, 0, 0, 0], control_loop_time: 0  };
+        let datalog = Datalog {motor1: 0, motor2: 0, motor3: 0, motor4: 0, rtc: 0, yaw: 0.0, pitch: 0.0, roll: 0.0, x: 0, y: 0, z: 0, bat: 0, bar: 0, workingmode: WorkingModes::ManualMode, arguments: [0, 0, 0, 0], control_loop_time: 0, yaw_f: 0.0, pitch_f: 0.0, roll_f: 0.0, yaw_r: todo!(), pitch_r: todo!(), roll_r: todo!()  };
         let message = Message::Datalogging(datalog);
         let packet = Packet::new(message);
 
@@ -388,10 +392,12 @@ mod tests {
                         MoveTo(120,4),
                         Print("YPR: "), Print(d.yaw), Print(", "), Print(d.pitch), Print(", "), Print(d.roll),
                         MoveTo(120,5),
-                        Print("ACC: "), Print(d.x), Print(", "), Print(d.y), Print(", "), Print(d.z), 
+                        Print("Filterd: "), Print(d.yaw_f), Print(", "), Print(d.pitch_f), Print(", "), Print(d.roll_f),
                         MoveTo(120,6),
-                        Print("Battery: "), Print(d.bat), Print(" mV"), 
+                        Print("ACC: "), Print(d.x), Print(", "), Print(d.y), Print(", "), Print(d.z), 
                         MoveTo(120,7),
+                        Print("Battery: "), Print(d.bat), Print(" mV"), 
+                        MoveTo(120,8),
                         Print("Barometer: "), Print(d.bar), Print(" 10^-5 bar"), 
                     ).unwrap();
                 }
