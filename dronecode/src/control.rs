@@ -127,9 +127,6 @@ pub fn control_loop() -> ! {
                 Green.off();
             },
             WorkingModes::FullControlMode => {
-                if new_message {
-                    drone.message_check(&message);
-                }
                 Yellow.off();
                 Red.off();
                 Green.on();

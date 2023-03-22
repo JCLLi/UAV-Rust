@@ -38,28 +38,20 @@ impl From<Quaternion> for YawPitchRoll {
     }
 }
 
-pub fn yaw_rate(drone: &mut Drone, angles: f32) -> f32{
-    let time = Instant::now();
-    let time_diff = time.duration_since(drone.get_sample_time()).as_millis();
-    drone.set_sample_time(time);
+impl YawPitchRoll {
+    pub fn yaw_rate(&self, drone: &mut Drone, angles: f32) -> f32{
+        let time = Instant::now();
+        let time_diff = time.duration_since(drone.get_sample_time()).as_millis();
 
-    let rate = ((angles - drone.get_angles().yaw) * 180 as f32 / 3.1415926) / (time_diff as f32 / 1000 as f32);
+        //let current_yaw = drone.get_calibration().yaw_compensation(self.yaw);
 
-    drone.set_angles((angles, 0.0, 0.0));
-    return rate;
+        drone.set_sample_time(time);
+        let rate = ((angles - drone.get_angles().yaw) * 180 as f32 / 3.14) / (time_diff as f32 / 1000 as f32);
+
+        //drone.set_test([rate, 0.0]);
+
+        drone.set_angles((angles, 0.0, 0.0));
+        return rate;
+    }
 }
-
-pub fn full_rate(drone: &mut Drone, angles: YawPitchRoll) -> [f32; 3] {
-    let time = Instant::now();
-    let time_diff = time.duration_since(drone.get_sample_time()).as_millis();
-    drone.set_sample_time(time);
-
-    let yaw_rate = ((angles.yaw - drone.get_angles().yaw) * 180 as f32 / 3.1415926) / (time_diff as f32 / 1000 as f32);
-    let pitch_rate = ((angles.pitch - drone.get_angles().pitch) * 180 as f32 / 3.1415926) / (time_diff as f32 / 1000 as f32);
-    let roll_rate = ((angles.roll - drone.get_angles().roll) * 180 as f32 / 3.1415926) / (time_diff as f32 / 1000 as f32);
-
-    drone.set_angles((angles.yaw, angles.pitch, angles.roll));
-    return [yaw_rate, pitch_rate, roll_rate];
-}
-
 

@@ -287,13 +287,10 @@ fn print_command(bundle: SettingsBundle) {
         Print("Yaw:   "), Print(bundle.yaw), Print("       "),
         MoveTo(0,7), 
         Print("Lift:  "), Print(bundle.lift), Print("       "),
-        MoveTo(0,8),
+        MoveTo(0, 8),
         Print("P_yaw: "), Print(u16_to_f32(bundle.yaw_control_p)), Print("       "),
-        MoveTo(0,9),
-        Print("P1: "), Print(u16_to_f32(bundle.roll_pitch_control_p1)), Print("       "),
-        MoveTo(0,10),
-        Print("P2: "), Print(u16_to_f32(bundle.roll_pitch_control_p2)), Print("       "),
-    ).unwrap();
+
+    ).unwrap(); 
 }   
 
 /// Show values sent by drone in tui

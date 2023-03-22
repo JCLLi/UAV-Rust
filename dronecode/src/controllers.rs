@@ -5,7 +5,6 @@ pub struct PID {
     pub(crate) kd: f32,
     pub(crate) last_error: f32,
     pub(crate) previous_error: f32,
-    pub(crate) pwm_change: f32,
 }
 
 fn signum_f32(x: f32) -> f32 {
@@ -28,7 +27,6 @@ impl PID {
             kd,
             last_error: 0 as f32,
             previous_error: 0 as f32,
-            pwm_change: 0 as f32,
         }
     }
 
@@ -55,7 +53,6 @@ impl PID {
         self.last_error = current_err;
         (output, current_err, self.last_error)
     }
-
     
 }
  
