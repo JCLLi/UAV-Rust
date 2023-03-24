@@ -10,8 +10,8 @@ use tudelft_quadrupel::led::{Blue, Green, Red, Yellow};
 use tudelft_quadrupel::time::assembly_delay;
 
 fn map_velocity_to_f32(data: f32) -> f32 {
-    let min_i16 = -360.0;
-    let max_i16 = 360.0;
+    let min_i16 = -560.0;
+    let max_i16 = 560.0;
     let min_f32 = -1.0;
     let max_f32 = 1.0;
     
@@ -26,7 +26,8 @@ pub fn motion(drone: &mut Drone, argument: [u16; 4]) {
 
     //PID control
     yawing(drone, pwm[2]);
-    pwm[2] -= drone.get_yaw_pwm_change();
+    pwm[2] = drone.get_yaw_pwm_change();
+
     //Assign motor speed according to the pwm signal
     motor_assign(pwm);
 }
@@ -41,7 +42,7 @@ pub fn yawing(drone: &mut Drone, setpoint: f32){
 
     //let calibrated_yaw = drone.get_calibration().yaw_compensation(angles.yaw);
 
-    let velocity = map_velocity_to_f32(yaw_rate(drone, angles.yaw));
+    let velocity = map_velocity_to_f32(-yaw_rate(drone, angles.yaw));
 
     // Calculate PID output
     let mut yaw_pwm = drone.get_yaw_controller().step(setpoint, velocity);

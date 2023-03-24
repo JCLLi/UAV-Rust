@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 use std::{fmt::{self}, sync::mpsc};
 const STATIC_OFFSET_UP:u16 = 1000;
 const STATIC_OFFSET_DOWN:u16 = 1000;
-const CONTROL_STATIC_OFFSET_UP:u16 = 100;
-const CONTROL_STATIC_OFFSET_DOWN:u16 = 100;
+const CONTROL_STATIC_OFFSET_UP:u16 = 1000;
+const CONTROL_STATIC_OFFSET_DOWN:u16 = 1000;
 
 /// Enum with all possible commands that can be given to the drone
 #[derive(Serialize, Deserialize, Debug, Eq, PartialEq, Copy, Clone)]

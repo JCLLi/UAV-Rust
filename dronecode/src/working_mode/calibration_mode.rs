@@ -57,7 +57,7 @@ impl Calibration {
 
     pub fn full_compensation(&self, full: YawPitchRoll) -> YawPitchRoll {
         YawPitchRoll{
-            yaw: full.yaw - self.yaw[0],
+            yaw: full.yaw,
             pitch: full.pitch - self.pitch[0],
             roll: full.roll - self.roll[0],
         }

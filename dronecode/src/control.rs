@@ -3,7 +3,7 @@ use protocol::{self, Message, Datalog, WorkingModes};
 use tudelft_quadrupel::battery::read_battery;
 use tudelft_quadrupel::block;
 use tudelft_quadrupel::led::{Blue, Green, Red, Yellow};
-use tudelft_quadrupel::motor::get_motors;
+use tudelft_quadrupel::motor::{get_motors, set_motor_max};
 use tudelft_quadrupel::mpu::read_raw;
 use tudelft_quadrupel::time::{set_tick_frequency, wait_for_next_tick, Instant};
 use tudelft_quadrupel::mpu::read_dmp_bytes;
@@ -20,6 +20,7 @@ const NO_CONNECTION_PANIC:u16 = 10; // Counts how often messages are not receive
 const FIXED_FREQUENCY:u64 = 100; //100 Hz
 
 pub fn control_loop() -> ! {
+    set_motor_max(600);
     set_tick_frequency(FIXED_FREQUENCY);
     let begin_loop = Instant::now();
     let mut drone = Drone::initialize();

@@ -47,6 +47,10 @@ pub trait Setter{
     fn set_calibration(&mut self, yaw: [f32; 2], pitch: [f32; 2], roll: [f32; 2]);
     fn set_test(&mut self, test_value: [f32; 2]);
     fn reset_pwm(&mut self);
+    fn reset_yaw_controller(&mut self);
+    fn reset_fpr1_controller(&mut self);
+    fn reset_fpr2_controller(&mut self);
+    fn reset_fy2_controller(&mut self);
 }
 
 

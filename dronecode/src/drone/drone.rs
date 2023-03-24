@@ -142,16 +142,29 @@ impl Setter for Drone {
     }
 
     fn set_yaw_gain(&mut self, gain: (f32, f32, f32)) {
-        self.yaw_controller.kp = gain.0;
-        self.yaw_controller.ki = gain.1;
-        self.yaw_controller.kd = gain.2;
+        if self.yaw_controller.kp != gain.0 {
+            self.yaw_controller.kp = gain.0;
+            self.yaw_controller.ki = gain.1;
+            self.yaw_controller.kd = gain.2;
+            self.reset_yaw_controller();
+        }
     }
     fn set_full_gain(&mut self, yaw_p2: f32, pitch_roll_p1: f32, pitch_roll_p2: f32) {
-        self.full_controller.pitch_p1.kp = pitch_roll_p1;
-        self.full_controller.roll_p1.kp = pitch_roll_p1;
-        self.full_controller.pitch_p2.kp = pitch_roll_p2;
-        self.full_controller.roll_p2.kp = pitch_roll_p2;
-        self.full_controller.yaw_p2.kp = yaw_p2;
+        if self.full_controller.pitch_p1.kp != pitch_roll_p1{
+            self.full_controller.pitch_p1.kp = pitch_roll_p1;
+            self.full_controller.roll_p1.kp = pitch_roll_p1;
+            self.reset_fpr1_controller();
+        }
+        if self.full_controller.pitch_p2.kp != pitch_roll_p2{
+            self.full_controller.pitch_p2.kp = pitch_roll_p2;
+            self.full_controller.roll_p2.kp = pitch_roll_p2;
+
+            self.reset_fpr2_controller();
+        }
+        if self.full_controller.yaw_p2.kp != yaw_p2{
+            self.full_controller.yaw_p2.kp = yaw_p2;
+            self.reset_fy2_controller();
+        }
     }
     
     fn set_sample_time(&mut self, time: Instant) {
@@ -171,5 +184,32 @@ impl Setter for Drone {
         self.full_controller.pitch_p1.pwm_change = 0.0;
         self.full_controller.roll_p1.pwm_change = 0.0;
         self.full_controller.roll_p2.pwm_change = 0.0;
+    }
+    fn reset_yaw_controller(&mut self) {
+        self.yaw_controller.pwm_change = 0.0;
+        self.yaw_controller.last_error = 0.0;
+        self.yaw_controller.previous_error = 0.0;
+    }
+    fn reset_fpr1_controller(&mut self) {
+        self.full_controller.pitch_p1.pwm_change = 0.0;
+        self.full_controller.pitch_p1.last_error = 0.0;
+        self.full_controller.pitch_p1.previous_error = 0.0;
+        self.full_controller.roll_p1.pwm_change = 0.0;
+        self.full_controller.roll_p1.last_error = 0.0;
+        self.full_controller.roll_p1.previous_error = 0.0;
+    }
+    fn reset_fpr2_controller(&mut self) {
+        self.full_controller.pitch_p2.pwm_change = 0.0;
+        self.full_controller.pitch_p2.last_error = 0.0;
+        self.full_controller.pitch_p2.previous_error = 0.0;
+        self.full_controller.roll_p2.pwm_change = 0.0;
+        self.full_controller.roll_p2.last_error = 0.0;
+        self.full_controller.roll_p2.previous_error = 0.0;
+    }
+
+    fn reset_fy2_controller(&mut self) {
+        self.full_controller.yaw_p2.pwm_change = 0.0;
+        self.full_controller.yaw_p2.last_error = 0.0;
+        self.full_controller.yaw_p2.previous_error = 0.0;
     }
 }
