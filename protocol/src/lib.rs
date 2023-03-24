@@ -77,19 +77,22 @@ pub struct Datalog {
     pub motor2: u16,
     pub motor3: u16,
     pub motor4:u16,
-    pub rtc: u64,
-    pub yaw: f32,
-    pub pitch: f32,
-    pub roll: f32,
-    pub yaw_f: f32,
-    pub pitch_f: f32,
-    pub roll_f: f32,
-    pub yaw_r: f32,
-    pub pitch_r: f32,
-    pub roll_r: f32,
-    pub x: i16, 
-    pub y: i16,
-    pub z: i16, 
+    pub rtc: u64,       // Time
+    pub yaw: f32,       // DMP
+    pub pitch: f32,     // DMP
+    pub roll: f32,      // DMP
+    pub yaw_f: f32,     // Filtered 
+    pub pitch_f: f32,   // Filtered
+    pub roll_f: f32,    // Filtered
+    pub yaw_angle: f32,
+    pub pitch_angle: f32,
+    pub roll_angle: f32,
+    pub gyro_x: f32,
+    pub gyro_y: f32,
+    pub gyro_z: f32,
+    pub acc_x: i16, 
+    pub acc_y: i16,
+    pub acc_z: i16, 
     pub bat: u16, 
     pub bar: u32,
     pub workingmode: WorkingModes,

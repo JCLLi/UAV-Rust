@@ -4,3 +4,5 @@ pub mod interface;
 pub mod joystick_mapper;
 pub mod settings_logic;
 pub mod database;
+pub mod kalman;
+pub mod plotters_piston;

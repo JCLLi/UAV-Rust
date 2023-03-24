@@ -1,6 +1,3 @@
-use tudelft_quadrupel::mpu::read_raw;
-use tudelft_quadrupel::mpu::structs::{Accel, Gyro};
-
 // Kalman filter variables
 pub struct KalmanFilter {
    q_angle:f32,             // Process noise variance for the accelerometer
@@ -20,7 +17,7 @@ impl Default for KalmanFilter {
         KalmanFilter{
             q_angle: 0.001,
             q_bias: 0.003,
-            r_measure: 0.0001,
+            r_measure: 0.03,
             angle: 0.0,
             bias: 0.0,
             rate: 0.0,
@@ -62,6 +59,8 @@ impl KalmanFilter {
         self.p_error[1][0] -= dt * self.p_error[1][1];
         self.p_error[1][1] += dt * self.q_bias;
 
+
+
         // Compute the Kalman gain
         self.s = self.p_error[0][0] + self.r_measure;
         self.k_gain[0] = self.p_error[0][0] / self.s;
@@ -101,3 +100,23 @@ impl KalmanFilter {
         self.r_measure = new_r_measure;
     }
 }
+
+#[cfg(test)]
+mod tests { 
+    use super::*;
+
+    #[test]
+    fn filter() {
+        let mut kalman = KalmanFilter::default();
+
+        kalman.set_angle(0.0);
+
+        let test_data: [f32; 10] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6,0.7,0.8,0.9, 1.0];
+
+        for i in test_data {
+            println!("res: {:?}", kalman.update(i, 1.0, 0.1))
+        }
+    }
+
+}
+
