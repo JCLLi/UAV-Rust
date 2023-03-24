@@ -46,6 +46,7 @@ pub struct SettingsBundle {
     pub roll_offset: i16,
     pub yaw_offset: i16,
     pub lift_offset: i16,
+    pub calibration: bool,
 }
 
 impl Default for SettingsBundle {
@@ -68,7 +69,8 @@ impl Default for SettingsBundle {
             pitch_offset: 0,
             roll_offset: 0,
             yaw_offset: 0,
-            lift_offset: 0
+            lift_offset: 0,
+            calibration: false,
         }
     }
 }
@@ -119,25 +121,28 @@ impl DeviceListener {
                     Commands::SafeMode              => self.bundle.mode = WorkingModes::SafeMode,
                     Commands::PanicMode             => self.bundle.mode = WorkingModes::PanicMode,
                     Commands::ManualMode            => self.bundle.mode = {
-                        // If joystick is at zeropoint, go to manual mode, otherwise stay in old mode
-                        if (self.bundle.pitch == 32767) && (self.bundle.roll == 32767) && (self.bundle.yaw >= 8000 && self.bundle.yaw <= 8800) && (self.bundle.lift == 0) {
+                        // If joystick is at zeropoint, drone is in safe mode and calibration is done, go to manual mode, otherwise stay in old mode
+                        if (self.bundle.pitch == 32767) && (self.bundle.roll == 32767) && (self.bundle.yaw >= 8000 && self.bundle.yaw <= 8800) && (self.bundle.lift == 0) && (self.bundle.mode == WorkingModes::SafeMode || self.bundle.mode == WorkingModes::PanicMode) && (self.bundle.calibration == true){
                             WorkingModes::ManualMode
                         } else {
                             self.bundle.mode
                         }
                     },
-                    Commands::CalibrationMode       => self.bundle.mode = WorkingModes::CalibrationMode,
+                    Commands::CalibrationMode       => {
+                        self.bundle.mode = WorkingModes::CalibrationMode; 
+                        self.bundle.calibration = true
+                    },
                     Commands::YawControlledMode     => self.bundle.mode = {
-                        // If joystick is at zeropoint, go to yawcontrolled mode, otherwise stay in old mode
-                        if (self.bundle.pitch == 32767) && (self.bundle.roll == 32767) && (self.bundle.yaw >= 8000 && self.bundle.yaw <= 8800) && (self.bundle.lift == 0) {
+                        // If joystick is at zeropoint, drone is in safe mode and calibration is done, go to yawcontrolled mode, otherwise stay in old mode
+                        if (self.bundle.pitch == 32767) && (self.bundle.roll == 32767) && (self.bundle.yaw >= 8000 && self.bundle.yaw <= 8800) && (self.bundle.lift == 0) && (self.bundle.mode == WorkingModes::SafeMode || self.bundle.mode == WorkingModes::PanicMode) && (self.bundle.calibration == true){
                             WorkingModes::YawControlMode
                         } else {
                             self.bundle.mode
                         }
                     },
                     Commands::FullControlMode       => self.bundle.mode = {
-                        // If joystick is at zeropoint, go to fullcontrol mode, otherwise stay in old mode
-                        if (self.bundle.pitch == 32767) && (self.bundle.roll == 32767) && (self.bundle.yaw >= 8000 && self.bundle.yaw <= 8800) && (self.bundle.lift == 0) {
+                        // If joystick is at zeropoint, drone is in safe mode and calibration is done, go to fullcontrol mode, otherwise stay in old mode
+                        if (self.bundle.pitch == 32767) && (self.bundle.roll == 32767) && (self.bundle.yaw >= 8000 && self.bundle.yaw <= 8800) && (self.bundle.lift == 0) && (self.bundle.mode == WorkingModes::SafeMode || self.bundle.mode == WorkingModes::PanicMode) && (self.bundle.calibration == true){
                             WorkingModes::FullControlMode
                         } else {
                             self.bundle.mode
