@@ -38,27 +38,27 @@ impl From<Quaternion> for YawPitchRoll {
     }
 }
 
-pub fn yaw_rate(drone: &mut Drone, angles: f32) -> f32{
-    let time = Instant::now();
-    let time_diff = time.duration_since(drone.get_sample_time()).as_millis();
-    drone.set_sample_time(time);
+pub fn yaw_rate(drone: &mut Drone) -> f32{
+    let time_diff = drone.get_time_diff();
+    drone.set_last_time(drone.get_sample_time());
+    let current_attitude = drone.get_current_attitude();
+    let rate = ((current_attitude.yaw - drone.get_last_attitude().yaw) * 180 as f32 / 3.1415926) / (time_diff as f32 / 1000 as f32);
 
-    let rate = ((angles - drone.get_angles().yaw) * 180 as f32 / 3.1415926) / (time_diff as f32 / 1000 as f32);
-
-    drone.set_angles((angles, 0.0, 0.0));
+    drone.set_last_attitude([current_attitude.yaw,current_attitude.pitch, current_attitude.roll]);
     return rate;
 }
 
-pub fn full_rate(drone: &mut Drone, angles: YawPitchRoll) -> [f32; 3] {
-    let time = Instant::now();
-    let time_diff = time.duration_since(drone.get_sample_time()).as_millis();
-    drone.set_sample_time(time);
+pub fn full_rate(drone: &mut Drone, current_attitude: YawPitchRoll) -> [f32; 3] {
+    let time_diff = drone.get_time_diff();
+    drone.set_last_time(drone.get_sample_time());
 
-    let yaw_rate = ((angles.yaw - drone.get_angles().yaw) * 180 as f32 / 3.1415926) / (time_diff as f32 / 1000 as f32);
-    let pitch_rate = ((angles.pitch - drone.get_angles().pitch) * 180 as f32 / 3.1415926) / (time_diff as f32 / 1000 as f32);
-    let roll_rate = ((angles.roll - drone.get_angles().roll) * 180 as f32 / 3.1415926) / (time_diff as f32 / 1000 as f32);
+    let last_attitude = drone.get_last_attitude();
 
-    drone.set_angles((angles.yaw, angles.pitch, angles.roll));
+    let yaw_rate = ((current_attitude.yaw - last_attitude.yaw) * 180 as f32 / 3.1415926) / (time_diff as f32 / 1000 as f32);
+    let pitch_rate = ((current_attitude.pitch - last_attitude.pitch) * 180 as f32 / 3.1415926) / (time_diff as f32 / 1000 as f32);
+    let roll_rate = ((current_attitude.roll - last_attitude.roll) * 180 as f32 / 3.1415926) / (time_diff as f32 / 1000 as f32);
+
+    drone.set_last_attitude([current_attitude.yaw, current_attitude.pitch, current_attitude.roll]);
     return [yaw_rate, pitch_rate, roll_rate];
 }
 

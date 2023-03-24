@@ -7,7 +7,6 @@ use tudelft_quadrupel::mpu::read_dmp_bytes;
 use protocol::WorkingModes;
 
 use crate::drone::{Drone, Getter, motors, Setter};
-use crate::drone::motors::{angle_to_pwm, motor_assign};
 use crate::yaw_pitch_roll::YawPitchRoll;
 
 #[derive(Copy, Clone)]
@@ -37,11 +36,6 @@ pub fn calibrate(drone: &mut Drone){
         [(last_calibration.roll[0] + ypr.roll) / 2.0, ypr.roll]
         );
     }
-    // drone.set_calibration(
-    //     [last_calibration.yaw[1] - ypr.yaw, ypr.yaw],
-    //     [last_calibration.pitch[1] - ypr.pitch, ypr.pitch],
-    //     [last_calibration.roll[1] - ypr.roll, ypr.roll]
-    // )
 }
 
 impl Calibration {

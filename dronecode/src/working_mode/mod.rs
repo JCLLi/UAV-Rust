@@ -8,22 +8,12 @@ pub mod panic_mode;
 pub mod calibration_mode;
 pub mod yaw_control_mode;
 pub mod full_control_mode;
-// pub enum WorkingModes {
-//     SafeMode,
-//     PanicMode,
-//     ManualMode,
-//     CalibrationMode,
-//     YawControlMode,
-//     FullControlMode,
-//     Motion
-// }
-
 
 pub fn mode_switch(drone: &mut Drone, new: WorkingModes) {
     match drone.get_mode() {
         WorkingModes::SafeMode | WorkingModes::CalibrationMode => {
             match new {
-                WorkingModes::FullControlMode | WorkingModes::YawControlMode => { drone.reset_pwm();}
+                WorkingModes::FullControlMode | WorkingModes::YawControlMode => { drone.reset_all_controller(); }
                 _ => (),
             }
             drone.set_mode(new);
@@ -34,7 +24,7 @@ pub fn mode_switch(drone: &mut Drone, new: WorkingModes) {
                 WorkingModes::CalibrationMode
                 | WorkingModes::SafeMode
                 | WorkingModes::PanicMode => {let temp = panic_mode();}
-                WorkingModes::FullControlMode | WorkingModes::YawControlMode => { drone.reset_pwm();}
+                WorkingModes::FullControlMode | WorkingModes::YawControlMode => { drone.reset_all_controller();}
                 _ => ()
             }
             drone.set_mode(new);
@@ -44,7 +34,7 @@ pub fn mode_switch(drone: &mut Drone, new: WorkingModes) {
                 WorkingModes::CalibrationMode
                 | WorkingModes::SafeMode
                 | WorkingModes::PanicMode => {let temp = panic_mode();}
-                WorkingModes::FullControlMode => { drone.reset_pwm();}
+                WorkingModes::FullControlMode => { drone.reset_all_controller();}
                 _ => ()
             }
             drone.set_mode(new);
@@ -54,14 +44,13 @@ pub fn mode_switch(drone: &mut Drone, new: WorkingModes) {
                 WorkingModes::CalibrationMode
                 | WorkingModes::SafeMode
                 | WorkingModes::PanicMode => {let temp = panic_mode();}
-                WorkingModes::YawControlMode => { drone.reset_pwm();}
+                WorkingModes::YawControlMode => { drone.reset_all_controller();}
                 _ => ()
             }
             drone.set_mode(new);
         },
     }
 }
-
 
 //Function used to set the motion of the drone according to the arguments from commands
 pub fn motions(drone: &mut Drone, argument: [u16; 4]) {

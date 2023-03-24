@@ -1,9 +1,10 @@
-
+use tudelft_quadrupel::motor::set_motor_max;
 use protocol::{Message, WorkingModes};
 use crate::controllers::PID;
-use crate::drone::{Drone, Getter, Setter, motors::FLOATING_SPEED};
+use crate::drone::{Drone, Getter, motors, Setter};
 use crate::yaw_pitch_roll::YawPitchRoll;
 use tudelft_quadrupel::time::Instant;
+use crate::drone::motors::{MOTOR_MAX_MANUAL, MOTOR_MAX_CONTROL};
 
 use crate::working_mode::{mode_switch, motions};
 use crate::working_mode::calibration_mode::Calibration;
@@ -18,16 +19,14 @@ impl Drone {
     pub fn initialize() -> Drone{
         Drone{
             mode: WorkingModes::SafeMode,
-            angles: YawPitchRoll{
-                yaw: 0.0,
-                pitch: 0.0,
-                roll: 0.0,
-            },
+            current_attitude: YawPitchRoll{ yaw: 0.0, pitch: 0.0, roll: 0.0 },
+            last_attitude:YawPitchRoll{ yaw: 0.0, pitch: 0.0, roll: 0.0 },
             thrust: 0 as f32,
             yaw_controller: PID::new(0.0,0.0,0.0),
             full_controller: FullController::new(),
             arguments: [0, 0, 0, 0],
             sample_time: Instant::now(),
+            last_sample_time: Instant::now(),
             calibration: Calibration::new(),
             test: [0.0, 0.0],
         }
@@ -40,11 +39,13 @@ impl Drone {
             Message::PanicMode => mode_switch(self, WorkingModes::PanicMode),
             Message::ManualMode(pitch, roll, yaw, lift)
             => {
+                set_motor_max(MOTOR_MAX_MANUAL);
                 mode_switch(self, WorkingModes::ManualMode);
                 motions(self, [*pitch, *roll, *yaw, *lift]);
                 self.arguments = [*pitch, *roll, *yaw, *lift]
             }
             Message::YawControlMode(pitch, roll, yaw, lift, p) => {
+                set_motor_max(MOTOR_MAX_CONTROL);
                 mode_switch(self, WorkingModes::YawControlMode);
                 motions(self, [*pitch, *roll, *yaw, *lift]);
                 self.set_yaw_gain((gain_u16_to_f32(*p), 0.0, 0.1));
@@ -57,6 +58,7 @@ impl Drone {
             }
             Message::FullControlMode(pitch, roll, yaw, lift
                                      , yaw_p2, pitch_roll_p1, pitch_roll_p2) => {
+                set_motor_max(MOTOR_MAX_CONTROL);
                 mode_switch(self, WorkingModes::FullControlMode);
                 motions(self, [*pitch, *roll, *yaw, *lift]);
                 self.set_full_gain(gain_u16_to_f32(*yaw_p2),
@@ -81,13 +83,13 @@ impl Getter for Drone {
         }
     }
 
-    fn get_angles(&self) -> YawPitchRoll { self.angles }
+    fn get_current_attitude(&self) -> YawPitchRoll { self.current_attitude }
+    fn get_last_attitude(&self) -> YawPitchRoll { self.last_attitude }
     fn get_yaw_controller(&self) -> PID { self.yaw_controller }
     fn get_full_controller(&self) -> FullController { self.full_controller }
-    fn get_arguments(&self) -> [u16; 4] {self.arguments}
-    fn get_sample_time(&self) -> Instant {
-        self.sample_time
-    }
+    fn get_arguments(&self) -> [u16; 4] { self.arguments }
+    fn get_sample_time(&self) -> Instant { self.sample_time }
+    fn get_time_diff(&self) -> u128 { self.sample_time.duration_since(self.last_sample_time).as_millis() }
     fn get_calibration(&self) -> Calibration { self.calibration }
     fn get_test(&self) -> [f32; 2] { self.test }
     fn get_yaw_pwm_change(&self) -> f32 { self.yaw_controller.pwm_change }
@@ -106,10 +108,16 @@ impl Setter for Drone {
     fn set_mode(&mut self, mode: WorkingModes){
         self.mode = mode;
     }
-    fn set_angles(&mut self, angles: (f32, f32, f32)){
-        self.angles.yaw = angles.0;
-        self.angles.pitch = angles.1;
-        self.angles.roll = angles.2;
+    fn set_current_attitude(&mut self, angles: [f32; 3]){
+        self.current_attitude.yaw = angles[0];
+        self.current_attitude.pitch = angles[1];
+        self.current_attitude.roll = angles[2];
+    }
+
+    fn set_last_attitude(&mut self, angles: [f32; 3]) {
+        self.last_attitude.yaw = angles[0];
+        self.last_attitude.pitch = angles[1];
+        self.last_attitude.roll = angles[2];
     }
 
     fn set_yaw_controller(&mut self, errors: (f32, f32), pwm: f32) {
@@ -170,6 +178,7 @@ impl Setter for Drone {
     fn set_sample_time(&mut self, time: Instant) {
         self.sample_time = time;
     }
+    fn set_last_time(&mut self, time: Instant) { self.last_sample_time = time; }
 
     fn set_calibration(&mut self, yaw: [f32; 2], pitch: [f32; 2], roll: [f32; 2]) {
         self.calibration.yaw = yaw;
@@ -177,13 +186,11 @@ impl Setter for Drone {
         self.calibration.roll = roll;
     }
     fn set_test(&mut self, test_value: [f32; 2]) { self.test = test_value }
-    fn reset_pwm(&mut self) {
-        self.yaw_controller.pwm_change = 0.0;
-        self.full_controller.yaw_p2.pwm_change = 0.0;
-        self.full_controller.pitch_p1.pwm_change = 0.0;
-        self.full_controller.pitch_p1.pwm_change = 0.0;
-        self.full_controller.roll_p1.pwm_change = 0.0;
-        self.full_controller.roll_p2.pwm_change = 0.0;
+    fn reset_all_controller(&mut self) {
+        self.reset_yaw_controller();
+        self.reset_fpr1_controller();
+        self.reset_fpr2_controller();
+        self.reset_fy2_controller();
     }
     fn reset_yaw_controller(&mut self) {
         self.yaw_controller.pwm_change = 0.0;
