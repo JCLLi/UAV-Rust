@@ -25,7 +25,6 @@ pub enum DeviceError {
     DisconnectedJoystickRunner,
 }
 
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct SettingsBundle {
     pub pitch: u16,

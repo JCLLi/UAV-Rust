@@ -1,7 +1,7 @@
 use crossterm::{terminal::{disable_raw_mode, enable_raw_mode, self}, execute, cursor::{MoveTo, Hide, Show}, style::{SetAttribute, Attribute, Print, Color, SetForegroundColor}};
 use std::{error::Error as OtherError, io::{self, stdout}, sync::mpsc::{self, Sender, Receiver}, time::{Instant, Duration}};
 use serial2::{SerialPort};
-use protocol::{self, Message, PacketManager, Packet, WorkingModes};
+use protocol::{self, Message, PacketManager, Packet, WorkingModes, Datalog};
 use crate::interface::{pc_transmission::{write_packet, write_message}, settings_logic::{DeviceListener, SettingsBundle}};
 use single_value_channel::{Updater};
 use super::{pc_transmission::read_message, database::DatabaseManager};
@@ -16,19 +16,78 @@ pub fn setup_interface(serial: &SerialPort) -> Result<(), Box<dyn OtherError>> {
     execute!(
         stdout(),
         terminal::Clear(terminal::ClearType::All),
-        MoveTo(50,0),
+        MoveTo(70,0),
         SetAttribute(Attribute::Bold),
-        SetForegroundColor(Color::Blue),
+        SetForegroundColor(Color::White),
         Print("PC interface"),
         MoveTo(50,2),
         SetForegroundColor(Color::White),
         Print("Drone data"),
-        MoveTo(0,2),
+        MoveTo(2,2),
         Print("Command to drone"),
-        MoveTo(108,2),
+        MoveTo(129,2),
         Print("Motors"),
         SetAttribute(Attribute::Reset),
         Hide,
+    ).unwrap();
+
+    for i in 1..145 {
+        execute!(
+            stdout(),
+            MoveTo(i,1),
+            Print("▀"),
+        ).unwrap();
+    }
+    
+    for i in 0..146 {
+        execute!(
+            stdout(),
+            MoveTo(i,14),
+        Print("▀"),
+    ).unwrap();
+    }
+    
+    for i in 2..14 {
+        execute!(
+            stdout(),
+        MoveTo(0,i),
+        Print("▌"),
+    ).unwrap();
+    }
+    
+    for i in 2..14 {
+        execute!(
+            stdout(),
+            MoveTo(47,i),
+            Print("▌"),
+        ).unwrap();
+    }
+
+    for i in 2..14 {
+        execute!(
+            stdout(),
+            MoveTo(115,i),
+            Print("▌"),
+        ).unwrap();
+    }
+
+    for i in 2..14 {
+        execute!(
+            stdout(),
+            MoveTo(145,i),
+            Print("▐"),
+        ).unwrap();
+    }
+    execute!(
+        stdout(),
+    MoveTo(0,1),
+    Print("▛"),
+    MoveTo(47,1),
+    Print("▛"),
+    MoveTo(115,1),
+    Print("▛"),
+    MoveTo(145,1),
+    Print("▜"),       
     ).unwrap();
     
     // Put drone in safemode
@@ -130,23 +189,6 @@ fn write_serial(serial: &SerialPort, tx_exit: Sender<bool>, tx_tui1: Sender<Sett
     let mut time = Instant::now();
     let mut paniced_once = false;
 
-    // // Wait for initial message
-    // loop {
-    //     // println!("\rWaiting for initial message");
-    //     let default_bundle = *rx_input.latest();
-    //     match default_bundle {
-    //         None => (),
-    //         Some(bundle) => {
-    //             // Send message to drone
-    //             write_message(serial, bundle);
-                
-    //             tx_tui1.send(bundle).unwrap();
-    //             break;
-    //         },
-    //     }
-    // }
-    // println!("initial message received");
-    
     // Write messages to drone until exit command is given
     loop {
 
@@ -244,6 +286,11 @@ fn read_serial(serial: &SerialPort, rx_exit: Receiver<bool>, tx_tui2: Sender<Pac
 
 /// Show interface in terminal, including Command to drone, drone data and motor display
 fn tui(rx_tui1: Receiver<SettingsBundle>, rx_tui2: Receiver<Packet>) {
+    let default_bundle = SettingsBundle::default();
+    print_command(default_bundle);
+    let default_datalog = Packet::new(Message::Datalogging(Datalog {motor1: 0, motor2: 0, motor3: 0, motor4: 0, rtc: 0, yaw: 0.0, pitch: 0.0, roll: 0.0, x: 0, y: 0, z: 0, bat: 0, bar: 0, workingmode: WorkingModes::SafeMode, arguments: [0, 0, 0, 0], control_loop_time: 0  }));
+    print_datalog(default_datalog);
+
     loop {
         // Try to receive command to drone from write_serial thread
         match rx_tui1.try_recv() {
@@ -277,28 +324,33 @@ fn u16_to_f32(u16_value: u16) -> f32 {
 fn print_command(bundle: SettingsBundle) {
     execute!(
         stdout(),
-        MoveTo(0,3),
+        MoveTo(2,3),
         Print("Mode:  "), Print(bundle.mode), Print("         "),
-        MoveTo(0,4), 
+        MoveTo(2,4), 
         Print("Pitch: "), Print(bundle.pitch), Print("       "),
-        MoveTo(0,5), 
+        MoveTo(2,5), 
         Print("Rol:   "), Print(bundle.roll), Print("       "),
-        MoveTo(0,6), 
+        MoveTo(2,6), 
         Print("Yaw:   "), Print(bundle.yaw), Print("       "),
-        MoveTo(0,7), 
+        MoveTo(2,7), 
         Print("Lift:  "), Print(bundle.lift), Print("       "),
-        MoveTo(0,8),
-        Print("P_yaw: "), Print(u16_to_f32(bundle.yaw_control_p)), Print("       "),
-        MoveTo(0,9),
-        Print("P1: "), Print(u16_to_f32(bundle.roll_pitch_control_p1)), Print("       "),
-        MoveTo(0,10),
-        Print("P2: "), Print(u16_to_f32(bundle.roll_pitch_control_p2)), Print("       "),
+        MoveTo(2,9),
+        SetAttribute(Attribute::Bold),
+        Print("P Control"),
+        SetAttribute(Attribute::Reset),
+        MoveTo(2,10),
+        Print("P yaw: "), Print(u16_to_f32(bundle.yaw_control_p)), Print("       "),
+        MoveTo(2,11),
+        Print("P1:    "), Print(u16_to_f32(bundle.roll_pitch_control_p1)), Print("       "),
+        MoveTo(2,12),
+        Print("P2:    "), Print(u16_to_f32(bundle.roll_pitch_control_p2)), Print("       "),
     ).unwrap();
 }   
 
 /// Show values sent by drone in tui
 fn print_datalog(packet: Packet) {
- 
+    let offset = 20;
+
     if let Message::Datalogging(d) = packet.message {
         execute!(
             stdout(),
@@ -322,23 +374,23 @@ fn print_datalog(packet: Packet) {
             Print("Loop time: "), Print(d.control_loop_time), Print(" us                      "),
 
             // Print motor display
-            MoveTo(110,3), Print(d.motor1), Print("  "),
-            MoveTo(111,4), Print("|"),
-            MoveTo(111,5), Print("1"),
-            MoveTo(111,6), Print("©"),
-            MoveTo(113,6), Print("2"),
-            MoveTo(114,6), Print("-"),
-            MoveTo(115,6), Print("-"),
-            MoveTo(116,6), Print("-"),
-            MoveTo(117,6), Print(d.motor2), Print("  "),
-            MoveTo(111,7), Print("3"),
-            MoveTo(111,8), Print("|"),
-            MoveTo(110,9), Print(d.motor3), Print("  "),
-            MoveTo(109,6), Print("4"),
-            MoveTo(108,6), Print("-"),
-            MoveTo(107,6), Print("-"),
-            MoveTo(106,6), Print("-"),
-            MoveTo(105,6), Print(d.motor4),
+            MoveTo(110+offset,3), Print(d.motor1), Print("  "),
+            MoveTo(111+offset,4), Print("|"),
+            MoveTo(111+offset,5), Print("1"),
+            MoveTo(111+offset,6), Print("©"),
+            MoveTo(113+offset,6), Print("2"),
+            MoveTo(114+offset,6), Print("-"),
+            MoveTo(115+offset,6), Print("-"),
+            MoveTo(116+offset,6), Print("-"),
+            MoveTo(117+offset,6), Print(d.motor2), Print("  "),
+            MoveTo(111+offset,7), Print("3"),
+            MoveTo(111+offset,8), Print("|"),
+            MoveTo(110+offset,9), Print(d.motor3), Print("  "),
+            MoveTo(109+offset,6), Print("4"),
+            MoveTo(108+offset,6), Print("-"),
+            MoveTo(107+offset,6), Print("-"),
+            MoveTo(106+offset,6), Print("-"),
+            MoveTo(105+offset,6), Print(d.motor4),
 
             MoveTo(0,0),
         ).unwrap();
@@ -352,101 +404,98 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_tui() {
+    fn test_tui()  {
 
+        // Setup terminal
+        enable_raw_mode().unwrap();
+        print! ("\x1B[2J\x1B[1;1H");
+
+        // Setup terminal interface
         execute!(
             stdout(),
             terminal::Clear(terminal::ClearType::All),
-            MoveTo(80,0),
+            MoveTo(50,0),
             SetAttribute(Attribute::Bold),
+            SetForegroundColor(Color::White),
             Print("PC interface"),
-            MoveTo(120,1),
+            MoveTo(50,2),
+            SetForegroundColor(Color::White),
             Print("Drone data"),
-            MoveTo(0,1),
-            Print("Command to drone")
+            MoveTo(2,2),
+            Print("Command to drone"),
+            MoveTo(108,2),
+            Print("Motors"),
+            SetAttribute(Attribute::Reset),
+            Hide,
         ).unwrap();
 
-        let datalog = Datalog {motor1: 0, motor2: 0, motor3: 0, motor4: 0, rtc: 0, yaw: 0.0, pitch: 0.0, roll: 0.0, x: 0, y: 0, z: 0, bat: 0, bar: 0, workingmode: WorkingModes::ManualMode, arguments: [0, 0, 0, 0], control_loop_time: 0  };
-        let message = Message::Datalogging(datalog);
-        let packet = Packet::new(message);
-
-        let mut packetmanager = PacketManager::new();
-        packetmanager.add_packet(packet);
-
-        // Read one packet from the packetmanager and use it
-        let get_packet = packetmanager.read_packet();
-
-        // Show message sent by drone in terminal
-        match get_packet {
-            None => (),
-            Some(x) => {
-                if let Message::Datalogging(d) = x.message {
-                    execute!(
-                        stdout(),
-                        SetAttribute(Attribute::Reset),
-                        MoveTo(120,2),
-                        Print("Motors: "), Print(d.motor1), Print(", "), Print(d.motor2), Print(", "), Print(d.motor3), Print(", "), Print(d.motor4), Print(" RPM"),
-                        MoveTo(120,3),
-                        Print("Time: "), Print(d.rtc), 
-                        MoveTo(120,4),
-                        Print("YPR: "), Print(d.yaw), Print(", "), Print(d.pitch), Print(", "), Print(d.roll),
-                        MoveTo(120,5),
-                        Print("ACC: "), Print(d.x), Print(", "), Print(d.y), Print(", "), Print(d.z), 
-                        MoveTo(120,6),
-                        Print("Battery: "), Print(d.bat), Print(" mV"), 
-                        MoveTo(120,7),
-                        Print("Barometer: "), Print(d.bar), Print(" 10^-5 bar"), 
-                    ).unwrap();
-                }
-            }
+        
+        
+        for i in 1..125 {
+            execute!(
+                stdout(),
+                MoveTo(i,1),
+                Print("▀"),
+            ).unwrap();
+        }
+        
+        for i in 0..126 {
+            execute!(
+                stdout(),
+                MoveTo(i,14),
+            Print("▀"),
+        ).unwrap();
+        }
+        
+        for i in 2..14 {
+            execute!(
+                stdout(),
+            MoveTo(0,i),
+            Print("▌"),
+        ).unwrap();
+        }
+        
+        for i in 2..14 {
+            execute!(
+                stdout(),
+                MoveTo(47,i),
+                Print("▌"),
+            ).unwrap();
         }
 
-        let mut device_listener = DeviceListener::new();
-        let mut bundle_new = SettingsBundle::default();
-        
-        // Message vec to show messages in terminal
-        let mut messagevec: Vec<Message> = Vec::new();
-    
-        loop {
-            // Receive user input
-            let bundle_result = device_listener.get_combined_settings();
-    
-            match bundle_result {
-                Ok(bundle) => {
-                    if bundle != bundle_new {
-                        bundle_new = bundle;
-        
-                        // Match user input with drone message
-                        let message = match bundle.mode {
-                            WorkingModes::SafeMode => Message::SafeMode,
-                            WorkingModes::PanicMode => Message::PanicMode,
-                            WorkingModes::ManualMode => Message::ManualMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift),
-                            WorkingModes::CalibrationMode => Message::CalibrationMode,
-                            WorkingModes::YawControlMode => Message::YawControlMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift, bundle.yaw_control_p),
-                            WorkingModes::FullControlMode => Message::FullControlMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift, bundle.yaw_control_p, bundle.roll_pitch_control_p1, bundle.roll_pitch_control_p2),
-                         };
-
-                        // Add message to messagevec, to show in terminal
-                        if messagevec.len() >= 10 {
-                            messagevec.rotate_left(1);
-                            messagevec[9] = message;
-                        } else {
-                            messagevec.push(message);
-                        }      
-
-                        // Show messages to drone in terminal
-                        for i in 0..messagevec.len() {
-                            execute!(
-                                stdout(),
-                                MoveTo(0,i as u16 + 2),
-                                Print(&messagevec[i]), Print("                                                     ")
-                            ).unwrap();
-                        }  
-
-                    }
-                },
-                Err(device) => println!("{:?}", device),    
-            }           
+        for i in 2..14 {
+            execute!(
+                stdout(),
+                MoveTo(95,i),
+                Print("▌"),
+            ).unwrap();
         }
+
+        for i in 2..14 {
+            execute!(
+                stdout(),
+                MoveTo(125,i),
+                Print("▐"),
+            ).unwrap();
+        }
+        execute!(
+            stdout(),
+        MoveTo(0,1),
+        Print("▛"),
+        MoveTo(47,1),
+        Print("▛"),
+        MoveTo(95,1),
+        Print("▛"),
+        MoveTo(125,1),
+        Print("▜"),       
+        ).unwrap();
+        
+
+        let default_bundle = SettingsBundle::default();
+        print_command(default_bundle);
+        let default_datalog = Packet::new(Message::Datalogging(Datalog {motor1: 0, motor2: 0, motor3: 0, motor4: 0, rtc: 0, yaw: 0.0, pitch: 0.0, roll: 0.0, x: 0, y: 0, z: 0, bat: 0, bar: 0, workingmode: WorkingModes::SafeMode, arguments: [0, 0, 0, 0], control_loop_time: 0  }));
+        print_datalog(default_datalog);
+
+        loop{}
     }
 }
