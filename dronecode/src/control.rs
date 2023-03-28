@@ -14,6 +14,7 @@ use crate::drone::{Drone, Getter, Setter};
 use crate::working_mode::panic_mode::{panic_mode, panic_check};
 use tudelft_quadrupel::time::assembly_delay;
 use crate::drone;
+use fixed::types::I18F14;
 
 const FIXED_SIZE:usize = 64;
 const MOTION_DELAY:u16 = 100;//Set a big value for debugging
@@ -38,7 +39,7 @@ pub fn control_loop() -> ! {
     // Buffer to store received bytes
     let mut shared_buf = Vec::new();
 
-    let mut angles = YawPitchRoll { yaw: 0.0, pitch: 0.0, roll: 0.0};
+    let mut angles = YawPitchRoll { yaw: I18F14::from_num(0), pitch: I18F14::from_num(0), roll: I18F14::from_num(0)};
 
     let _storage_manager = LogStorageManager::new(0x1FFF);
     
@@ -177,9 +178,9 @@ pub fn control_loop() -> ! {
                 motor3: motors[2], 
                 motor4: motors[3], 
                 rtc: time, 
-                yaw: angles.yaw,
-                pitch: angles.pitch,
-                roll: angles.roll,
+                yaw: angles.yaw.to_num(),
+                pitch: angles.pitch.to_num(),
+                roll: angles.roll.to_num(),
                 // yaw: drone.get_test()[0],
                 // pitch: drone.get_test()[1],
                 // roll: 0.0,

@@ -17,7 +17,6 @@ use tudelft_quadrupel::time::assembly_delay;
 use tudelft_quadrupel::uart::send_bytes;
 use tudelft_quadrupel::{entry, uart};
 
-
 mod working_mode;
 mod control;
 mod yaw_pitch_roll;

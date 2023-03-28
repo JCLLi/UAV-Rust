@@ -8,12 +8,13 @@ use crate::drone::motors::{normalize_manual_yaw, motor_assign};
 use crate::yaw_pitch_roll::{yaw_rate, YawPitchRoll};
 use tudelft_quadrupel::led::{Blue, Green, Red, Yellow};
 use tudelft_quadrupel::time::assembly_delay;
+use fixed::types::I18F14;
 
-fn map_velocity_to_f32(data: f32) -> f32 {
-    let min_i16 = -560.0;
-    let max_i16 = 560.0;
-    let min_f32 = -1.0;
-    let max_f32 = 1.0;
+fn map_velocity_to_f32(data: I18F14) -> I18F14 {
+    let min_i16 = I18F14::from_num(-560);
+    let max_i16 = I18F14::from_num(560);
+    let min_f32 = I18F14::from_num(-1);
+    let max_f32 = I18F14::from_num(1);
     
     (data - min_i16) / (max_i16 - min_i16) * (max_f32 - min_f32) + min_f32
 }
@@ -34,7 +35,7 @@ pub fn motion(drone: &mut Drone, argument: [u16; 4]) {
 
 //The input value drone has a parameter called yaw_controller, if you want to change the Kpid value
 //manually, go to drone.rs::initialize()
-pub fn yaw_control(drone: &mut Drone, target_yaw: f32){
+pub fn yaw_control(drone: &mut Drone, target_yaw: I18F14) {
 
     //let calibrated_yaw = drone.get_calibration().yaw_compensation(angles.yaw);
 

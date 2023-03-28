@@ -8,12 +8,18 @@ use crate::controllers::PID;
 use crate::drone::{Drone, Getter, Setter};
 use crate::yaw_pitch_roll::{full_rate, YawPitchRoll};
 use crate::drone::motors::{motor_assign, normalize_full};
+use fixed::types::I18F14;
 
-const ZERO_POINT: u16 = 32767;
-//const ZERO_POINT_YAW: u16 = 8520;
-const ZERO_POINT_YAW: u16 = 8000;
-const RESOLUTION: f32 = 1 as f32 / 65535 as f32; //Convert from 0-65535 to -1-1
+// const ZERO_POINT: u16 = 32767;
+// //const ZERO_POINT_YAW: u16 = 8520;
+// const ZERO_POINT_YAW: u16 = 8000;
+// const RESOLUTION: f32 = 1 as f32 / 65535 as f32; //Convert from 0-65535 to -1-1
 
+// Fixed point constants
+const MOTOR_MIN: I18F14 = I18F14::lit("200");
+const ZERO_POINT: I18F14 = I18F14::lit("32767");
+const ZERO_POINT_YAW: I18F14 = I18F14::lit("8520");
+const RESOLUTION: I18F14 = I18F14::lit("3.051850948e-5"); // 1/32767
 
 #[derive(Copy, Clone)]
 pub struct FullController{
@@ -27,25 +33,25 @@ pub struct FullController{
 impl FullController {
     pub fn new() -> Self{
         FullController{
-            pitch_p1: PID::new(0.0, 0.0, 0.0),
-            roll_p1: PID::new(0.0, 0.0, 0.0),
-            yaw_p2: PID::new(0.0, 0.0, 0.0),
-            pitch_p2: PID::new(0.0, 0.0, 0.0),
-            roll_p2: PID::new(0.0, 0.0, 0.0),
+            pitch_p1: PID::new(I18F14::from_num(0), I18F14::from_num(0), I18F14::from_num(0)),
+            roll_p1: PID::new(I18F14::from_num(0), I18F14::from_num(0), I18F14::from_num(0)),
+            yaw_p2: PID::new(I18F14::from_num(0), I18F14::from_num(0), I18F14::from_num(0)),
+            pitch_p2: PID::new(I18F14::from_num(0), I18F14::from_num(0), I18F14::from_num(0)),
+            roll_p2: PID::new(I18F14::from_num(0), I18F14::from_num(0), I18F14::from_num(0)),
         }
     }
 }
 
-fn map_velocity_to_f32(data: [f32; 3]) -> [f32; 3] {
-    let min_i16 = -360.0;
-    let max_i16 = 360.0;
-    let min_f32 = -1.0;
-    let max_f32 = 1.0;
+fn map_velocity_to_f32(data: [I18F14; 3]) -> [I18F14; 3] {
+    let min_i16 = I18F14::from_num(-360);
+    let max_i16 = I18F14::from_num(360);
+    let min_f32 = I18F14::from_num(-1);
+    let max_f32 = I18F14::from_num(1);
 
     [
-        -((data[0] - min_i16) as f32 / (max_i16 - min_i16) as f32 * (max_f32 - min_f32) + min_f32),
-        ((data[1] - min_i16) as f32 / (max_i16 - min_i16) as f32 * (max_f32 - min_f32) + min_f32),
-        ((data[2] - min_i16) as f32 / (max_i16 - min_i16) as f32 * (max_f32 - min_f32) + min_f32),
+        -((data[0] - min_i16) / (max_i16 - min_i16) * (max_f32 - min_f32) + min_f32),
+        ((data[1] - min_i16) / (max_i16 - min_i16) * (max_f32 - min_f32) + min_f32),
+        ((data[2] - min_i16) / (max_i16 - min_i16) * (max_f32 - min_f32) + min_f32),
     ]
 }
 
@@ -58,7 +64,7 @@ pub fn motion(drone: &mut Drone, argument: [u16; 4]){
     motor_assign(drone, pwm);
 }
 
-pub fn full_control(drone: &mut Drone, argument: [u16; 4]) -> [f32; 4]{
+pub fn full_control(drone: &mut Drone, argument: [u16; 4]) -> [I18F14; 4]{
 
     let [mut target_yaw, mut target_pitch, mut target_roll, mut target_lift]
         = normalize_full(argument[2], argument[0], argument[1], argument[3]);
@@ -67,7 +73,7 @@ pub fn full_control(drone: &mut Drone, argument: [u16; 4]) -> [f32; 4]{
 
     let mut full_controllers = drone.get_full_controller();
 
-    let temp = 1.0 / 0.5236;
+    let temp = I18F14::from_num(1.0 / 0.5236);
 
     let pitch = full_controllers.pitch_p1.step(target_pitch, angles.pitch);
     let roll = full_controllers.roll_p1.step(target_roll, angles.roll);

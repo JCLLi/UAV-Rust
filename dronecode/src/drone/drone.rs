@@ -5,13 +5,14 @@ use crate::drone::{Drone, Getter, motors, Setter};
 use crate::yaw_pitch_roll::YawPitchRoll;
 use tudelft_quadrupel::time::Instant;
 use crate::drone::motors::{MOTOR_MAX_MANUAL, MOTOR_MAX_CONTROL};
+use fixed::types::I18F14;
 
 use crate::working_mode::{mode_switch, motions};
 use crate::working_mode::calibration_mode::Calibration;
 use crate::working_mode::full_control_mode::FullController;
 
-fn gain_u16_to_f32(u16_value: u16) -> f32 {
-    let f32_value = u16_value as f32 / 10000.0;
+fn gain_u16_to_f32(u16_value: u16) -> I18F14 {
+    let f32_value = I18F14::from_num(u16_value / 10000);
     f32_value
 }
 
@@ -19,16 +20,16 @@ impl Drone {
     pub fn initialize() -> Drone{
         Drone{
             mode: WorkingModes::SafeMode,
-            current_attitude: YawPitchRoll{ yaw: 0.0, pitch: 0.0, roll: 0.0 },
-            last_attitude:YawPitchRoll{ yaw: 0.0, pitch: 0.0, roll: 0.0 },
-            thrust: 0 as f32,
-            yaw_controller: PID::new(0.0,0.0,0.0),
+            current_attitude: YawPitchRoll{ yaw: I18F14::from_num(0), pitch: I18F14::from_num(0), roll: I18F14::from_num(0) },
+            last_attitude:YawPitchRoll{ yaw: I18F14::from_num(0), pitch: I18F14::from_num(0), roll: I18F14::from_num(0) },
+            thrust: I18F14::from_num(0),
+            yaw_controller: PID::new(I18F14::from_num(0),I18F14::from_num(0),I18F14::from_num(0)),
             full_controller: FullController::new(),
             arguments: [0, 0, 0, 0],
             sample_time: Instant::now(),
             last_sample_time: Instant::now(),
             calibration: Calibration::new(),
-            test: [0.0, 0.0],
+            test: [I18F14::from_num(0), I18F14::from_num(0)],
         }
     }
 
@@ -48,7 +49,7 @@ impl Drone {
                 set_motor_max(MOTOR_MAX_CONTROL);
                 mode_switch(self, WorkingModes::YawControlMode);
                 motions(self, [*pitch, *roll, *yaw, *lift]);
-                self.set_yaw_gain((gain_u16_to_f32(*p), 0.0, 0.1));
+                self.set_yaw_gain((gain_u16_to_f32(*p), I18F14::from_num(0), I18F14::from_num(0.1)));
                 self.arguments = [*pitch, *roll, *yaw, *lift]
             }
             Message::CalibrationMode => {
@@ -91,13 +92,13 @@ impl Getter for Drone {
     fn get_sample_time(&self) -> Instant { self.sample_time }
     fn get_time_diff(&self) -> u128 { self.sample_time.duration_since(self.last_sample_time).as_millis() }
     fn get_calibration(&self) -> Calibration { self.calibration }
-    fn get_test(&self) -> [f32; 2] { self.test }
-    fn get_yaw_pwm_change(&self) -> f32 { self.yaw_controller.pwm_change }
-    fn get_angle_pwm_change(&self) -> [f32; 2] {
+    fn get_test(&self) -> [I18F14; 2] { self.test }
+    fn get_yaw_pwm_change(&self) -> I18F14 { self.yaw_controller.pwm_change }
+    fn get_angle_pwm_change(&self) -> [I18F14; 2] {
         [self.full_controller.pitch_p1.pwm_change,
         self.full_controller.roll_p1.pwm_change]
     }
-    fn get_rate_pwm_change(&self) -> [f32; 3] {
+    fn get_rate_pwm_change(&self) -> [I18F14; 3] {
         [self.full_controller.yaw_p2.pwm_change,
         self.full_controller.pitch_p2.pwm_change,
         self.full_controller.roll_p2.pwm_change]
@@ -108,25 +109,25 @@ impl Setter for Drone {
     fn set_mode(&mut self, mode: WorkingModes){
         self.mode = mode;
     }
-    fn set_current_attitude(&mut self, angles: [f32; 3]){
+    fn set_current_attitude(&mut self, angles: [I18F14; 3]){
         self.current_attitude.yaw = angles[0];
         self.current_attitude.pitch = angles[1];
         self.current_attitude.roll = angles[2];
     }
 
-    fn set_last_attitude(&mut self, angles: [f32; 3]) {
+    fn set_last_attitude(&mut self, angles: [I18F14; 3]) {
         self.last_attitude.yaw = angles[0];
         self.last_attitude.pitch = angles[1];
         self.last_attitude.roll = angles[2];
     }
 
-    fn set_yaw_controller(&mut self, errors: (f32, f32), pwm: f32) {
+    fn set_yaw_controller(&mut self, errors: (I18F14, I18F14), pwm: I18F14) {
         self.yaw_controller.last_error = errors.0;
         self.yaw_controller.previous_error = errors.1;
         self.yaw_controller.pwm_change += pwm;
     }
 
-    fn set_full_angle_controller(&mut self, pitch_p1: [f32; 2], roll_p1: [f32; 2], pwm: [f32; 2]){
+    fn set_full_angle_controller(&mut self, pitch_p1: [I18F14; 2], roll_p1: [I18F14; 2], pwm: [I18F14; 2]){
         self.full_controller.pitch_p1.last_error = pitch_p1[0];
         self.full_controller.pitch_p1.previous_error = pitch_p1[1];
         self.full_controller.pitch_p1.pwm_change += pwm[0];
@@ -135,7 +136,7 @@ impl Setter for Drone {
         self.full_controller.roll_p1.pwm_change += pwm[1];
     }
 
-    fn set_full_rate_controller(&mut self, yaw_p2: [f32; 2], pitch_p2: [f32; 2], roll_p2: [f32; 2], pwm: [f32; 3]){
+    fn set_full_rate_controller(&mut self, yaw_p2: [I18F14; 2], pitch_p2: [I18F14; 2], roll_p2: [I18F14; 2], pwm: [I18F14; 3]){
         self.full_controller.yaw_p2.last_error = yaw_p2[0];
         self.full_controller.yaw_p2.previous_error = yaw_p2[1];
         self.full_controller.yaw_p2.pwm_change += pwm[0];
@@ -149,7 +150,7 @@ impl Setter for Drone {
         self.full_controller.roll_p2.pwm_change += pwm[2];
     }
 
-    fn set_yaw_gain(&mut self, gain: (f32, f32, f32)) {
+    fn set_yaw_gain(&mut self, gain: (I18F14, I18F14, I18F14)) {
         if self.yaw_controller.kp != gain.0 {
             self.yaw_controller.kp = gain.0;
             self.yaw_controller.ki = gain.1;
@@ -157,7 +158,7 @@ impl Setter for Drone {
             self.reset_yaw_controller();
         }
     }
-    fn set_full_gain(&mut self, yaw_p2: f32, pitch_roll_p1: f32, pitch_roll_p2: f32) {
+    fn set_full_gain(&mut self, yaw_p2: I18F14, pitch_roll_p1: I18F14, pitch_roll_p2: I18F14) {
         if self.full_controller.pitch_p1.kp != pitch_roll_p1{
             self.full_controller.pitch_p1.kp = pitch_roll_p1;
             self.full_controller.roll_p1.kp = pitch_roll_p1;
@@ -180,12 +181,12 @@ impl Setter for Drone {
     }
     fn set_last_time(&mut self, time: Instant) { self.last_sample_time = time; }
 
-    fn set_calibration(&mut self, yaw: [f32; 2], pitch: [f32; 2], roll: [f32; 2]) {
+    fn set_calibration(&mut self, yaw: [I18F14; 2], pitch: [I18F14; 2], roll: [I18F14; 2]) {
         self.calibration.yaw = yaw;
         self.calibration.pitch = pitch;
         self.calibration.roll = roll;
     }
-    fn set_test(&mut self, test_value: [f32; 2]) { self.test = test_value }
+    fn set_test(&mut self, test_value: [I18F14; 2]) { self.test = test_value }
     fn reset_all_controller(&mut self) {
         self.reset_yaw_controller();
         self.reset_fpr1_controller();
@@ -193,30 +194,30 @@ impl Setter for Drone {
         self.reset_fy2_controller();
     }
     fn reset_yaw_controller(&mut self) {
-        self.yaw_controller.pwm_change = 0.0;
-        self.yaw_controller.last_error = 0.0;
-        self.yaw_controller.previous_error = 0.0;
+        self.yaw_controller.pwm_change = I18F14::from_num(0);
+        self.yaw_controller.last_error = I18F14::from_num(0);
+        self.yaw_controller.previous_error = I18F14::from_num(0);
     }
     fn reset_fpr1_controller(&mut self) {
-        self.full_controller.pitch_p1.pwm_change = 0.0;
-        self.full_controller.pitch_p1.last_error = 0.0;
-        self.full_controller.pitch_p1.previous_error = 0.0;
-        self.full_controller.roll_p1.pwm_change = 0.0;
-        self.full_controller.roll_p1.last_error = 0.0;
-        self.full_controller.roll_p1.previous_error = 0.0;
+        self.full_controller.pitch_p1.pwm_change = I18F14::from_num(0);
+        self.full_controller.pitch_p1.last_error = I18F14::from_num(0);
+        self.full_controller.pitch_p1.previous_error = I18F14::from_num(0);
+        self.full_controller.roll_p1.pwm_change = I18F14::from_num(0);
+        self.full_controller.roll_p1.last_error = I18F14::from_num(0);
+        self.full_controller.roll_p1.previous_error = I18F14::from_num(0);
     }
     fn reset_fpr2_controller(&mut self) {
-        self.full_controller.pitch_p2.pwm_change = 0.0;
-        self.full_controller.pitch_p2.last_error = 0.0;
-        self.full_controller.pitch_p2.previous_error = 0.0;
-        self.full_controller.roll_p2.pwm_change = 0.0;
-        self.full_controller.roll_p2.last_error = 0.0;
-        self.full_controller.roll_p2.previous_error = 0.0;
+        self.full_controller.pitch_p2.pwm_change = I18F14::from_num(0);
+        self.full_controller.pitch_p2.last_error = I18F14::from_num(0);
+        self.full_controller.pitch_p2.previous_error = I18F14::from_num(0);
+        self.full_controller.roll_p2.pwm_change = I18F14::from_num(0);
+        self.full_controller.roll_p2.last_error = I18F14::from_num(0);
+        self.full_controller.roll_p2.previous_error = I18F14::from_num(0);
     }
 
     fn reset_fy2_controller(&mut self) {
-        self.full_controller.yaw_p2.pwm_change = 0.0;
-        self.full_controller.yaw_p2.last_error = 0.0;
-        self.full_controller.yaw_p2.previous_error = 0.0;
+        self.full_controller.yaw_p2.pwm_change = I18F14::from_num(0);
+        self.full_controller.yaw_p2.last_error = I18F14::from_num(0);
+        self.full_controller.yaw_p2.previous_error = I18F14::from_num(0);
     }
 }

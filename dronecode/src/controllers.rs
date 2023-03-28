@@ -1,34 +1,36 @@
+use fixed::types::I18F14;
+
 #[derive(Copy, Clone)]
 pub struct PID {
-    pub(crate) kp: f32,
-    pub(crate) ki: f32,
-    pub(crate) kd: f32,
-    pub(crate) last_error: f32,
-    pub(crate) previous_error: f32,
-    pub(crate) pwm_change: f32,
+    pub(crate) kp: I18F14,
+    pub(crate) ki: I18F14,
+    pub(crate) kd: I18F14,
+    pub(crate) last_error: I18F14,
+    pub(crate) previous_error: I18F14,
+    pub(crate) pwm_change: I18F14,
 }
 
-fn signum_f32(x: f32) -> f32 {
-    if x > 0.0 {
-        1.0
+fn signum_f32(x: I18F14) -> I18F14 {
+    if x > 0 {
+        I18F14::from_num(1)
     } else if x < 0.0 {
-        -1.0
+        I18F14::from_num(-1)
     } else {
-        0.0
+        I18F14::from_num(0)
     }
 }
 
 
 
 impl PID {
-    pub fn new(kp: f32, ki: f32, kd: f32) -> Self {
+    pub fn new(kp: I18F14, ki: I18F14, kd: I18F14) -> Self {
         Self {
             kp,
             ki,
             kd,
-            last_error: 0 as f32,
-            previous_error: 0 as f32,
-            pwm_change: 0 as f32,
+            last_error: I18F14::from_num(0),
+            previous_error: I18F14::from_num(0),
+            pwm_change: I18F14::from_num(0),
         }
     }
 
@@ -46,11 +48,11 @@ impl PID {
     ///The big difference between two types of controllers is the I controller. Pos PID needs more computations
     ///on summing all errors together but Inc PID doesn't. In case we might us I controller, Inc PID
     ///is chosen
-    pub fn step(&mut self, target: f32, current: f32) -> (f32, f32, f32){
-        let current_err = target - current as f32;
+    pub fn step(&mut self, target: I18F14, current: I18F14) -> (I18F14, I18F14, I18F14){
+        let current_err = target - current;
         let output = self.kp * (current_err - self.last_error)
             //+ self.ki * current_err
-            + self.kd * (current_err - 2 as f32 * self.last_error + self.previous_error);
+            + self.kd * (current_err - I18F14::from_num(2) * self.last_error + self.previous_error);
         self.previous_error = self.last_error;
         self.last_error = current_err;
         (output, current_err, self.last_error)
