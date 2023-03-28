@@ -3,6 +3,7 @@ pub mod motors;
 
 
 use crate::controllers::PID;
+use crate::working_mode::raw_sensor_mode::{Kalman, YawPitchRollRate};
 use protocol::WorkingModes;
 use tudelft_quadrupel::time::Instant;
 use crate::yaw_pitch_roll::YawPitchRoll;
@@ -11,11 +12,14 @@ use crate::working_mode::calibration_mode::Calibration;
 pub struct Drone{
     mode: WorkingModes,
     pub angles: YawPitchRoll,
+    pub angles_raw: YawPitchRoll,
+    pub rates: YawPitchRollRate,
     thrust: f32,
     controller: PID,
     arguments: [u16; 4],
     sample_time: Instant,
     calibration: Calibration,
+    pub kalman: Kalman,
     test: [f32; 2],
 }
 

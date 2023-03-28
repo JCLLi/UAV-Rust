@@ -6,7 +6,7 @@ use std::{error::Error as OtherError, io::{self, stdout}, sync::mpsc::{self, Sen
 use protocol::{self, Message, PacketManager, Datalog, WorkingModes, Packet};
 use crate::interface::{pc_transmission::{write_packet}, settings_logic::{DeviceListener, SettingsBundle}};
 use single_value_channel::{Updater};
-use super::{pc_transmission::{read_message, write_message}, database::DatabaseManager, kalman::KalmanFilter, plotters_piston};
+use super::{pc_transmission::{read_message, write_message}, database::DatabaseManager, plotters_piston};
 use std::env;
 use piston_window::{EventLoop, PistonWindow, WindowSettings};
 use plotters::{prelude::*};

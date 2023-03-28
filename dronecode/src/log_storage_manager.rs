@@ -26,6 +26,8 @@ impl LogStorageManager {
             written_packets: 0
         };
 
+        flash_chip_erase().unwrap();
+
         managar
     }
 

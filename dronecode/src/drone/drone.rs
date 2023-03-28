@@ -2,6 +2,7 @@
 use protocol::{Message, WorkingModes};
 use crate::controllers::PID;
 use crate::drone::{Drone, Getter, Setter, motors::FLOATING_SPEED};
+use crate::working_mode::raw_sensor_mode::{Kalman, YawPitchRollRate, measure_raw, filter};
 use crate::yaw_pitch_roll::YawPitchRoll;
 use tudelft_quadrupel::time::Instant;
 
@@ -22,11 +23,22 @@ impl Drone {
                 pitch: 0.0,
                 roll: 0.0,
             },
+            angles_raw: YawPitchRoll { 
+                yaw: 0.0, 
+                pitch: 0.0, 
+                roll: 0.0 
+            },
+            rates: YawPitchRollRate {
+                yaw_rate: 0.0,
+                pitch_rate: 0.0,
+                roll_rate: 0.0,
+            },
             thrust: 0 as f32,
             controller: PID::new(0.0,0.0,0.00),
             arguments: [0, 0, 0, 0],
             sample_time: Instant::now(),
             calibration: Calibration::new(),
+            kalman: Kalman::new(),
             test: [0.0, 0.0],
         }
     }
@@ -47,6 +59,9 @@ impl Drone {
                 motions(self, [*pitch, *roll, *yaw, *lift]);
                 self.set_gain_controller((gain_u16_to_f32(*p), 0.0, 0.1));
                 self.arguments = [*pitch, *roll, *yaw, *lift]
+            }
+            Message::RawSensorReadings(q_angle,q_bias, r_measure ) => {
+                mode_switch(self, WorkingModes::RawSensorReadings);
             }
             _ => mode_switch(self, WorkingModes::SafeMode),//TODO: add new mode and change the 'new' argument
         }

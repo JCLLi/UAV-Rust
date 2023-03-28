@@ -143,6 +143,7 @@ impl DeviceListener {
                             self.bundle.mode
                         }
                     },
+                    Commands::RawSensorMode         => self.bundle.mode = WorkingModes::RawSensorReadings, 
                     Commands::ResetToZeroPoint      => self.bundle = SettingsBundle::default(),
                     Commands::LiftUp                => self.bundle.lift_offset = self.bundle.lift_offset.saturating_add(keyboardcommand.argument as i16),
                     Commands::LiftDown              => self.bundle.lift_offset = self.bundle.lift_offset.saturating_sub(keyboardcommand.argument as i16),

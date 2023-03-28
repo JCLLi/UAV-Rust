@@ -1,6 +1,3 @@
-use tudelft_quadrupel::mpu::read_raw;
-use tudelft_quadrupel::mpu::structs::{Accel, Gyro};
-
 // Kalman filter variables
 pub struct KalmanFilter {
    q_angle:f32,             // Process noise variance for the accelerometer
@@ -50,7 +47,7 @@ impl KalmanFilter {
         }
     }
     // Update Kalman filter and retrieve the angle and rate
-    pub fn update(&mut self, new_angle: f32, new_rate: f32, dt: f32) -> (f32, f32) {
+    pub fn update(&mut self, new_angle: f32, new_rate: f32, dt: f32) -> f32 {
         // Update the estimated state
         // Since we can not directly measure the bias the estimate of the a priori bias is just equal to the previous one.
         self.rate = new_rate - self.bias;
@@ -78,7 +75,7 @@ impl KalmanFilter {
         self.p_error[1][0] -= self.k_gain[1] * self.p_error[0][0];
         self.p_error[1][1] -= self.k_gain[1] * self.p_error[0][1];
 
-        return (self.angle, self.rate)
+        return self.angle
     }
 
     // This should be set as the starting angle

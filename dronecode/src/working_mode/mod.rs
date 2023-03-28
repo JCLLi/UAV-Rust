@@ -8,6 +8,7 @@ pub mod panic_mode;
 pub mod safe_mode;
 pub mod yawcontrolled_mode;
 pub mod calibration_mode;
+pub mod raw_sensor_mode;
 // pub enum WorkingModes {
 //     SafeMode,
 //     PanicMode,
@@ -26,6 +27,7 @@ pub fn mode_switch(drone: &mut Drone, new: WorkingModes) {
         WorkingModes::PanicMode => drone.set_mode(panic_mode()),
         WorkingModes::ManualMode => drone.set_mode(manual_mode::switch(new)),
         WorkingModes::YawControlMode => drone.set_mode(yawcontrolled_mode::switch(new)),
+        WorkingModes::RawSensorReadings => drone.set_mode(raw_sensor_mode::switch(new)),
         _ => (),//TODO:add new operation with new modes
     }
 }

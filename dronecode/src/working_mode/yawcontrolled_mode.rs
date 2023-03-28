@@ -14,6 +14,7 @@ pub fn switch(new: WorkingModes) -> WorkingModes{
         WorkingModes::SafeMode | PanicMode => PanicMode,
         WorkingModes::ManualMode => new,
         WorkingModes::YawControlMode => new,
+        WorkingModes::RawSensorReadings => new,
         _ => WorkingModes::SafeMode,//TODO:add new operation with new modes
     }
 }

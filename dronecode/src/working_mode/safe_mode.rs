@@ -7,6 +7,7 @@ pub fn switch(new: WorkingModes) -> WorkingModes{
         WorkingModes::ManualMode => new,
         WorkingModes::YawControlMode => new,
         WorkingModes::CalibrationMode => new,
+        WorkingModes::RawSensorReadings => new,
         _ => WorkingModes::SafeMode,
     }
 }
