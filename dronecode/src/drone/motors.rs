@@ -54,10 +54,10 @@ pub fn motor_assign(drone: &Drone, pwm: [I18F14; 4]){
     }
 
     if pwm[3] > 0 {
-        let mut m1 = (MOTOR_MIN + ((I18F14::from_num(0.2) * (- pwm[1] + pwm[0]) + I18F14::from_num(0.8) * pwm[3]) / motor_resolution)).to_num();
-        let mut m2 = (MOTOR_MIN + ((I18F14::from_num(0.2) * (- pwm[2] - pwm[0]) + I18F14::from_num(0.8) * pwm[3]) / motor_resolution)).to_num();
-        let mut m3 = (MOTOR_MIN + ((I18F14::from_num(0.2) * (pwm[1] + pwm[0]) + I18F14::from_num(0.8) * pwm[3]) / motor_resolution)).to_num();
-        let mut m4 = (MOTOR_MIN + ((I18F14::from_num(0.2) * (pwm[2] - pwm[0]) + I18F14::from_num(0.8) * pwm[3]) / motor_resolution)).to_num();
+        let mut m1 = (MOTOR_MIN + ((I18F14::from_num(1/5) * (- pwm[1] + pwm[0]) + I18F14::from_num(4/5) * pwm[3]) / motor_resolution)).to_num();
+        let mut m2 = (MOTOR_MIN + ((I18F14::from_num(1/5) * (- pwm[2] - pwm[0]) + I18F14::from_num(4/5) * pwm[3]) / motor_resolution)).to_num();
+        let mut m3 = (MOTOR_MIN + ((I18F14::from_num(1/5) * (pwm[1] + pwm[0]) + I18F14::from_num(4/5) * pwm[3]) / motor_resolution)).to_num();
+        let mut m4 = (MOTOR_MIN + ((I18F14::from_num(1/5) * (pwm[2] - pwm[0]) + I18F14::from_num(4/5) * pwm[3]) / motor_resolution)).to_num();
 
         set_motors([m1, m2, m3, m4]);
     }else { set_motors([0, 0, 0, 0]) }
