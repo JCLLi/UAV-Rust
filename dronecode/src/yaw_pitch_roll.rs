@@ -1,6 +1,10 @@
 use tudelft_quadrupel::mpu::structs::Quaternion;
 use tudelft_quadrupel::time::Instant;
 use crate::drone::{Drone, Getter, Setter};
+use cordic::{atan2, sqrt};
+use fixed::types::I18F14;
+
+const PI: I18F14 = I18F14::lit("3.14159265358979");
 
 /// This struct holds the yaw, pitch, and roll that the drone things it is in.
 /// The struct is currently implemented using `f32`, you may want to change this to use fixed point arithmetic.
@@ -36,6 +40,35 @@ impl From<Quaternion> for YawPitchRoll {
 
         Self { yaw, pitch, roll }
     }
+
+    
+}
+
+fn from_fixed(q: Quaternion) -> YawPitchRoll {
+    let Quaternion { w, x, y, z } = q;
+
+    let w = I18F14::from_num(w);
+    let x = I18F14::from_num(x);
+    let y = I18F14::from_num(y);
+    let z = I18F14::from_num(z);
+
+    let gx = 2 * (x * z - w * y);
+    let gy = 2 * (w * x + y * z);
+    let gz = w * w - x * x - y * y + z * z;
+
+    // yaw: (about Z axis)
+    // let yaw = micromath::F32Ext::atan2(2.0 * x * y - 2.0 * w * z, 2.0 * w * w + 2.0 * x * x - 1.0);
+    let yaw = atan2(2*x*y - 2*w*z, 2*w*w + 2*x*x - I18F14::from_num(1)).to_num();
+
+    // pitch: (nose up/down, about Y axis)
+    // let pitch = micromath::F32Ext::atan2(gx, micromath::F32Ext::sqrt(gy * gy + gz * gz));
+    let pitch = atan2(gx, sqrt(gy * gy + gz * gz)).to_num();
+
+    // roll: (tilt left/right, about X axis)
+    // let roll = micromath::F32Ext::atan2(gy, gz);
+    let roll = atan2(gy, gz).to_num();
+
+    YawPitchRoll { yaw, pitch, roll }
 }
 
 pub fn yaw_rate(drone: &mut Drone) -> f32{

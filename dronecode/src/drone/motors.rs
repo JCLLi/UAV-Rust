@@ -2,6 +2,7 @@
 use tudelft_quadrupel::motor::set_motors;
 use protocol::WorkingModes;
 use crate::drone::{Drone, Getter, Setter};
+use fixed::types::I18F14;
 
 pub(crate) const MOTOR_MAX_CONTROL: u16 = 600;
 pub(crate) const MOTOR_MAX_MANUAL: u16 = 400;
@@ -17,6 +18,7 @@ const MOTOR_MIN_PWM_CONTROL: f32 = 250.0 * MOTOR_RESOLUTION_CONTROL;
 const MOTOR_MIN_PWM_MANUAL: f32 = 250.0 * MOTOR_RESOLUTION_MANUAL;
 const PI: f32 = 3.1415926 as f32;
 
+const MOTOR_MIN_FIXED: I18F14 = I18F14::lit("200");
 ///
 pub fn motor_assign(drone: &Drone, pwm: [f32; 4]){
     //        m1
@@ -48,6 +50,41 @@ pub fn motor_assign(drone: &Drone, pwm: [f32; 4]){
         let mut m2 = MOTOR_MIN + ((0.2 * (- pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
         let mut m3 = MOTOR_MIN + ((0.2 * (pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
         let mut m4 = MOTOR_MIN + ((0.2 * (pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+
+        set_motors([m1, m2, m3, m4]);
+    }else { set_motors([0, 0, 0, 0]) }
+}
+
+pub fn motor_assign_fixed(drone: &Drone, pwm: [I18F14; 4]){
+    //        m1
+    //        |
+    //        |
+    //m4—— —— o —— ——m2
+    //        |
+    //        |
+    //        m3
+    let mut motor_max = 0;
+    let mut motor_resolution = I18F14::from_num(0);;
+    let working_mode = drone.get_mode();
+
+    match working_mode {
+        WorkingModes::ManualMode => {
+            motor_resolution = I18F14::from_num(1 / MOTOR_MAX_MANUAL); 
+        }
+        WorkingModes::YawControlMode => {
+            motor_resolution = I18F14::from_num(1 / MOTOR_MAX_CONTROL);
+        }
+        WorkingModes::FullControlMode => {
+            motor_resolution = I18F14::from_num(1 / MOTOR_MAX_CONTROL);
+        }
+        _ => ()
+    }
+
+    if pwm[3] > 0 {
+        let mut m1 = (MOTOR_MIN_FIXED + ((I18F14::from_num(0.2) * (- pwm[1] + pwm[0]) + I18F14::from_num(0.8) * pwm[3]) / motor_resolution)).to_num();
+        let mut m2 = (MOTOR_MIN_FIXED + ((I18F14::from_num(0.2) * (- pwm[2] - pwm[0]) + I18F14::from_num(0.8) * pwm[3]) / motor_resolution)).to_num();
+        let mut m3 = (MOTOR_MIN_FIXED + ((I18F14::from_num(0.2) * (pwm[1] + pwm[0]) + I18F14::from_num(0.8) * pwm[3]) / motor_resolution)).to_num();
+        let mut m4 = (MOTOR_MIN_FIXED + ((I18F14::from_num(0.2) * (pwm[2] - pwm[0]) + I18F14::from_num(0.8) * pwm[3]) / motor_resolution)).to_num();
 
         set_motors([m1, m2, m3, m4]);
     }else { set_motors([0, 0, 0, 0]) }

@@ -12,3 +12,6 @@ postcard = "1.0.0"
 serde = { version = "1.0.*", features = ["derive"], default-features = false }
 crc = "2.0"
 protocol = {path = "../protocol"}
+fixed = "1.23.0"
+fixed-macro = "1.2.0"
+cordic = "0.1.5"

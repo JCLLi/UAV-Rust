@@ -16,7 +16,7 @@ use tudelft_quadrupel::led::Led::{Green, Red};
 use tudelft_quadrupel::time::assembly_delay;
 use tudelft_quadrupel::uart::send_bytes;
 use tudelft_quadrupel::{entry, uart};
-
+use fixed::types::I18F14;
 
 mod working_mode;
 mod control;
@@ -25,6 +25,16 @@ mod drone;
 mod drone_transmission;
 mod log_storage_manager;
 mod controllers;
+
+// Fixed point constants
+const MOTOR_MIN: I18F14 = I18F14::lit("200");
+const ZERO_POINT: I18F14 = I18F14::lit("32767");
+const ZERO_POINT_YAW: I18F14 = I18F14::lit("8520");
+const RESOLUTION: I18F14 = I18F14::lit("3.051850948e-5"); // 1/32767
+const ANGLE_RESOLUTION: I18F14 = I18F14::lit("1.597945402e-5"); // 0.52359877/32767
+const LIFT_RESOLUTION: I18F14 = I18F14::lit("1.52590219e-5"); // 1/65535
+const MOTOR_RESOLUTION_CONTROL: I18F14 = I18F14::lit("1.66666666666666666e-3"); // 1/600
+const MOTOR_RESOLUTION_MANUAL: I18F14 = I18F14::lit("2.5e-3"); // 1/400
 
 
 /// The heap size of your drone code in bytes.
