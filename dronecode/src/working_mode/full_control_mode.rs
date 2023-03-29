@@ -30,8 +30,8 @@ impl FullController {
             pitch_p1: PID::new(0.0, 0.0, 0.0),
             roll_p1: PID::new(0.0, 0.0, 0.0),
             yaw_p2: PID::new(0.0, 0.0, 0.0),
-            pitch_p2: PID::new(0.0, 0.0, 0.0),
-            roll_p2: PID::new(0.0, 0.0, 0.0),
+            pitch_p2: PID::new(0.0, 0.0, 0.3),
+            roll_p2: PID::new(0.0, 0.0, 0.3),
         }
     }
 }
@@ -58,6 +58,8 @@ pub fn motion(drone: &mut Drone, argument: [u16; 4]){
     motor_assign(drone, pwm);
 }
 
+
+//P1: 0.84 P2: 0.96
 pub fn full_control(drone: &mut Drone, argument: [u16; 4]) -> [f32; 4]{
 
     let [mut target_yaw, mut target_pitch, mut target_roll, mut target_lift]
@@ -80,10 +82,11 @@ pub fn full_control(drone: &mut Drone, argument: [u16; 4]) -> [f32; 4]{
 
     let velocities = map_velocity_to_f32(full_rate(drone, angles));
     let mut full_controllers = drone.get_full_controller();
+    drone.set_test([full_controllers.roll_p1.kd as f32, 0.0]);
     // Calculate PID output
     let yaw_pwm = full_controllers.yaw_p2.step(target_yaw, velocities[0]);
-    let pitch_pwm = full_controllers.pitch_p2.step(target_pitch, velocities[1]);
-    let roll_pwm = full_controllers.roll_p2.step(target_roll, velocities[2]);
+    let pitch_pwm = full_controllers.pitch_p2.step2(target_pitch, velocities[1]);
+    let roll_pwm = full_controllers.roll_p2.step2(target_roll, velocities[2]);
 
     if pitch_pwm.0 > -10000.0 || pitch_pwm.0 < 10000.0 || roll_pwm.0 > -10000.0 || roll_pwm.0 < 10000.0{
         drone.set_full_rate_controller([yaw_pwm.1, yaw_pwm.2],
@@ -94,6 +97,6 @@ pub fn full_control(drone: &mut Drone, argument: [u16; 4]) -> [f32; 4]{
 
     let pwm_change = drone.get_rate_pwm_change();
 
-    [pwm_change[0], pwm_change[1], pwm_change[2], target_lift]
+    [pwm_change[0], target_pitch - pwm_change[1], target_roll - pwm_change[2], target_lift]
 
 }

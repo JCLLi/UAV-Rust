@@ -56,6 +56,15 @@ impl PID {
         (output, current_err, self.last_error)
     }
 
+    pub fn step2(&mut self, target: f32, current: f32) -> (f32, f32, f32){
+        let current_err = current;
+        let output = self.kp * (current_err - self.last_error)
+            //+ self.ki * current_err
+            + self.kd * (current_err - 2 as f32 * self.last_error + self.previous_error);
+        self.previous_error = self.last_error;
+        self.last_error = current_err;
+        (output, current_err, self.last_error)
+    }
     
 }
  

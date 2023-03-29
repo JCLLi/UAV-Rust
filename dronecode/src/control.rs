@@ -1,4 +1,5 @@
 use alloc::vec::Vec;
+use tudelft_quadrupel::barometer::read_pressure;
 use protocol::{self, Message, Datalog, WorkingModes};
 use tudelft_quadrupel::battery::read_battery;
 use tudelft_quadrupel::block;
@@ -177,17 +178,17 @@ pub fn control_loop() -> ! {
                 motor3: motors[2], 
                 motor4: motors[3], 
                 rtc: time, 
-                yaw: angles.yaw,
-                pitch: angles.pitch,
-                roll: angles.roll,
-                // yaw: drone.get_test()[0],
-                // pitch: drone.get_test()[1],
-                // roll: 0.0,
+                // yaw: angles.yaw,
+                // pitch: angles.pitch,
+                // roll: angles.roll,
+                yaw: drone.get_test()[0],
+                pitch: drone.get_test()[1],
+                roll: 0.0,
                 x: gyro.x, 
                 y: gyro.y, 
                 z: gyro.z, 
                 bat: read_battery(), 
-                bar: 100, 
+                bar: read_pressure(),
                 workingmode: drone.get_mode(),
                 arguments: drone.get_arguments(),
                 control_loop_time,
