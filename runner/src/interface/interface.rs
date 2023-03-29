@@ -291,27 +291,48 @@ fn tui(rx_tui1: Receiver<SettingsBundle>, rx_tui2: Receiver<Packet>) {
     let default_datalog = Packet::new(Message::Datalogging(Datalog {motor1: 0, motor2: 0, motor3: 0, motor4: 0, rtc: 0, yaw: 0.0, pitch: 0.0, roll: 0.0, x: 0, y: 0, z: 0, bat: 0, bar: 0, workingmode: WorkingModes::SafeMode, arguments: [0, 0, 0, 0], control_loop_time: 0  }));
     print_datalog(default_datalog);
 
+    let mut total_time = 0;
+    let mut i = 0;
+    let mut mode = WorkingModes::SafeMode;
+
     loop {
-        // Try to receive command to drone from write_serial thread
-        match rx_tui1.try_recv() {
-            Ok(bundle) => {                
-                print_command(bundle);
+            // Try to receive command to drone from write_serial thread
+            match rx_tui1.try_recv() {
+                Ok(bundle) => {             
+                    print_command(bundle);
 
-                // Exit if exit program command is given
-                if bundle.exit == true {
-                    break;
-                }
-            },
-            Err(_) => ()
-        }
+                    // Exit if exit program command is given
+                    if bundle.exit == true {
+                        break;
+                    }
+                },
+                Err(_) => ()
+            }
 
-        // Try to receive datalog from read_serial thread
-        match rx_tui2.try_recv() {
-            Ok(packet) => {
-                print_datalog(packet);
-            },
-            Err(_) => ()
-        }
+            // Try to receive datalog from read_serial thread
+            match rx_tui2.try_recv() {
+                Ok(packet) => {
+                    if let Message::Datalogging(mut d) = packet.message {
+                        if mode != d.workingmode {
+                            i = 0;
+                            total_time = 0;
+                            mode = d.workingmode;
+                        }
+
+                        i += 1;
+                        // Calculate average loop time
+                        let loop_time = d.control_loop_time;
+                        total_time += loop_time;
+                        let avg_loop_time = total_time / i;
+
+                        d.control_loop_time = avg_loop_time;
+                        print_datalog(Packet::new(Message::Datalogging(d)));
+                    }
+                },
+                Err(_) => ()
+            }
+        
+        // total_time = 0;
     }
 }
 
