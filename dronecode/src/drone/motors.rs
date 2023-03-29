@@ -102,20 +102,6 @@ pub fn normalize_manual_yaw(drone: &Drone, argument: [u16; 4]) -> [f32; 4]{
     let mut target_lift = argument[3] as f32 * LIFT_RESOLUTION;
     if target_lift > 1.0 {target_lift = 1 as f32 }
 
-    // match drone.get_mode() {
-    //     WorkingModes::ManualMode => {
-    //         if target_lift > 0.0 && target_lift < MOTOR_MIN_PWM_MANUAL {
-    //             target_lift = MOTOR_MIN_PWM_MANUAL
-    //         }
-    //     }
-    //     WorkingModes::YawControlMode => {
-    //         if target_lift > 0.0 && target_lift < MOTOR_MIN_PWM_CONTROL {
-    //             target_lift = MOTOR_MIN_PWM_CONTROL
-    //         }
-    //     }
-    //     _ => (),
-    // }
-
     [target_yaw, target_pitch, target_roll, target_lift]
 }
 
@@ -144,6 +130,7 @@ pub fn normalize_full(yaw_u16: u16, pitch_u16: u16, roll_u16: u16, lift_u16: u16
 
     let mut target_lift = lift_u16 as f32 * LIFT_RESOLUTION;
     if target_lift > 1.0 { target_lift = 1 as f32 }
+
     [target_yaw, target_pitch, target_roll, target_lift]
 }
 
