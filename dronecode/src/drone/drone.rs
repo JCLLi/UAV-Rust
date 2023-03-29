@@ -90,7 +90,7 @@ impl Getter for Drone {
     fn get_full_controller(&self) -> FullController { self.full_controller }
     fn get_arguments(&self) -> [u16; 4] { self.arguments }
     fn get_sample_time(&self) -> Instant { self.sample_time }
-    fn get_time_diff(&self) -> u128 { self.sample_time.duration_since(self.last_sample_time).as_millis() }
+    fn get_time_diff(&self) -> u128 { self.sample_time.duration_since(self.last_sample_time).as_micros() }
     fn get_calibration(&self) -> Calibration { self.calibration }
     fn get_test(&self) -> [I18F14; 2] { self.test }
     fn get_yaw_pwm_change(&self) -> I18F14 { self.yaw_controller.pwm_change }
