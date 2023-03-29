@@ -33,24 +33,41 @@ pub fn motor_assign(drone: &Drone, pwm: [f32; 4]){
     match working_mode {
         WorkingModes::ManualMode => {
             motor_resolution = MOTOR_RESOLUTION_MANUAL;
+            if pwm[3] > 0.0 {
+                let mut m1 = MOTOR_MIN + ((0.2 * (- pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let mut m2 = MOTOR_MIN + ((0.2 * (- pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let mut m3 = MOTOR_MIN + ((0.2 * (pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let mut m4 = MOTOR_MIN + ((0.2 * (pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+
+                set_motors([m1, m2, m3, m4]);
+            }else { set_motors([0, 0, 0, 0]) }
         }
         WorkingModes::YawControlMode => {
             motor_resolution = MOTOR_RESOLUTION_CONTROL;
+            if pwm[3] > 0.0 {
+                let mut m1 = MOTOR_MIN + ((0.2 * (- pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let mut m2 = MOTOR_MIN + ((0.2 * (- pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let mut m3 = MOTOR_MIN + ((0.2 * (pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let mut m4 = MOTOR_MIN + ((0.2 * (pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+
+                set_motors([m1, m2, m3, m4]);
+            }else { set_motors([0, 0, 0, 0]) }
         }
         WorkingModes::FullControlMode => {
             motor_resolution = MOTOR_RESOLUTION_CONTROL;
+            if pwm[3] > 0.0 {
+                let mut m1 = MOTOR_MIN + ((0.2 * (pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let mut m2 = MOTOR_MIN + ((0.2 * (- pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let mut m3 = MOTOR_MIN + ((0.2 * (- pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let mut m4 = MOTOR_MIN + ((0.2 * (pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+
+                set_motors([m1, m2, m3, m4]);
+            }else { set_motors([0, 0, 0, 0]) }
         }
         _ => ()
     }
 
-    if pwm[3] > 0.0 {
-        let mut m1 = MOTOR_MIN + ((0.2 * (- pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
-        let mut m2 = MOTOR_MIN + ((0.2 * (- pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
-        let mut m3 = MOTOR_MIN + ((0.2 * (pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
-        let mut m4 = MOTOR_MIN + ((0.2 * (pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
 
-        set_motors([m1, m2, m3, m4]);
-    }else { set_motors([0, 0, 0, 0]) }
 }
 
 ///Convert from a number between 0-65535 to a real angle(in manual mode, it is the speed). And according to the angle to set PWM
@@ -127,7 +144,6 @@ pub fn normalize_full(yaw_u16: u16, pitch_u16: u16, roll_u16: u16, lift_u16: u16
 
     let mut target_lift = lift_u16 as f32 * LIFT_RESOLUTION;
     if target_lift > 1.0 { target_lift = 1 as f32 }
-    if target_lift > 0.0 && target_lift < MOTOR_MIN_PWM_CONTROL { target_lift = MOTOR_MIN_PWM_CONTROL }
     [target_yaw, target_pitch, target_roll, target_lift]
 }
 
