@@ -179,7 +179,7 @@ pub fn control_loop() -> ! {
         angles = YawPitchRoll::from(sensor_data);
         
         drone.set_sample_time(begin);
-        measure_raw(&mut drone);
+        measure_raw(&mut drone, control_loop_time);
         filter(&mut drone, control_loop_time);
 
         let log = Message::Datalogging(Datalog 

@@ -15,9 +15,9 @@ pub struct KalmanFilter {
 impl Default for KalmanFilter {
     fn default() -> Self {
         KalmanFilter{
-            q_angle: 0.001,
+            q_angle: 0.004,
             q_bias: 0.003,
-            r_measure: 0.0001,
+            r_measure: 0.00001,
             angle: 0.0,
             bias: 0.0,
             rate: 0.0,

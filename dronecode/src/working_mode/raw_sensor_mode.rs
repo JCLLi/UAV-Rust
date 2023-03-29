@@ -34,7 +34,6 @@ pub fn switch(new: WorkingModes) -> WorkingModes {
 }
 
 pub fn filter(drone: &mut Drone, time: u128) {
-    let end = Instant::now();
     let dt = (time as f32) / 1_000_000.0;
     let pitch= drone.kalman.pitch.update(drone.angles_raw.pitch, drone.rates.pitch_rate, dt);
     let roll = drone.kalman.roll.update(drone.angles_raw.roll, drone.rates.roll_rate, dt);
@@ -45,7 +44,9 @@ pub fn filter(drone: &mut Drone, time: u128) {
     drone.angles.yaw = yaw;
 }
 
-pub fn measure_raw(drone: &mut Drone) {
+pub fn measure_raw(drone: &mut Drone, time: u128) {
+    let dt = (time as f32) / 1_000_000.0;
+
     let (acc, gyro) = read_raw().unwrap();
 
     let pitch_acc = acc.x as f32;
@@ -61,7 +62,7 @@ pub fn measure_raw(drone: &mut Drone) {
 
     drone.angles_raw.pitch = micromath::F32Ext::atan2(pitch_acc, micromath::F32Ext::sqrt(roll_acc * roll_acc + yaw_acc * yaw_acc));
     drone.angles_raw.roll = micromath::F32Ext::atan2(roll_acc, yaw_acc);
-    drone.angles_raw.yaw = micromath::F32Ext::atan2(pitch_acc, micromath::F32Ext::sqrt(roll_acc * roll_acc + yaw_acc * yaw_acc));
+    drone.angles_raw.yaw -= dps_to_rads(raw_to_dps(gyro.z)) * dt;
 }
 
 impl Kalman {

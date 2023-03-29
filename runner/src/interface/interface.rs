@@ -193,9 +193,9 @@ fn run_interface(serial: SerialPort) -> io::Result<()> {
     }) {
         
         if let Ok(d) = rx_gui.recv() {        
-            queues[0].0.push(d.pitch_angle);
-            queues[1].0.push(d.pitch_f);
-            queues[2].0.push(d.pitch);
+            queues[0].0.push(d.yaw_angle);
+            queues[1].0.push(d.yaw_f);
+            queues[2].0.push(d.yaw);
         }
     }
     
