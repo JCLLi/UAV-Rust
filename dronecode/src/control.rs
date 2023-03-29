@@ -12,8 +12,8 @@ use crate::log_storage_manager::LogStorageManager;
 use crate::yaw_pitch_roll::YawPitchRoll;
 use crate::drone::{Drone, Getter, Setter};
 use crate::working_mode::panic_mode::{panic_mode, panic_check};
-use tudelft_quadrupel::time::assembly_delay;
-use crate::drone;
+
+
 use fixed::types::I18F14;
 
 const FIXED_SIZE:usize = 64;
@@ -181,9 +181,6 @@ pub fn control_loop() -> ! {
                 yaw: angles.yaw.to_num(),
                 pitch: angles.pitch.to_num(),
                 roll: angles.roll.to_num(),
-                // yaw: drone.get_test()[0],
-                // pitch: drone.get_test()[1],
-                // roll: 0.0,
                 x: gyro.x, 
                 y: gyro.y, 
                 z: gyro.z, 
@@ -193,9 +190,6 @@ pub fn control_loop() -> ! {
                 arguments: drone.get_arguments(),
                 control_loop_time,
             });
-            
-            // Store log on drone flash
-            // storage_manager.store_logging(log).unwrap();
             
         if i % 5 == 0 {
             write_packet(log);

@@ -1,7 +1,7 @@
 use tudelft_quadrupel::motor::set_motor_max;
 use protocol::{Message, WorkingModes};
 use crate::controllers::PID;
-use crate::drone::{Drone, Getter, motors, Setter};
+use crate::drone::{Drone, Getter, Setter};
 use crate::yaw_pitch_roll::YawPitchRoll;
 use tudelft_quadrupel::time::Instant;
 use crate::drone::motors::{MOTOR_MAX_MANUAL, MOTOR_MAX_CONTROL};

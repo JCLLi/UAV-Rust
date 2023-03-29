@@ -23,7 +23,7 @@ pub fn mode_switch(drone: &mut Drone, new: WorkingModes) {
             match new {
                 WorkingModes::CalibrationMode
                 | WorkingModes::SafeMode
-                | WorkingModes::PanicMode => {let temp = panic_mode();}
+                | WorkingModes::PanicMode => {let _temp = panic_mode();}
                 WorkingModes::FullControlMode | WorkingModes::YawControlMode => { drone.reset_all_controller();}
                 _ => ()
             }
@@ -33,7 +33,7 @@ pub fn mode_switch(drone: &mut Drone, new: WorkingModes) {
             match new {
                 WorkingModes::CalibrationMode
                 | WorkingModes::SafeMode
-                | WorkingModes::PanicMode => {let temp = panic_mode();}
+                | WorkingModes::PanicMode => {let _temp = panic_mode();}
                 WorkingModes::FullControlMode => { drone.reset_all_controller();}
                 _ => ()
             }
@@ -43,7 +43,7 @@ pub fn mode_switch(drone: &mut Drone, new: WorkingModes) {
             match new {
                 WorkingModes::CalibrationMode
                 | WorkingModes::SafeMode
-                | WorkingModes::PanicMode => {let temp = panic_mode();}
+                | WorkingModes::PanicMode => {let _temp = panic_mode();}
                 WorkingModes::YawControlMode => { drone.reset_all_controller();}
                 _ => ()
             }

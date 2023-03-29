@@ -1,7 +1,7 @@
 
 use tudelft_quadrupel::motor::set_motors;
 use protocol::WorkingModes;
-use crate::drone::{Drone, Getter, Setter};
+use crate::drone::{Drone, Getter};
 use fixed::types::I18F14;
 
 pub(crate) const MOTOR_MAX_CONTROL: u16 = 600;
@@ -38,7 +38,7 @@ pub fn motor_assign(drone: &Drone, pwm: [I18F14; 4]){
     //        |
     //        |
     //        m3
-    let mut motor_max = 0;
+    let _motor_max = 0;
     let mut motor_resolution = I18F14::from_num(1);
     let working_mode = drone.get_mode();
 
@@ -56,10 +56,10 @@ pub fn motor_assign(drone: &Drone, pwm: [I18F14; 4]){
     }
 
     if pwm[3] > 0 {
-        let mut m1 = (MOTOR_MIN + ((I18F14::from_num(0.2) * (- pwm[1] + pwm[0]) + I18F14::from_num(0.8) * pwm[3]) * motor_resolution)).to_num();
-        let mut m2 = (MOTOR_MIN + ((I18F14::from_num(0.2) * (- pwm[2] - pwm[0]) + I18F14::from_num(0.8) * pwm[3]) * motor_resolution)).to_num();
-        let mut m3 = (MOTOR_MIN + ((I18F14::from_num(0.2) * (pwm[1] + pwm[0]) + I18F14::from_num(0.8) * pwm[3]) * motor_resolution)).to_num();
-        let mut m4 = (MOTOR_MIN + ((I18F14::from_num(0.2) * (pwm[2] - pwm[0]) + I18F14::from_num(0.8) * pwm[3]) * motor_resolution)).to_num();
+        let m1 = (MOTOR_MIN + ((I18F14::from_num(0.2) * (- pwm[1] + pwm[0]) + I18F14::from_num(0.8) * pwm[3]) * motor_resolution)).to_num();
+        let m2 = (MOTOR_MIN + ((I18F14::from_num(0.2) * (- pwm[2] - pwm[0]) + I18F14::from_num(0.8) * pwm[3]) * motor_resolution)).to_num();
+        let m3 = (MOTOR_MIN + ((I18F14::from_num(0.2) * (pwm[1] + pwm[0]) + I18F14::from_num(0.8) * pwm[3]) * motor_resolution)).to_num();
+        let m4 = (MOTOR_MIN + ((I18F14::from_num(0.2) * (pwm[2] - pwm[0]) + I18F14::from_num(0.8) * pwm[3]) * motor_resolution)).to_num();
 
         set_motors([m1, m2, m3, m4]);
     }else { set_motors([0, 0, 0, 0]) }
@@ -67,13 +67,13 @@ pub fn motor_assign(drone: &Drone, pwm: [I18F14; 4]){
 
 ///Convert from a number between 0-65535 to a real angle(in manual mode, it is the speed). And according to the angle to set PWM
 /// signal from 0-1.
-pub fn normalize_manual_yaw(drone: &Drone, argument_u16: [u16; 4]) -> [I18F14; 4]{
+pub fn normalize_manual_yaw(_drone: &Drone, argument_u16: [u16; 4]) -> [I18F14; 4]{
     let mut target_pitch = I18F14::from_num(0);
     let mut target_roll = I18F14::from_num(0);
     let mut target_yaw = I18F14::from_num(0);
     
-    let zero_point = I18F14::from_num(32767);
-    let zero_point_yaw = I18F14::from_num(8520);
+    let _zero_point = I18F14::from_num(32767);
+    let _zero_point_yaw = I18F14::from_num(8520);
     let argument = [I18F14::from_num(argument_u16[0]), I18F14::from_num(argument_u16[1]), I18F14::from_num(argument_u16[2]), I18F14::from_num(argument_u16[3])];
     
     // Pitch

@@ -25,7 +25,7 @@ pub fn panic_mode() -> WorkingModes{
 //Different situations that can panic
 pub fn panic_check() -> bool{ 
     // Panic when battery is low
-    let volt = read_battery();
+    let _volt = read_battery();
 
     // if volt < 900 && volt > 50 {
     //     return false;

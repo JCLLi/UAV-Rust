@@ -1,5 +1,5 @@
 use tudelft_quadrupel::mpu::structs::Quaternion;
-use tudelft_quadrupel::time::Instant;
+
 use crate::drone::{Drone, Getter, Setter};
 use cordic::{atan2, sqrt};
 use fixed::types::I18F14;
