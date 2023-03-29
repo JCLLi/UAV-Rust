@@ -246,7 +246,7 @@ fn read_serial(serial: &SerialPort, rx_exit: Receiver<bool>, tx_tui2: Sender<Pac
         // Either print panic messages or show TUI
         if debug == true {
             if let Ok(num) = serial.read(&mut buf) {
-                println!("{:?}", String::from_utf8_lossy(&buf[0..num]));
+                println!("\r{:?}", String::from_utf8_lossy(&buf[0..num]));
             }
 
         } else {

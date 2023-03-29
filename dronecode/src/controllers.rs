@@ -13,7 +13,7 @@ pub struct PID {
 fn signum_f32(x: I18F14) -> I18F14 {
     if x > 0 {
         I18F14::from_num(1)
-    } else if x < 0.0 {
+    } else if x < 0 {
         I18F14::from_num(-1)
     } else {
         I18F14::from_num(0)
@@ -56,6 +56,7 @@ impl PID {
         self.previous_error = self.last_error;
         self.last_error = current_err;
         (output, current_err, self.last_error)
+    
     }
 
     

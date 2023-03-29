@@ -1,9 +1,3 @@
-
-
-
-
-
-
 use crate::controllers::PID;
 use crate::drone::{Drone, Getter, Setter};
 use crate::yaw_pitch_roll::{full_rate};
@@ -68,7 +62,6 @@ pub fn full_control(drone: &mut Drone, argument: [u16; 4]) -> [I18F14; 4]{
 
     let [target_yaw, mut target_pitch, mut target_roll, target_lift]
         = normalize_full(argument[2], argument[0], argument[1], argument[3]);
-
     let angles = drone.get_current_attitude();
 
     let mut full_controllers = drone.get_full_controller();

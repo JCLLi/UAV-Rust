@@ -6,17 +6,6 @@ use fixed::types::I18F14;
 
 pub(crate) const MOTOR_MAX_CONTROL: u16 = 600;
 pub(crate) const MOTOR_MAX_MANUAL: u16 = 400;
-// const MOTOR_MIN: u16 = 200;
-// const ZERO_POINT: u16 = 32767;
-// const ZERO_POINT_YAW: u16 = 8520;
-// const RESOLUTION: f32 = 1 as f32 / ZERO_POINT as f32; //Convert from 0-65535 to 0-1
-// const ANGLE_RESOLUTION: f32 = 0.52359877 / ZERO_POINT as f32;
-// const LIFT_RESOLUTION: f32 = 1 as f32 / 65535 as f32;
-// const MOTOR_RESOLUTION_CONTROL: f32 = 1 as f32 / MOTOR_MAX_CONTROL as f32; //Convert from 0-1 to 0-MOTORMAX
-// const MOTOR_RESOLUTION_MANUAL: f32 = 1 as f32 / MOTOR_MAX_MANUAL as f32; //Convert from 0-1 to 0-MOTORMAX
-// const MOTOR_MIN_PWM_CONTROL: f32 = 250.0 * MOTOR_RESOLUTION_CONTROL;
-// const MOTOR_MIN_PWM_MANUAL: f32 = 250.0 * MOTOR_RESOLUTION_MANUAL;
-// const PI: f32 = 3.1415926 as f32;
 
 // Fixed point constants
 const MOTOR_MIN: I18F14 = I18F14::lit("200");
@@ -27,8 +16,11 @@ const ANGLE_RESOLUTION: I18F14 = I18F14::lit("1.597945402e-5"); // 0.52359877/32
 const LIFT_RESOLUTION: I18F14 = I18F14::lit("1.52590219e-5"); // 1/65535
 const MOTOR_RESOLUTION_CONTROL: I18F14 = I18F14::lit("1.66666666666666666e-3"); // 1/600
 const MOTOR_RESOLUTION_MANUAL: I18F14 = I18F14::lit("2.5e-3"); // 1/400
-const LIFT_MAX: i32 = 65535;
-const ARG_MAX: i32 = 32767;
+const ARG_MAX: i32 = 65535;
+const ZEROPOINT_I32: i32 = 32767;
+const ZEROPOINT_YAW_I32: i32 = 8520;
+const MOTOR_MAX_MANUAL_FIXED: I18F14 = I18F14::lit("400");
+const MOTOR_MAX_CONTROL_FIXED: I18F14 = I18F14::lit("600");
 
 pub fn motor_assign(drone: &Drone, pwm: [I18F14; 4]){
     //        m1
@@ -44,13 +36,13 @@ pub fn motor_assign(drone: &Drone, pwm: [I18F14; 4]){
 
     match working_mode {
         WorkingModes::ManualMode => {
-            motor_resolution = I18F14::from_num(MOTOR_MAX_MANUAL); 
+            motor_resolution = MOTOR_MAX_MANUAL_FIXED; 
         }
         WorkingModes::YawControlMode => {
-            motor_resolution = I18F14::from_num(MOTOR_MAX_CONTROL);
+            motor_resolution = MOTOR_MAX_CONTROL_FIXED;
         }
         WorkingModes::FullControlMode => {
-            motor_resolution = I18F14::from_num(MOTOR_MAX_CONTROL);
+            motor_resolution = MOTOR_MAX_CONTROL_FIXED;
         }
         _ => ()
     }
@@ -77,29 +69,23 @@ pub fn normalize_manual_yaw(_drone: &Drone, argument_u16: [u16; 4]) -> [I18F14; 
     let argument = [I18F14::from_num(argument_u16[0]), I18F14::from_num(argument_u16[1]), I18F14::from_num(argument_u16[2]), I18F14::from_num(argument_u16[3])];
     
     // Pitch
-    if argument[0] > ZERO_POINT {
-        target_pitch = -1 * (argument[0] - ZERO_POINT) / ARG_MAX;
-    }else if argument[0] < ZERO_POINT {
-        target_pitch = -1 * ( -1 * (ZERO_POINT - argument[0]) / ARG_MAX);
+    if argument[0] != ZERO_POINT {
+        target_pitch = (ZERO_POINT - argument[0]) / ZEROPOINT_I32;
     }
 
     // Roll
-    if argument[1] > ZERO_POINT {
-        target_roll = (argument[1] - ZERO_POINT) / ARG_MAX;
-    }else if argument[1] < ZERO_POINT {
-        target_roll =  -1 * (ZERO_POINT - argument[1]) / ARG_MAX;
+    if argument[1] != ZERO_POINT {
+        target_roll = (argument[1] - ZERO_POINT) / ZEROPOINT_I32;
     }
 
     // Yaw
-    if argument[2] > ZERO_POINT_YAW {
-        target_yaw = (argument[2] - ZERO_POINT_YAW) / ARG_MAX * 4;
-    }else if argument[2] < ZERO_POINT_YAW {
-        target_yaw =  -1 * (ZERO_POINT_YAW - argument[2]) / ARG_MAX * 4;
+    if argument[2] != ZERO_POINT_YAW {
+        target_yaw = (argument[2] - ZERO_POINT_YAW) / ZEROPOINT_YAW_I32;
     }
 
     // Lift
-    let mut target_lift = argument[3] / LIFT_MAX;
-    if target_lift > I18F14::from_num(1) {target_lift = I18F14::from_num(1) }
+    let mut target_lift = argument[3] / ARG_MAX;
+    if target_lift > 1 {target_lift = I18F14::from_num(1) }
 
     [target_yaw, target_pitch, target_roll, target_lift]
 }
@@ -110,32 +96,25 @@ pub fn normalize_full(yaw_u16: u16, pitch_u16: u16, roll_u16: u16, lift_u16: u16
     let mut target_yaw = I18F14::from_num(0);
 
     let argument = [I18F14::from_num(pitch_u16), I18F14::from_num(roll_u16), I18F14::from_num(yaw_u16), I18F14::from_num(lift_u16)];
+    
     // Pitch
-    if argument[0] > ZERO_POINT {
-        target_pitch = (argument[0] - ZERO_POINT) * ANGLE_RESOLUTION;
-    }else if argument[0] < ZERO_POINT {
-        target_pitch =  -1 * (ZERO_POINT - argument[0]) * ANGLE_RESOLUTION;
+    if argument[0] != ZERO_POINT {
+        target_pitch = (ZERO_POINT - argument[0]) / ZEROPOINT_I32;
     }
 
     // Roll
-    if argument[1] > ZERO_POINT {
-        target_roll = (argument[1] - ZERO_POINT) * ANGLE_RESOLUTION;
-    }else if argument[1] < ZERO_POINT {
-        target_roll =  -1 * (ZERO_POINT - argument[1]) * ANGLE_RESOLUTION;
+    if argument[1] != ZERO_POINT {
+        target_roll = (argument[1] - ZERO_POINT) / ZEROPOINT_I32;
     }
 
     // Yaw
-    if argument[2] > ZERO_POINT_YAW {
-        target_yaw = (argument[2] - ZERO_POINT_YAW) * RESOLUTION * -4;
-    }else if argument[2] < ZERO_POINT_YAW {
-        target_yaw = -1 * (ZERO_POINT_YAW - argument[2]) * RESOLUTION * -4;
+    if argument[2] != ZERO_POINT_YAW {
+        target_yaw = (argument[2] - ZERO_POINT_YAW) / ZEROPOINT_YAW_I32;
     }
-
+    
     // Lift
-    let mut target_lift = argument[3] / LIFT_MAX;
+    let mut target_lift = argument[3] / ARG_MAX;
     if target_lift > 1 { target_lift = I18F14::from_num(1) }
-
-    // if target_lift > 0.0 && target_lift < MOTOR_MIN_PWM_CONTROL { target_lift = MOTOR_MIN_PWM_CONTROL }
 
     [target_yaw, target_pitch, target_roll, target_lift]
 }
