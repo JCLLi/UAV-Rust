@@ -27,7 +27,8 @@ const ANGLE_RESOLUTION: I18F14 = I18F14::lit("1.597945402e-5"); // 0.52359877/32
 const LIFT_RESOLUTION: I18F14 = I18F14::lit("1.52590219e-5"); // 1/65535
 const MOTOR_RESOLUTION_CONTROL: I18F14 = I18F14::lit("1.66666666666666666e-3"); // 1/600
 const MOTOR_RESOLUTION_MANUAL: I18F14 = I18F14::lit("2.5e-3"); // 1/400
-const LIFT_MAX: I18F14 = I18F14::lit("65535");
+const LIFT_MAX: i32 = 65535;
+const ARG_MAX: i32 = 32767;
 
 pub fn motor_assign(drone: &Drone, pwm: [I18F14; 4]){
     //        m1
@@ -73,29 +74,27 @@ pub fn normalize_manual_yaw(drone: &Drone, argument_u16: [u16; 4]) -> [I18F14; 4
     
     let zero_point = I18F14::from_num(32767);
     let zero_point_yaw = I18F14::from_num(8520);
-    let resolution = I18F14::from_num(1/32767);
-    let lift_resolution = I18F14::from_num(1/65535);
     let argument = [I18F14::from_num(argument_u16[0]), I18F14::from_num(argument_u16[1]), I18F14::from_num(argument_u16[2]), I18F14::from_num(argument_u16[3])];
     
     // Pitch
     if argument[0] > ZERO_POINT {
-        target_pitch = -1 * (argument[0] - ZERO_POINT) * resolution;
+        target_pitch = -1 * (argument[0] - ZERO_POINT) / ARG_MAX;
     }else if argument[0] < ZERO_POINT {
-        target_pitch = -1 * ( -1 * (ZERO_POINT - argument[0]) * resolution);
+        target_pitch = -1 * ( -1 * (ZERO_POINT - argument[0]) / ARG_MAX);
     }
 
     // Roll
     if argument[1] > ZERO_POINT {
-        target_roll = (argument[1] - ZERO_POINT) * resolution;
+        target_roll = (argument[1] - ZERO_POINT) / ARG_MAX;
     }else if argument[1] < ZERO_POINT {
-        target_roll =  -1 * (ZERO_POINT - argument[1]) * resolution;
+        target_roll =  -1 * (ZERO_POINT - argument[1]) / ARG_MAX;
     }
 
     // Yaw
     if argument[2] > ZERO_POINT_YAW {
-        target_yaw = (argument[2] - ZERO_POINT_YAW) * resolution * 4;
+        target_yaw = (argument[2] - ZERO_POINT_YAW) / ARG_MAX * 4;
     }else if argument[2] < ZERO_POINT_YAW {
-        target_yaw =  -1 * (ZERO_POINT_YAW - argument[2]) * resolution * 4;
+        target_yaw =  -1 * (ZERO_POINT_YAW - argument[2]) / ARG_MAX * 4;
     }
 
     // Lift

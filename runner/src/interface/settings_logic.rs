@@ -174,12 +174,20 @@ impl DeviceListener {
         if self.bundle.pitch_offset > 0 {
             self.bundle.pitch = self.bundle.pitch_joystick.saturating_add(self.bundle.pitch_offset as u16);
         } else {
-            self.bundle.pitch = self.bundle.pitch_joystick.saturating_sub(-self.bundle.pitch_offset as u16);
+            if self.bundle.pitch_joystick as i16 + self.bundle.pitch_offset < 0 {
+                self.bundle.pitch = 0;
+            } else {
+                self.bundle.pitch = self.bundle.pitch_joystick.saturating_sub(-self.bundle.pitch_offset as u16);
+            }
         }
         if self.bundle.roll_offset > 0 {
             self.bundle.roll = self.bundle.roll_joystick.saturating_add(self.bundle.roll_offset as u16);
         } else {
-            self.bundle.roll = self.bundle.roll_joystick.saturating_sub(-self.bundle.roll_offset as u16);
+            if self.bundle.roll_joystick as i16 + self.bundle.roll_offset < 0 {
+                self.bundle.roll = 0;
+            } else {
+                self.bundle.roll = self.bundle.roll_joystick.saturating_sub(-self.bundle.roll_offset as u16);
+            }
         }
         if self.bundle.yaw_offset > 0 {
             self.bundle.yaw = self.bundle.yaw_joystick.saturating_add(self.bundle.yaw_offset as u16);
