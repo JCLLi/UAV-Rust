@@ -187,7 +187,7 @@ pub fn control_loop() -> ! {
                 x: gyro.x, 
                 y: gyro.y, 
                 z: gyro.z, 
-                bat: read_battery(), 
+                bat: read_battery(),
                 bar: pressure[0],
                 workingmode: drone.get_mode(),
                 arguments: drone.get_arguments(),
