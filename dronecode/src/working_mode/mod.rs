@@ -8,6 +8,7 @@ pub mod panic_mode;
 pub mod calibration_mode;
 pub mod yaw_control_mode;
 pub mod full_control_mode;
+pub mod lift_control_mode;
 
 pub fn mode_switch(drone: &mut Drone, new: WorkingModes) {
     match drone.get_mode() {
@@ -55,7 +56,8 @@ pub fn mode_switch(drone: &mut Drone, new: WorkingModes) {
 //Function used to set the motion of the drone according to the arguments from commands
 pub fn motions(drone: &mut Drone, argument: [u16; 4]) {
     match drone.get_mode() {
-        WorkingModes::ManualMode => manual_mode::motion(drone, argument),
+        //WorkingModes::ManualMode => manual_mode::motion(drone, argument),
+        WorkingModes::ManualMode => lift_control_mode::motion(drone, argument),
         WorkingModes::YawControlMode => yaw_control_mode::motion(drone, argument),
         WorkingModes::FullControlMode => full_control_mode::motion(drone, argument),
         WorkingModes::CalibrationMode => calibration_mode::calibrate(drone),

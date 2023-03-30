@@ -7,6 +7,7 @@ use tudelft_quadrupel::mpu::read_dmp_bytes;
 use protocol::WorkingModes;
 
 use crate::drone::{Drone, Getter, motors, Setter};
+use crate::working_mode::lift_control_mode::height_calibration;
 use crate::yaw_pitch_roll::YawPitchRoll;
 
 #[derive(Copy, Clone)]
@@ -20,7 +21,6 @@ pub struct Calibration{
 pub fn calibrate(drone: &mut Drone){
     let quaternion = block!(read_dmp_bytes()).unwrap();
     let ypr = YawPitchRoll::from(quaternion);
-
     let last_calibration = drone.get_calibration();
     if last_calibration.pitch[0] == 0.0000000{
         drone.set_calibration(
@@ -36,6 +36,7 @@ pub fn calibrate(drone: &mut Drone){
         [(last_calibration.roll[0] + ypr.roll) / 2.0, ypr.roll]
         );
     }
+    height_calibration(drone);
 }
 
 impl Calibration {

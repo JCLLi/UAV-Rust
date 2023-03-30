@@ -98,7 +98,7 @@ pub fn motor_assign(drone: &Drone, pwm: [f32; 4]){
 
 ///Convert from a number between 0-65535 to a real angle(in manual mode, it is the speed). And according to the angle to set PWM
 /// signal from 0-1.
-pub fn normalize_manual_yaw(drone: &Drone, argument: [u16; 4]) -> [f32; 4]{
+pub fn normalize_manual_yaw(drone: &mut Drone, argument: [u16; 4]) -> [f32; 4]{
     let mut target_pitch = 0 as f32;
     let mut target_roll = 0 as f32;
     let mut target_yaw = 0 as f32;
@@ -140,7 +140,6 @@ pub fn normalize_manual_yaw(drone: &Drone, argument: [u16; 4]) -> [f32; 4]{
         }
         _ => (),
     }
-
 
 
     [target_yaw, target_pitch, target_roll, target_lift]
