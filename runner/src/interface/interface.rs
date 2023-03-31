@@ -447,172 +447,34 @@ mod tests {
         
         
         // Create the bar chart
-let data = [("Motor 1", datalog.motor1), ("Motor 2", datalog.motor2), ("Motor 3", datalog.motor3), ("Motor 4", datalog.motor4)];
-let max_value = 500;
-let mut chart = BarChart::default()
-    .data(&data)
-    .max(max_value)
-    .bar_width(5)
-    .style(Style::default());
+// let data = [("Motor 1", datalog.motor1), ("Motor 2", datalog.motor2), ("Motor 3", datalog.motor3), ("Motor 4", datalog.motor4)];
+// let max_value = 500;
+// let mut chart = BarChart::default()
+//     .data(&data)
+//     .max(max_value)
+//     .bar_width(5)
+//     .style(Style::default());
 
-// Update the chart with the new motor values
-if let Some(x) = get_packet {
-    if let Message::Datalogging(d) = x.message {
-        chart.data_mut()[0].1 = d.motor1;
-        chart.data_mut()[1].1 = d.motor2;
-        chart.data_mut()[2].1 = d.motor3;
-        chart.data_mut()[3].1 = d.motor4;
-    }
-}
+// // Update the chart with the new motor values
+// if let Some(x) = get_packet {
+//     if let Message::Datalogging(d) = x.message {
+//         chart.data_m()[0].1 = d.motor1;
+//         chart.data_mut()[1].1 = d.motor2;
+//         chart.data_mut()[2].1 = d.motor3;
+//         chart.data_mut()[3].1 = d.motor4;
+//     }
+// }
 
-// Render the chart
-let chart_area = Rect::new(0, 3, 50, 10);
-let chart_widget = ChartWidget::default()
-    .bar_chart(chart)
-    .title("Motor Speeds")
-    .bar_style(Style::default().fg(Color::Cyan));
-f.render_widget(chart_widget, chart_area);
+// // Render the chart
+// let chart_area = Rect::new(0, 3, 50, 10);
+// let chart_widget = ChartWidget::default()
+//     .bar_chart(chart)
+//     .title("Motor Speeds")
+//     .bar_style(Style::default().fg(Color::Cyan));
+// f.render_widget(chart_widget, chart_area);
 
         
-            // let stdout = io::stdout();
-            // let backend = CrosstermBackend::new(stdout);
-            // let mut terminal = Terminal::new(backend)?;
-            // //terminal.clear()?;
-        
-            //  let mut sine_data: Vec<(f64, f64)> = Vec::new();
-            //  let mut cosine_data: Vec<(f64, f64)> = Vec::new();
-            //  let mut data = Vec::new(); // Initialize an empty vector for the data
             
-        
-        
-            // let mut x = 0.0;
-        
-            // execute!(stdout(), terminal::EnterAlternateScreen)?;
-        
-            // loop {
-            //     let start = Instant::now();
-            //     let x_label = format!("X Axis Label - Iteration {}", data.len());
-            //     let chart_block = Block::default().borders(Borders::ALL).title(x_label);
-               
-            //     let new_data = [
-            //         ("A", rand::random::<u64>() % 10),
-            //         ("B", rand::random::<u64>() % 10),
-            //         ("C", rand::random::<u64>() % 10),
-            //         ("D", rand::random::<u64>() % 10),
-            //     ];
-            //     data = new_data.to_vec(); // Update the vector with the new data
-        
-            //     //thread::sleep(Duration::from_millis(500));
-            //     //Generate sine wave data
-            //     let sine_y = (x * PI / 10.0).sin();
-            //     sine_data.push((x, sine_y));
-            //     let cosine_y = (x * PI / 10.0).cos();
-            //     cosine_data.push((x, cosine_y));
-        
-            //     x += 0.1;
-        
-            //     // Truncate data to last 100 points
-            //     if sine_data.len() > 100 {
-            //         sine_data.remove(0);
-            //     }
-            //      if cosine_data.len() > 100 {
-            //         cosine_data.remove(0);
-            //     }
-        
-            //     // Draw plot
-            //     terminal.draw(|f| {
-            //         let size = f.size();
-            //         let constraints = [
-            //             Constraint::Percentage(30),
-            //             Constraint::Percentage(30),
-            //             Constraint::Percentage(10),
-            //             Constraint::Percentage(30),
-            //         ];
-            //         let slices = Layout::default()
-            //             .direction(Direction::Vertical)
-            //             .constraints(constraints)
-            //             .split(size);
-        
-            //         let chart = Chart::new(
-            //             vec![
-            //                 Dataset::default()
-            //                 .marker(Marker::Braille)
-            //                 .style(tui::style::Style::default().fg(tui::style::Color::Yellow))
-            //                 .data(&sine_data),
-        
-            //                 Dataset::default()
-            //                 .marker(Marker::Braille)
-            //                 .style(tui::style::Style::default().fg(tui::style::Color::Green))
-            //                 .data(&cosine_data),
-            //             ]
-                
-            //         )
-            //         .block(
-            //             Block::default()
-            //                 .title(Span::styled(
-            //                     "Sine and Cosine Waves",
-            //                     tui::style::Style::default()
-            //                     .fg(tui::style::Color::White),
-            //                 ))
-            //                 .borders(Borders::ALL)
-            //                 .border_style(tui::style::Style::default()
-            //                 .fg(tui::style::Color::Yellow)),
-            //         )
-            //         .x_axis(
-            //             Axis::default()
-            //                 .bounds([x - 10.0, x])
-            //                 .title("X Axis")
-            //                 .style(tui::style::Style::default().fg(tui::style::Color::White)),
-            //         )
-            //         .y_axis(
-            //             Axis::default()
-            //                 .bounds([-1.0, 1.0])
-            //                 .title("Y Axis")
-            //                 .style(tui::style::Style::default().fg(tui::style::Color::White)),
-            //         );
-        
-            //         f.render_widget(chart, slices[1]);
-        
-                   
-                    
-            //         let text = format!("x = {:.2}, sine y = {:.2}, cosine y = {:.2}", x, sine_y, cosine_y);
-            //         let text_widget = Paragraph::new(text).block(
-            //             Block::default()
-            //                 .title(Span::styled(
-            //                     "Current Data Point",
-            //                     tui::style::Style::default().fg(tui::style::Color::Green),
-            //                 ))
-            //                 .borders(Borders::ALL),
-            //         );
-            //         f.render_widget(text_widget, slices[2]);
-            //         let size = f.size();
-            //         let chart_area = Layout::default()
-            //             .direction(Direction::Vertical)
-            //             .margin(5)
-            //             .constraints([Constraint::Percentage(40)].as_ref())
-            //             .horizontal_margin(10)
-            //             .vertical_margin(30)
-            //             .split(size);
-            //         // Create a new bar chart with the current data
-            //         let bar_chart = BarChart::default()
-            //             .bar_width(2)
-            //             .bar_gap(1)
-            //             .data(&data) // Pass a reference to the vector
-            //             .bar_width(3)
-            //             .bar_gap(1)
-            //             .value_style(Style::default())
-            //             .bar_style(Style::default())
-            //             .max(10)
-            //             .block(chart_block);
-            //         // Render the chart in the chart area
-            //         f.render_widget(bar_chart, slices[3]);
-            //     })?;
-        
-                
-            //     thread::sleep(Duration::from_millis(75));
-            //     }
-            
-        
         
         
         // execute!
@@ -628,6 +490,7 @@ f.render_widget(chart_widget, chart_area);
         
         #[test]
 fn test_tui2() {
+    //This test is not working
     // Setup terminal interface
     execute!(
         stdout(),
@@ -681,7 +544,7 @@ fn test_tui2() {
                     stdout(),
                     SetAttribute(Attribute::Reset),
                     MoveTo(0, 4),
-                    chart.render(),
+                    //chart.render(),
                     MoveTo(120,2),
                     Print("Motors: "),
                     Print(d.motor1), Print(", "),
@@ -715,7 +578,11 @@ fn test_tui2() {
 
     }
     #[test]
-    fn test_tui3()->Result<()>{
+    fn test_tui3()->Result<()>{ 
+    //This test contains the general code for the dynamiv bar chart and the line graph. It does not take input values from sensors
+    // Sine and cosine waves are randomly generated. Random values are taken as input for the bar chart.
+    //The terminal screen is divided into four sections in this code.
+    // The first section is empty. Is there any way to display the existing tui into the first section here?
     let stdout = io::stdout();
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
@@ -733,7 +600,7 @@ fn test_tui2() {
 
     loop {
         let start = Instant::now();
-        let x_label = format!("X Axis Label - Iteration {}", data.len());
+        let x_label = format!("Motor Speed {}", data.len());
         let chart_block = Block::default().borders(Borders::ALL).title(x_label);
        
         let new_data = [
