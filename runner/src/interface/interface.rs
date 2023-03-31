@@ -349,35 +349,76 @@ fn print_datalog(packet: Packet) {
 #[cfg(test)]
 mod tests {
     use protocol::{Packet, Datalog, WorkingModes};
-
+    //use tui::widgets::BarChart;
     use super::*;
+    use std::f64::consts::PI;
+        use tui::{
+            backend::CrosstermBackend,
+            layout::{Constraint, Direction, Layout},
+            symbols::Marker,
+            text::Span,
+            widgets::{Axis, BarChart, Block, Borders, Chart, Dataset, Paragraph},
+            Terminal,
+        };
+        use crossterm::{execute, terminal, Result};
+        use std::io::stdout;
+        use std::time::{Duration, Instant};
+        
+        
+        use std::io;
+        use std::thread;
+        
+        
+        use rand::Rng;
+        
+        use tui::widgets::Widget;
+        use tui::style::Style;
+        
 
     #[test]
     fn test_tui() {
 
+            // Setup terminal interface
         execute!(
             stdout(),
             terminal::Clear(terminal::ClearType::All),
-            MoveTo(80,0),
+            MoveTo(50,0),
             SetAttribute(Attribute::Bold),
+            SetForegroundColor(Color::Blue),
             Print("PC interface"),
-            MoveTo(120,1),
+            MoveTo(50,2),
+            SetForegroundColor(Color::White),
             Print("Drone data"),
-            MoveTo(0,1),
-            Print("Command to drone")
+            MoveTo(0,2),
+            Print("Command to drone"),
+            MoveTo(108,2),
+            Print("Motors"),
+            SetAttribute(Attribute::Reset),
+            Hide,
         ).unwrap();
 
-        let datalog = Datalog {motor1: 0, motor2: 0, motor3: 0, motor4: 0, rtc: 0, yaw: 0.0, pitch: 0.0, roll: 0.0, x: 0, y: 0, z: 0, bat: 0, bar: 0, workingmode: WorkingModes::ManualMode, arguments: [0, 0, 0, 0], control_loop_time: 0, yaw_f: 0.0, pitch_f: 0.0, roll_f: 0.0, yaw_r: todo!(), pitch_r: todo!(), roll_r: todo!()  };
+        let datalog = Datalog {motor1: 0, motor2: 0, motor3: 0, motor4: 0, rtc: 0, yaw: 0.0, pitch: 0.0, roll: 0.0, x: 0, y: 0, z: 0, bat: 0, bar: 0, workingmode: WorkingModes::ManualMode, arguments: [0, 0, 0, 0], control_loop_time: 0, yaw_f: 0.0, pitch_f: 0.0, roll_f: 0.0, yaw_r: 0.0, pitch_r: 0.0, roll_r: 0.0  };
         let message = Message::Datalogging(datalog);
         let packet = Packet::new(message);
 
         let mut packetmanager = PacketManager::new();
         packetmanager.add_packet(packet);
 
+        // Create the bar chart
+        // let data = [("Motor 1", datalog.motor1), ("Motor 2", datalog.motor2), ("Motor 3", datalog.motor3), ("Motor 4", datalog.motor4)];
+        // let mut chart = BarChart::default()
+        //     .data(&data)
+        //     .max(500)
+        //     .bar_width(5)
+        //     .style(Style::default().fg(Color::Yellow));
+
+
+
+
         // Read one packet from the packetmanager and use it
         let get_packet = packetmanager.read_packet();
 
-        // Show message sent by drone in terminal
+        //Show message sent by drone in terminal
         match get_packet {
             None => (),
             Some(x) => {
@@ -403,54 +444,418 @@ mod tests {
                 }
             }
         }
-
-        let mut device_listener = DeviceListener::new();
-        let mut bundle_new = SettingsBundle::default();
         
-        // Message vec to show messages in terminal
-        let mut messagevec: Vec<Message> = Vec::new();
-    
-        loop {
-            // Receive user input
-            let bundle_result = device_listener.get_combined_settings();
-    
-            match bundle_result {
-                Ok(bundle) => {
-                    if bundle != bundle_new {
-                        bundle_new = bundle;
         
-                        // Match user input with drone message
-                        let message = match bundle.mode {
-                            WorkingModes::SafeMode => Message::SafeMode,
-                            WorkingModes::PanicMode => Message::PanicMode,
-                            WorkingModes::ManualMode => Message::ManualMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift),
-                            WorkingModes::CalibrationMode => Message::CalibrationMode,
-                            WorkingModes::YawControlMode => Message::YawControlMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift, bundle.yaw_control_p),
-                            WorkingModes::FullControlMode => Message::FullControlMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift, bundle.yaw_control_p, bundle.roll_pitch_control_p1, bundle.roll_pitch_control_p2),
-                            _ => (),
-                         };
+        // Create the bar chart
+let data = [("Motor 1", datalog.motor1), ("Motor 2", datalog.motor2), ("Motor 3", datalog.motor3), ("Motor 4", datalog.motor4)];
+let max_value = 500;
+let mut chart = BarChart::default()
+    .data(&data)
+    .max(max_value)
+    .bar_width(5)
+    .style(Style::default());
 
-                        // Add message to messagevec, to show in terminal
-                        if messagevec.len() >= 10 {
-                            messagevec.rotate_left(1);
-                            messagevec[9] = message;
-                        } else {
-                            messagevec.push(message);
-                        }      
+// Update the chart with the new motor values
+if let Some(x) = get_packet {
+    if let Message::Datalogging(d) = x.message {
+        chart.data_mut()[0].1 = d.motor1;
+        chart.data_mut()[1].1 = d.motor2;
+        chart.data_mut()[2].1 = d.motor3;
+        chart.data_mut()[3].1 = d.motor4;
+    }
+}
 
-                        // Show messages to drone in terminal
-                        for i in 0..messagevec.len() {
-                            execute!(
-                                stdout(),
-                                MoveTo(0,i as u16 + 2),
-                                Print(&messagevec[i]), Print("                                                     ")
-                            ).unwrap();
-                        }  
+// Render the chart
+let chart_area = Rect::new(0, 3, 50, 10);
+let chart_widget = ChartWidget::default()
+    .bar_chart(chart)
+    .title("Motor Speeds")
+    .bar_style(Style::default().fg(Color::Cyan));
+f.render_widget(chart_widget, chart_area);
 
-                    }
-                },
-                Err(device) => println!("{:?}", device),    
-            }           
+        
+            // let stdout = io::stdout();
+            // let backend = CrosstermBackend::new(stdout);
+            // let mut terminal = Terminal::new(backend)?;
+            // //terminal.clear()?;
+        
+            //  let mut sine_data: Vec<(f64, f64)> = Vec::new();
+            //  let mut cosine_data: Vec<(f64, f64)> = Vec::new();
+            //  let mut data = Vec::new(); // Initialize an empty vector for the data
+            
+        
+        
+            // let mut x = 0.0;
+        
+            // execute!(stdout(), terminal::EnterAlternateScreen)?;
+        
+            // loop {
+            //     let start = Instant::now();
+            //     let x_label = format!("X Axis Label - Iteration {}", data.len());
+            //     let chart_block = Block::default().borders(Borders::ALL).title(x_label);
+               
+            //     let new_data = [
+            //         ("A", rand::random::<u64>() % 10),
+            //         ("B", rand::random::<u64>() % 10),
+            //         ("C", rand::random::<u64>() % 10),
+            //         ("D", rand::random::<u64>() % 10),
+            //     ];
+            //     data = new_data.to_vec(); // Update the vector with the new data
+        
+            //     //thread::sleep(Duration::from_millis(500));
+            //     //Generate sine wave data
+            //     let sine_y = (x * PI / 10.0).sin();
+            //     sine_data.push((x, sine_y));
+            //     let cosine_y = (x * PI / 10.0).cos();
+            //     cosine_data.push((x, cosine_y));
+        
+            //     x += 0.1;
+        
+            //     // Truncate data to last 100 points
+            //     if sine_data.len() > 100 {
+            //         sine_data.remove(0);
+            //     }
+            //      if cosine_data.len() > 100 {
+            //         cosine_data.remove(0);
+            //     }
+        
+            //     // Draw plot
+            //     terminal.draw(|f| {
+            //         let size = f.size();
+            //         let constraints = [
+            //             Constraint::Percentage(30),
+            //             Constraint::Percentage(30),
+            //             Constraint::Percentage(10),
+            //             Constraint::Percentage(30),
+            //         ];
+            //         let slices = Layout::default()
+            //             .direction(Direction::Vertical)
+            //             .constraints(constraints)
+            //             .split(size);
+        
+            //         let chart = Chart::new(
+            //             vec![
+            //                 Dataset::default()
+            //                 .marker(Marker::Braille)
+            //                 .style(tui::style::Style::default().fg(tui::style::Color::Yellow))
+            //                 .data(&sine_data),
+        
+            //                 Dataset::default()
+            //                 .marker(Marker::Braille)
+            //                 .style(tui::style::Style::default().fg(tui::style::Color::Green))
+            //                 .data(&cosine_data),
+            //             ]
+                
+            //         )
+            //         .block(
+            //             Block::default()
+            //                 .title(Span::styled(
+            //                     "Sine and Cosine Waves",
+            //                     tui::style::Style::default()
+            //                     .fg(tui::style::Color::White),
+            //                 ))
+            //                 .borders(Borders::ALL)
+            //                 .border_style(tui::style::Style::default()
+            //                 .fg(tui::style::Color::Yellow)),
+            //         )
+            //         .x_axis(
+            //             Axis::default()
+            //                 .bounds([x - 10.0, x])
+            //                 .title("X Axis")
+            //                 .style(tui::style::Style::default().fg(tui::style::Color::White)),
+            //         )
+            //         .y_axis(
+            //             Axis::default()
+            //                 .bounds([-1.0, 1.0])
+            //                 .title("Y Axis")
+            //                 .style(tui::style::Style::default().fg(tui::style::Color::White)),
+            //         );
+        
+            //         f.render_widget(chart, slices[1]);
+        
+                   
+                    
+            //         let text = format!("x = {:.2}, sine y = {:.2}, cosine y = {:.2}", x, sine_y, cosine_y);
+            //         let text_widget = Paragraph::new(text).block(
+            //             Block::default()
+            //                 .title(Span::styled(
+            //                     "Current Data Point",
+            //                     tui::style::Style::default().fg(tui::style::Color::Green),
+            //                 ))
+            //                 .borders(Borders::ALL),
+            //         );
+            //         f.render_widget(text_widget, slices[2]);
+            //         let size = f.size();
+            //         let chart_area = Layout::default()
+            //             .direction(Direction::Vertical)
+            //             .margin(5)
+            //             .constraints([Constraint::Percentage(40)].as_ref())
+            //             .horizontal_margin(10)
+            //             .vertical_margin(30)
+            //             .split(size);
+            //         // Create a new bar chart with the current data
+            //         let bar_chart = BarChart::default()
+            //             .bar_width(2)
+            //             .bar_gap(1)
+            //             .data(&data) // Pass a reference to the vector
+            //             .bar_width(3)
+            //             .bar_gap(1)
+            //             .value_style(Style::default())
+            //             .bar_style(Style::default())
+            //             .max(10)
+            //             .block(chart_block);
+            //         // Render the chart in the chart area
+            //         f.render_widget(bar_chart, slices[3]);
+            //     })?;
+        
+                
+            //     thread::sleep(Duration::from_millis(75));
+            //     }
+            
+        
+        
+        
+        // execute!
+        // println!("{:?}", chart);
+        // print_command(bundle);
+        // print_datalog(packet);
+        // graph_datalog(packet);
+
+        //loop {}
+
         }
+    
+        
+        #[test]
+fn test_tui2() {
+    // Setup terminal interface
+    execute!(
+        stdout(),
+        terminal::Clear(terminal::ClearType::All),
+        MoveTo(50,0),
+        SetAttribute(Attribute::Bold),
+        SetForegroundColor(Color::Blue),
+        Print("PC interface"),
+        MoveTo(50,2),
+        SetForegroundColor(Color::White),
+        Print("Drone data"),
+        MoveTo(0,2),
+        Print("Command to drone"),
+        MoveTo(108,2),
+        Print("Motors"),
+        SetAttribute(Attribute::Reset),
+        Hide,
+    ).unwrap();
+
+    let datalog = Datalog {motor1: 0, motor2: 0, motor3: 0, motor4: 0, rtc: 0, yaw: 0.0, pitch: 0.0, roll: 0.0, x: 0, y: 0, z: 0, bat: 0, bar: 0, workingmode: WorkingModes::ManualMode, arguments: [0, 0, 0, 0], control_loop_time: 0, yaw_f: 0.0, pitch_f: 0.0, roll_f: 0.0, yaw_r: 0.0, pitch_r: 0.0, roll_r: 0.0 };
+    let message = Message::Datalogging(datalog);
+    let packet = Packet::new(message);
+
+    let mut packetmanager = PacketManager::new();
+    packetmanager.add_packet(packet);
+
+    // Create the bar chart
+    let mut chart = BarChart::default()
+        .max(500)
+        .bar_width(5)
+        .style(Style::default());
+
+    // Read one packet from the packetmanager and use it
+    let get_packet = packetmanager.read_packet();
+
+    //Show message sent by drone in terminal
+    match get_packet {
+        None => (),
+        Some(x) => {
+            if let Message::Datalogging(d) = x.message {
+                // Update the bar chart with the latest motor speeds
+                let data = [
+                    ("Motor 1", d.motor1),
+                    ("Motor 2", d.motor2),
+                    ("Motor 3", d.motor3),
+                    ("Motor 4", d.motor4),
+                ];
+                chart = chart.data(&data);
+
+                execute!(
+                    stdout(),
+                    SetAttribute(Attribute::Reset),
+                    MoveTo(0, 4),
+                    chart.render(),
+                    MoveTo(120,2),
+                    Print("Motors: "),
+                    Print(d.motor1), Print(", "),
+                    Print(d.motor2), Print(", "),
+                    Print(d.motor3), Print(", "),
+                    Print(d.motor4), Print(" RPM"),
+                    MoveTo(120,3),
+                    Print("Time: "), Print(d.rtc), 
+                    MoveTo(120,4),
+                    Print("YPR: "), Print(d.yaw), Print(", "),
+                    Print(d.pitch), Print(", "),
+                    Print(d.roll),
+                    MoveTo(120,5),
+                    Print("Filterd: "), Print(d.yaw_f), Print(", "),
+                    Print(d.pitch_f), Print(", "),
+                    Print(d.roll_f),
+                    MoveTo(120,6),
+                    Print("ACC: "), Print(d.x), Print(", "),
+                    Print(d.y), Print(", "),
+                    Print(d.z), 
+                    MoveTo(120,7),
+                    Print("Battery: "), Print(d.bat), Print(" mV"), 
+                    MoveTo(120,8),
+                    Print("Barometer: "), Print(d.bar), Print(" 10^-5 bar"), 
+                    ).unwrap();
+
+                        
+                }
+            }
+        }
+
+    }
+    #[test]
+    fn test_tui3()->Result<()>{
+    let stdout = io::stdout();
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
+    terminal.clear()?;
+
+     let mut sine_data: Vec<(f64, f64)> = Vec::new();
+     let mut cosine_data: Vec<(f64, f64)> = Vec::new();
+     let mut data = Vec::new(); // Initialize an empty vector for the data
+    
+
+
+    let mut x = 0.0;
+
+    //execute!(stdout(), terminal::EnterAlternateScreen)?;
+
+    loop {
+        let start = Instant::now();
+        let x_label = format!("X Axis Label - Iteration {}", data.len());
+        let chart_block = Block::default().borders(Borders::ALL).title(x_label);
+       
+        let new_data = [
+            ("A", rand::random::<u64>() % 10),
+            ("B", rand::random::<u64>() % 10),
+            ("C", rand::random::<u64>() % 10),
+            ("D", rand::random::<u64>() % 10),
+        ];
+        data = new_data.to_vec(); // Update the vector with the new data
+
+        //thread::sleep(Duration::from_millis(500));
+        //Generate sine wave data
+        let sine_y = (x * PI / 10.0).sin();
+        sine_data.push((x, sine_y));
+        let cosine_y = (x * PI / 10.0).cos();
+        cosine_data.push((x, cosine_y));
+
+        x += 0.1;
+
+        // Truncate data to last 100 points
+        if sine_data.len() > 100 {
+            sine_data.remove(0);
+        }
+         if cosine_data.len() > 100 {
+            cosine_data.remove(0);
+        }
+
+        // Draw plot
+        terminal.draw(|f| {
+            let size = f.size();
+            let constraints = [
+                Constraint::Percentage(30),
+                Constraint::Percentage(30),
+                Constraint::Percentage(10),
+                Constraint::Percentage(30),
+            ];
+            let slices = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints(constraints)
+                .split(size);
+
+            let chart = Chart::new(
+                vec![
+                    Dataset::default()
+                    .marker(Marker::Braille)
+                    .style(tui::style::Style::default().fg(tui::style::Color::Yellow))
+                    .data(&sine_data),
+
+                    Dataset::default()
+                    .marker(Marker::Braille)
+                    .style(tui::style::Style::default().fg(tui::style::Color::Green))
+                    .data(&cosine_data),
+                ]
+        
+            )
+            .block(
+                Block::default()
+                    .title(Span::styled(
+                        "Sine and Cosine Waves",
+                        tui::style::Style::default()
+                        .fg(tui::style::Color::White),
+                    ))
+                    .borders(Borders::ALL)
+                    .border_style(tui::style::Style::default()
+                    .fg(tui::style::Color::Yellow)),
+            )
+            .x_axis(
+                Axis::default()
+                    .bounds([x - 10.0, x])
+                    .title("X Axis")
+                    .style(tui::style::Style::default().fg(tui::style::Color::White)),
+            )
+            .y_axis(
+                Axis::default()
+                    .bounds([-1.0, 1.0])
+                    .title("Y Axis")
+                    .style(tui::style::Style::default().fg(tui::style::Color::White)),
+            );
+
+            f.render_widget(chart, slices[1]);
+
+           
+            
+            let text = format!("x = {:.2}, sine y = {:.2}, cosine y = {:.2}", x, sine_y, cosine_y);
+            let text_widget = Paragraph::new(text).block(
+                Block::default()
+                    .title(Span::styled(
+                        "Current Data Point",
+                        tui::style::Style::default().fg(tui::style::Color::Green),
+                    ))
+                    .borders(Borders::ALL),
+            );
+            f.render_widget(text_widget, slices[2]);
+            let size = f.size();
+            let chart_area = Layout::default()
+                .direction(Direction::Vertical)
+                .margin(5)
+                .constraints([Constraint::Percentage(40)].as_ref())
+                .horizontal_margin(10)
+                .vertical_margin(30)
+                .split(size);
+            // Create a new bar chart with the current data
+            let bar_chart = BarChart::default()
+                .bar_width(2)
+                .bar_gap(1)
+                .data(&data) // Pass a reference to the vector
+                .bar_width(3)
+                .bar_gap(1)
+                .value_style(Style::default())
+                .bar_style(Style::default())
+                .max(10)
+                .block(chart_block);
+            // Render the chart in the chart area
+            f.render_widget(bar_chart, slices[3]);
+        })?;
+
+        
+        thread::sleep(Duration::from_millis(75));
+        }
+    
+
+
+
     }
 }
