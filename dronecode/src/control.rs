@@ -65,10 +65,10 @@ pub fn control_loop() -> ! {
     //         None => (),
     //     };
     // }
-
     for i in 0.. {
+        let mut begin = Instant::now();
+
         // Measure time of loop iteration
-        let begin = Instant::now();
 
         if i % 50 == 0 {
             Blue.toggle();
@@ -171,14 +171,16 @@ pub fn control_loop() -> ! {
         // Read motor and sensor values
         let motors = get_motors();
 
-        // Measure time of loop iteration
-        let end = Instant::now();
-        let control_loop_time = end.duration_since(begin).as_micros();
 
         let sensor_data = block!(read_dmp_bytes()).unwrap();
         angles = YawPitchRoll::from(sensor_data);
         
         drone.set_sample_time(begin);
+
+        // Measure time of loop iteration
+        let end = Instant::now();
+        let control_loop_time = end.duration_since(begin).as_micros();
+        
         measure_raw(&mut drone, control_loop_time);
         filter(&mut drone, control_loop_time);
 
@@ -198,12 +200,6 @@ pub fn control_loop() -> ! {
                 yaw_angle: drone.angles_raw.yaw, 
                 pitch_angle: drone.angles_raw.pitch,
                 roll_angle: drone.angles_raw.roll,
-                gyro_x: 0.0,
-                gyro_y: 0.0,
-                gyro_z: 0.0,
-                acc_x: 0, 
-                acc_y: 0, 
-                acc_z: 0, 
                 bat: read_battery(), 
                 bar: 100, 
                 workingmode: drone.get_mode(),

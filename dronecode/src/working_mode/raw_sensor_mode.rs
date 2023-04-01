@@ -62,7 +62,7 @@ pub fn measure_raw(drone: &mut Drone, time: u128) {
 
     drone.angles_raw.pitch = micromath::F32Ext::atan2(pitch_acc, micromath::F32Ext::sqrt(roll_acc * roll_acc + yaw_acc * yaw_acc));
     drone.angles_raw.roll = micromath::F32Ext::atan2(roll_acc, yaw_acc);
-    drone.angles_raw.yaw -= dps_to_rads(raw_to_dps(gyro.z)) * dt;
+    drone.angles_raw.yaw -= dps_to_rads(raw_to_dps(gyro.z)) * dt * 5.0;
 }
 
 impl Kalman {
