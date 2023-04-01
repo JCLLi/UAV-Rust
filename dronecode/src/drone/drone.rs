@@ -2,6 +2,8 @@ use tudelft_quadrupel::motor::set_motor_max;
 use protocol::{Message, WorkingModes};
 use crate::controllers::PID;
 use crate::drone::{Drone, Getter, motors, Setter};
+use crate::kalman::KalmanFilter;
+use crate::working_mode::raw_sensor_mode::{YawPitchRollRate, Kalman};
 use crate::yaw_pitch_roll::YawPitchRoll;
 use tudelft_quadrupel::time::Instant;
 use crate::drone::motors::{MOTOR_MAX_MANUAL, MOTOR_MAX_CONTROL};
@@ -21,7 +23,7 @@ impl Drone {
             mode: WorkingModes::SafeMode,
             current_attitude: YawPitchRoll{ yaw: 0.0, pitch: 0.0, roll: 0.0 },
             last_attitude:YawPitchRoll{ yaw: 0.0, pitch: 0.0, roll: 0.0 },
-            thrust: 0 as f32,
+            thrust: 0.0,
             yaw_controller: PID::new(0.0,0.0,0.0),
             full_controller: FullController::new(),
             arguments: [0, 0, 0, 0],
@@ -29,6 +31,11 @@ impl Drone {
             last_sample_time: Instant::now(),
             calibration: Calibration::new(),
             test: [0.0, 0.0],
+            raw_test: false,
+            angles_raw: YawPitchRoll { yaw: 0.0, pitch: 0.0, roll: 0.0 },
+            rates: YawPitchRollRate {yaw_rate: 0.0, pitch_rate: 0.0, roll_rate: 0.0},
+            kalman: Kalman::new(),
+            raw_mode: false,
         }
     }
 
@@ -66,6 +73,12 @@ impl Drone {
                                    gain_u16_to_f32(*pitch_roll_p2));
                 self.arguments = [*pitch, *roll, *yaw, *lift]
             }
+            Message::RawSensorMode(test) => {
+                mode_switch(self, WorkingModes::RawSensorMode);
+                motions(self, [0, 0, 0, 0]);
+                self.set_raw_mode_test(*test);
+                self.arguments = [0, 0, 0, 0]
+            }
             _ => mode_switch(self, WorkingModes::SafeMode),//TODO: add new mode and change the 'new' argument
         }
     }
@@ -80,6 +93,7 @@ impl Getter for Drone {
             WorkingModes::YawControlMode => WorkingModes::YawControlMode,
             WorkingModes::CalibrationMode => WorkingModes::CalibrationMode,
             WorkingModes::FullControlMode => WorkingModes::FullControlMode,
+            WorkingModes::RawSensorMode => WorkingModes::RawSensorMode,
         }
     }
 
@@ -102,6 +116,10 @@ impl Getter for Drone {
         self.full_controller.pitch_p2.pwm_change,
         self.full_controller.roll_p2.pwm_change]
     }
+    fn get_raw_mode_test(&self) -> bool { self.raw_test }
+    fn get_raw_angles(&self) -> YawPitchRoll { self.angles_raw }
+    fn get_rate_angles(&self) -> YawPitchRollRate { self.rates }
+    fn get_raw_mode(&self) -> bool { self.raw_mode }
 }
 
 impl Setter for Drone {
@@ -186,6 +204,20 @@ impl Setter for Drone {
         self.calibration.roll = roll;
     }
     fn set_test(&mut self, test_value: [f32; 2]) { self.test = test_value }
+    fn set_raw_mode_test(&mut self, test: bool) { self.raw_test = test }
+    fn set_raw_angles(&mut self, angles:[f32; 3]) {
+        self.angles_raw.yaw = angles[0];
+        self.angles_raw.pitch = angles[1];
+        self.angles_raw.roll = angles[2];
+    }
+    fn set_rate_angles(&mut self, rate:[f32; 3]) {
+        self.rates.yaw_rate = rate[0];
+        self.rates.pitch_rate = rate[1];
+        self.rates.roll_rate = rate[2];
+    }
+    fn set_raw_mode(&mut self, mode: bool) {
+        self.raw_mode = mode
+    }
     fn reset_all_controller(&mut self) {
         self.reset_yaw_controller();
         self.reset_fpr1_controller();

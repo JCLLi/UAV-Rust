@@ -19,7 +19,8 @@ pub enum WorkingModes {
     ManualMode,
     CalibrationMode,
     YawControlMode,
-    FullControlMode
+    FullControlMode,
+    RawSensorMode
 }
 
 // Convert WorkingModes enum to string
@@ -32,6 +33,7 @@ impl fmt::Display for WorkingModes {
             WorkingModes::CalibrationMode => write!(f, "CalibrationMode"),
             WorkingModes::YawControlMode => write!(f, "YawControlMode"),
             WorkingModes::FullControlMode => write!(f, "FullControllMode"),
+            WorkingModes::RawSensorMode => write!(f, "RawSensorMode"),
         }
     }
 }
@@ -50,6 +52,7 @@ pub enum Message {
     YawControlMode(u16, u16, u16, u16, u16), // last value is yaw control P
     FullControlMode(u16, u16, u16, u16, u16, u16, u16), // last three values are yaw control P, roll pitch control P1 and P2
     Datalogging(Datalog),
+    RawSensorMode(bool), // test raw mode for full control and save the loggings into the flash
 }
 
 // Convert Message enum to string
@@ -62,8 +65,9 @@ impl fmt::Display for Message {
             Message::ManualMode(a, b, c, d) => write!(f, "ManualMode({}, {}, {}, {})", a, b, c, d),
             Message::CalibrationMode => write!(f, "CalibrationMode"),
             Message::YawControlMode(a, b, c, d, e) => write!(f, "YawControlMode({}, {}, {}, {}, {})", a, b, c, d, e),
-            Message::FullControlMode(_,_,_,_,_,_,_) => write!(f, "FullControllMode()"),
-            Message::Datalogging(_) => write!(f, "Datalogging()"),
+            Message::FullControlMode(_,_,_,_,_,_,_) => write!(f, "FullControllMode"),
+            Message::Datalogging(_) => write!(f, "Datalogging"),
+            Message::RawSensorMode(a) => write!(f, "RawSensorMode({})", a),
         }
     }
 }
@@ -76,17 +80,46 @@ pub struct Datalog {
     pub motor3: u16,
     pub motor4:u16,
     pub rtc: u64,
-    pub yaw: f32,
-    pub pitch: f32,
-    pub roll: f32,
-    pub x: i16, 
-    pub y: i16,
-    pub z: i16, 
-    pub bat: u16, 
-    pub bar: u32,
+    pub yaw: f32,       //DMP yaw
+    pub pitch: f32,     //DMP pitch
+    pub roll: f32,      //DMP roll
+    pub yaw_f: f32,     //Filterd yaw
+    pub pitch_f: f32,   //Filterd pitch
+    pub roll_f: f32,    //Filterd roll
+    pub yaw_r: f32,     //Raw yaw
+    pub pitch_r: f32,   //Raw pitch
+    pub roll_r: f32,    //Raw roll
+    pub bat: u16,       
+    pub bar: u32,       
     pub workingmode: WorkingModes,
     pub arguments: [u16; 4],
     pub control_loop_time: u128
+}
+
+impl Datalog {
+    pub fn new() -> Self {
+        Datalog { 
+            motor1: 0, 
+            motor2: 0, 
+            motor3: 0, 
+            motor4: 0, 
+            rtc: 0, 
+            yaw: 0.0, 
+            pitch: 0.0, 
+            roll: 0.0, 
+            yaw_f: 0.0, 
+            pitch_f: 0.0, 
+            roll_f: 0.0, 
+            yaw_r: 0.0, 
+            pitch_r: 0.0, 
+            roll_r: 0.0, 
+            bat: 0, 
+            bar: 0, 
+            workingmode: WorkingModes::SafeMode, 
+            arguments: [0, 0, 0, 0], 
+            control_loop_time: 0 
+        }
+    }
 }
 
 /// A Packet is the message format that contains a command, an argument and a checksum.

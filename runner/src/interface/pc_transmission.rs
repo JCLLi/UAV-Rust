@@ -40,6 +40,7 @@ pub fn write_message(serial: &SerialPort, bundle: SettingsBundle) {
         WorkingModes::CalibrationMode => Message::CalibrationMode,
         WorkingModes::YawControlMode => Message::YawControlMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift, bundle.yaw_control_p),
         WorkingModes::FullControlMode => Message::FullControlMode(bundle.pitch, bundle.roll, bundle.yaw, bundle.lift, bundle.yaw_control_p, bundle.roll_pitch_control_p1, bundle.roll_pitch_control_p2),
+        WorkingModes::RawSensorMode => Message::RawSensorMode(bundle.raw_test),
     };
 
     // Write message over serial

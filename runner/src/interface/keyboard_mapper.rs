@@ -17,6 +17,8 @@ pub enum Commands {
     CalibrationMode,
     YawControlledMode,
     FullControlMode,
+    RawSensorMode,
+    RawSensorModeTest,
     LiftUp,
     LiftDown,
     RollUp,
@@ -31,7 +33,7 @@ pub enum Commands {
     RollPitchControlP1Down,
     RollPitchControlP2Up,
     RollPitchControlP2Down,
-    ResetToZeroPoint
+    ResetToZeroPoint,
 }
 
 // Convert Commands enum to string
@@ -86,6 +88,7 @@ pub fn keymapper(sender: mpsc::Sender<KeyboardCommand>) -> crossterm::Result<()>
                     KeyCode::Char('3') => KeyboardCommand {command: Commands::CalibrationMode, argument: 0},
                     KeyCode::Char('4') => KeyboardCommand {command: Commands::YawControlledMode, argument: 0},
                     KeyCode::Char('5') => KeyboardCommand {command: Commands::FullControlMode, argument: 0},
+                    KeyCode::Char('6') => KeyboardCommand {command: Commands::RawSensorMode, argument: 0},
                     KeyCode::Char('8') => KeyboardCommand {command: Commands::ResetToZeroPoint, argument: 0},
                     KeyCode::Char('a') => KeyboardCommand {command: Commands::LiftUp, argument: STATIC_OFFSET_UP},
                     KeyCode::Char('z') => KeyboardCommand {command: Commands::LiftDown, argument: STATIC_OFFSET_DOWN},
@@ -101,6 +104,7 @@ pub fn keymapper(sender: mpsc::Sender<KeyboardCommand>) -> crossterm::Result<()>
                     KeyCode::Char('k') => KeyboardCommand {command: Commands::RollPitchControlP1Down, argument: CONTROL_STATIC_OFFSET_DOWN},
                     KeyCode::Char('o') => KeyboardCommand {command: Commands::RollPitchControlP2Up, argument: CONTROL_STATIC_OFFSET_UP},
                     KeyCode::Char('l') => KeyboardCommand {command: Commands::RollPitchControlP2Down, argument: CONTROL_STATIC_OFFSET_DOWN},
+                    KeyCode::Char('t') => KeyboardCommand {command: Commands::RawSensorModeTest, argument: 1 },
                     KeyCode::Delete    => KeyboardCommand {command: Commands::Exit, argument: 0},
                     _                  => KeyboardCommand {command: Commands::None, argument: 0},
                 };
