@@ -90,7 +90,7 @@ pub struct Datalog {
     pub pitch_r: f32,   //Raw pitch
     pub roll_r: f32,    //Raw roll
     pub bat: u16,       
-    pub bar: u32,       
+    pub bar: f32,       
     pub workingmode: WorkingModes,
     pub arguments: [u16; 4],
     pub control_loop_time: u128
@@ -114,7 +114,7 @@ impl Datalog {
             pitch_r: 0.0, 
             roll_r: 0.0, 
             bat: 0, 
-            bar: 0, 
+            bar: 0.0, 
             workingmode: WorkingModes::SafeMode, 
             arguments: [0, 0, 0, 0], 
             control_loop_time: 0 

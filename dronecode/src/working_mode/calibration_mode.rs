@@ -14,6 +14,7 @@ pub struct Calibration{
     pub(crate) yaw: [f32;2],
     pub(crate) pitch: [f32;2],
     pub(crate) roll: [f32;2],
+    pub(crate) attitude: f32,
     // pub(crate) acceleration: Accel,
     // pub(crate) pressure: u32,
 }
@@ -44,6 +45,7 @@ impl Calibration {
             yaw: [0.0, 0.0],
             pitch: [0.0, 0.0],
             roll: [0.0, 0.0],
+            attitude:  0.0,
         }
     }
 

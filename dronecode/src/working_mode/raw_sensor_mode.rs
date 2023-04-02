@@ -5,6 +5,7 @@ use tudelft_quadrupel::mpu::structs::Gyro;
 use tudelft_quadrupel::mpu::read_raw;
 use crate::drone::{Drone, Getter, Setter};
 use tudelft_quadrupel::time::Instant;
+use micromath::F32Ext;
 use core::f32::consts::PI;
 
 static LSB_SENSITIVITY: f32 = 1.0 / 16.4;
@@ -21,6 +22,20 @@ pub struct YawPitchRollRate {
     pub yaw_rate: f32,
     pub pitch_rate: f32,
     pub roll_rate: f32
+}
+
+pub fn calculate_altitude(pressure: u32, temperature: i32) -> f32 {
+    let temperature_celsius: f32 = temperature as f32 / 100.0; // Convert temperature from centi-degrees Celsius to degrees Celsius
+    let lapse_rate: f32 = 0.0065; // Standard temperature lapse rate in degrees Celsius per meter
+    let pressure_sea_level: f32 = 1.013250; // Standard atmospheric pressure at sea level in Bar
+
+    let p = pressure as f32 / 100000.0; // Convert pressure from 10^-5 bar to bar
+    let h = (((pressure_sea_level/p).powf(1.0/5.257) - 1.0) * (temperature_celsius + 273.15)) / lapse_rate;
+    return h;
+}
+
+pub fn calculate_velocity(acceleration: i16) -> f32 {
+    acceleration as f32 / 16384.0 * 9.81 * 100.0 // Convert the acceleration to m
 }
 
 pub fn filter(drone: &mut Drone, time: u128) {

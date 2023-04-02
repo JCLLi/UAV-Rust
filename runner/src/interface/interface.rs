@@ -199,7 +199,7 @@ fn run_interface(serial: SerialPort) -> io::Result<()> {
     let mut queues = [
         (ConstGenericRingBuffer::<f32, HISTORY>::new(), "Raw"),
         (ConstGenericRingBuffer::<f32, HISTORY>::new(), "Filtered"),
-        (ConstGenericRingBuffer::<f32, HISTORY>::new(), "MPU"),
+        (ConstGenericRingBuffer::<f32, HISTORY>::new(), "Velocity"),
     ];
 
     // let mut last_msg = Instant::now();
@@ -251,9 +251,9 @@ fn run_interface(serial: SerialPort) -> io::Result<()> {
     }) {
         
         if let Ok(d) = rx_gui.recv() {        
-            queues[0].0.push(d.pitch_r);
+            queues[0].0.push(d.bar);
             queues[1].0.push(d.pitch_f);
-            queues[2].0.push(d.pitch);
+            queues[2].0.push(d.roll_f);
         }
     }
     
@@ -492,7 +492,7 @@ fn print_datalog(packet: Packet) {
             MoveTo(50,6),
             Print("Battery:   "), Print(d.bat), Print(" mV"), Print("       "),
             MoveTo(50,7),
-            Print("Barometer: "), Print(d.bar), Print(" 10^-5 bar"), Print("       "),
+            Print("Altitude:  "), Print(d.bar), Print(" meter"), Print("       "),
             MoveTo(50,8),
             Print("Mode:      "), Print(d.workingmode), Print("       "), 
             MoveTo(50,9),

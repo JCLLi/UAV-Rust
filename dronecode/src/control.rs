@@ -1,5 +1,5 @@
 use alloc::vec::Vec;
-use tudelft_quadrupel::barometer::read_pressure;
+use tudelft_quadrupel::barometer::{read_pressure, read_temperature};
 use protocol::{self, Message, Datalog, WorkingModes};
 use tudelft_quadrupel::battery::read_battery;
 use tudelft_quadrupel::block;
@@ -10,7 +10,8 @@ use tudelft_quadrupel::time::{set_tick_frequency, wait_for_next_tick, Instant};
 use tudelft_quadrupel::mpu::read_dmp_bytes;
 use crate::drone_transmission::{write_packet, read_message};
 use crate::log_storage_manager::LogStorageManager;
-use crate::working_mode::raw_sensor_mode::{measure_raw, filter};
+use crate::working_mode::raw_sensor_mode::{measure_raw, filter, calculate_altitude, calculate_velocity};
+use crate::kalman::{KalmanFilter, AltitudeKalmanFilter};
 use crate::yaw_pitch_roll::YawPitchRoll;
 use crate::drone::{Drone, Getter, Setter};
 use crate::working_mode::panic_mode::{panic_mode, panic_check};
@@ -41,6 +42,16 @@ pub fn control_loop() -> ! {
     let mut shared_buf = Vec::new();
 
     let mut angles = YawPitchRoll { yaw: 0.0, pitch: 0.0, roll: 0.0};
+
+    let mut absolute_altitude: f32 = 0.0;
+
+    for i in 0..2000 {
+        absolute_altitude = calculate_altitude(read_pressure(), read_temperature());
+    }
+
+    
+
+    let mut altitude_kalman = AltitudeKalmanFilter::default();
 
     for i in 0.. {
         // Measure time of loop iteration
@@ -167,6 +178,17 @@ pub fn control_loop() -> ! {
            drone.set_current_attitude([angles.yaw, angles.pitch, angles.roll]);
        }
 
+
+       let altitude = calculate_altitude(read_pressure(), read_temperature()) - absolute_altitude;
+
+       let (acc, _) = read_raw().unwrap();
+
+       let vel_z = calculate_velocity(acc.z);
+
+       let dt = (control_loop_time as f32) / 1_000_000.0;
+
+       let (altitude_state, velocity_state) = altitude_kalman.update(altitude * 100.0, vel_z, dt);
+
         //Store the log files
         let log = Message::Datalogging(Datalog 
             { 
@@ -179,13 +201,13 @@ pub fn control_loop() -> ! {
                 pitch: angles.pitch,
                 roll: angles.roll, 
                 bat: read_battery(), 
-                bar: read_pressure(),
+                bar: altitude,
                 workingmode: drone.get_mode(),
                 arguments: drone.get_arguments(),
                 control_loop_time,
-                yaw_f: drone.current_attitude.yaw,
-                pitch_f: drone.current_attitude.pitch,
-                roll_f: drone.current_attitude.roll, 
+                yaw_f: vel_z,
+                pitch_f: altitude_state / 100.0,
+                roll_f: velocity_state / 100.0 , 
                 yaw_r: drone.angles_raw.yaw,
                 pitch_r: drone.angles_raw.pitch,
                 roll_r: drone.angles_raw.roll,
