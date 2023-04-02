@@ -8,7 +8,7 @@ pub mod panic_mode;
 pub mod calibration_mode;
 pub mod yaw_control_mode;
 pub mod full_control_mode;
-pub mod lift_control_mode;
+pub mod height_control_mode;
 
 pub fn mode_switch(drone: &mut Drone, new: WorkingModes) {
     match drone.get_mode() {
@@ -50,6 +50,16 @@ pub fn mode_switch(drone: &mut Drone, new: WorkingModes) {
             }
             drone.set_mode(new);
         },
+        WorkingModes::HeightControlMode => {
+            match new {
+                WorkingModes::CalibrationMode
+                | WorkingModes::SafeMode
+                | WorkingModes::PanicMode => {let temp = panic_mode();}
+                WorkingModes::YawControlMode | WorkingModes::FullControlMode => { drone.reset_all_controller();}
+                _ => ()
+            }
+            drone.set_mode(new);
+        }
     }
 }
 
@@ -57,10 +67,11 @@ pub fn mode_switch(drone: &mut Drone, new: WorkingModes) {
 pub fn motions(drone: &mut Drone, argument: [u16; 4]) {
     match drone.get_mode() {
         //WorkingModes::ManualMode => manual_mode::motion(drone, argument),
-        WorkingModes::ManualMode => lift_control_mode::motion(drone, argument),
+        WorkingModes::ManualMode => manual_mode::motion(drone, argument),
         WorkingModes::YawControlMode => yaw_control_mode::motion(drone, argument),
         WorkingModes::FullControlMode => full_control_mode::motion(drone, argument),
         WorkingModes::CalibrationMode => calibration_mode::calibrate(drone),
+        WorkingModes::HeightControlMode => height_control_mode::motion(drone, argument),
         _ => (),//TODO:add new operation with new modes
     }
 }

@@ -19,7 +19,8 @@ pub enum WorkingModes {
     ManualMode,
     CalibrationMode,
     YawControlMode,
-    FullControlMode
+    FullControlMode,
+    HeightControlMode,
 }
 
 // Convert WorkingModes enum to string
@@ -32,6 +33,7 @@ impl fmt::Display for WorkingModes {
             WorkingModes::CalibrationMode => write!(f, "CalibrationMode"),
             WorkingModes::YawControlMode => write!(f, "YawControlMode"),
             WorkingModes::FullControlMode => write!(f, "FullControllMode"),
+            WorkingModes::HeightControlMode => write!(f, "HeightControlMode"),
         }
     }
 }
@@ -49,6 +51,7 @@ pub enum Message {
     CalibrationMode,
     YawControlMode(u16, u16, u16, u16, u16), // last value is yaw control P
     FullControlMode(u16, u16, u16, u16, u16, u16, u16), // last three values are yaw control P, roll pitch control P1 and P2
+    HeightControlMode(u16, u16, u16, u16, u16, u16, u16, u16),  // last three values are yaw control P, roll pitch control P1 and P2, height control P
     Datalogging(Datalog),
 }
 
@@ -63,6 +66,7 @@ impl fmt::Display for Message {
             Message::CalibrationMode => write!(f, "CalibrationMode"),
             Message::YawControlMode(a, b, c, d, e) => write!(f, "YawControlMode({}, {}, {}, {}, {})", a, b, c, d, e),
             Message::FullControlMode(_,_,_,_,_,_,_) => write!(f, "FullControllMode()"),
+            Message::HeightControlMode(_,_,_,_,_,_,_,_) =>write!(f, "HeightControlMode()"),
             Message::Datalogging(_) => write!(f, "Datalogging()"),
         }
     }

@@ -364,6 +364,8 @@ fn print_command(bundle: SettingsBundle) {
         Print("P1:    "), Print(u16_to_f32(bundle.roll_pitch_control_p1)), Print("       "),
         MoveTo(2,12),
         Print("P2:    "), Print(u16_to_f32(bundle.roll_pitch_control_p2)), Print("       "),
+        MoveTo(2,13),
+        Print("P height:    "), Print(u16_to_f32(bundle.height_control_p)), Print("       "),
     ).unwrap();
 }   
 

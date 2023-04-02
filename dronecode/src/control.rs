@@ -1,5 +1,5 @@
 use alloc::vec::Vec;
-use tudelft_quadrupel::barometer::read_pressure;
+use tudelft_quadrupel::barometer::{read_pressure, read_temperature};
 use protocol::{self, Message, Datalog, WorkingModes};
 use tudelft_quadrupel::battery::read_battery;
 use tudelft_quadrupel::block;
@@ -15,11 +15,13 @@ use crate::drone::{Drone, Getter, Setter};
 use crate::working_mode::panic_mode::{panic_mode, panic_check};
 use tudelft_quadrupel::time::assembly_delay;
 use crate::drone;
+use crate::working_mode::height_control_mode::height_cal;
 
 const FIXED_SIZE:usize = 64;
 const MOTION_DELAY:u16 = 100;//Set a big value for debugging
 const NO_CONNECTION_PANIC:u16 = 10; // Counts how often messages are not received
 const FIXED_FREQUENCY:u64 = 100; //100 Hz
+const ACC_PARAMETER: f32 = 9.8 / 32768 as f32;
 
 pub fn control_loop() -> ! {
     set_motor_max(600);
@@ -96,11 +98,15 @@ pub fn control_loop() -> ! {
         }
 
         let sensor_data = block!(read_dmp_bytes()).unwrap();
+        let (acc, gyro) = read_raw().unwrap();
         let sample_time = Instant::now();
-        drone.set_sample_time(sample_time);
 
+        drone.set_sample_time(sample_time);
+        //height_cal(&mut drone);
         angles = drone.get_calibration().full_compensation(YawPitchRoll::from(sensor_data));
         drone.set_current_attitude([angles.yaw, angles.pitch, angles.roll]);
+
+        drone.set_acceleration((acc.z - 17110) as f32 * ACC_PARAMETER);
 
         //First the control part
         match drone.get_mode() {
@@ -153,6 +159,15 @@ pub fn control_loop() -> ! {
                 Red.off();
                 Green.on();
             },
+            WorkingModes::HeightControlMode => {
+                if new_message {
+                    drone.message_check(&message);
+                }
+
+                Yellow.on();
+                Red.on();
+                Green.on();
+            },
             _ => {
                 if new_message {
                     drone.message_check(&message);
@@ -162,14 +177,10 @@ pub fn control_loop() -> ! {
 
         // Read motor and sensor values
         let motors = get_motors();
-
-
-        let (_, gyro) = read_raw().unwrap();
         let pressure = drone.get_height();
         // Measure time of loop iteration
         let end = Instant::now();
         let control_loop_time = end.duration_since(begin).as_micros();
-
         //Store the log files
         let log = Message::Datalogging(Datalog 
             { 
@@ -184,9 +195,9 @@ pub fn control_loop() -> ! {
                 yaw: drone.get_test()[0],
                 pitch: drone.get_test()[1],
                 roll: 0.0,
-                x: gyro.x, 
-                y: gyro.y, 
-                z: gyro.z, 
+                x: gyro.x,
+                y: gyro.y,
+                z: gyro.z,
                 bat: read_battery(),
                 bar: pressure[0],
                 workingmode: drone.get_mode(),

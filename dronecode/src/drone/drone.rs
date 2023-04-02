@@ -21,10 +21,13 @@ impl Drone {
             mode: WorkingModes::SafeMode,
             current_attitude: YawPitchRoll{ yaw: 0.0, pitch: 0.0, roll: 0.0 },
             last_attitude:YawPitchRoll{ yaw: 0.0, pitch: 0.0, roll: 0.0 },
+            velocity: 0.0,
+            acceleration: 0.0,
             height: [0, 0],
+            height_cal: 0.0,
             yaw_controller: PID::new(0.0,0.0,0.0),
             full_controller: FullController::new(),
-            height_controller: PID::new(1.0, 0.0, 0.0),
+            height_controller: PID::new(0.0, 0.0, 0.0),
             arguments: [0, 0, 0, 0],
             sample_time: Instant::now(),
             last_sample_time: Instant::now(),
@@ -41,6 +44,7 @@ impl Drone {
             Message::ManualMode(pitch, roll, yaw, lift)
             => {
                 set_motor_max(MOTOR_MAX_MANUAL);
+                set_motor_max(MOTOR_MAX_CONTROL);
                 mode_switch(self, WorkingModes::ManualMode);
                 motions(self, [*pitch, *roll, *yaw, *lift]);
                 self.arguments = [*pitch, *roll, *yaw, *lift]
@@ -67,6 +71,17 @@ impl Drone {
                                    gain_u16_to_f32(*pitch_roll_p2));
                 self.arguments = [*pitch, *roll, *yaw, *lift]
             }
+            Message::HeightControlMode(pitch, roll, yaw, lift, yaw_p2, pitch_roll_p1,
+                                        pitch_roll_p2, height_p) =>{
+                set_motor_max(MOTOR_MAX_CONTROL);
+                mode_switch(self, WorkingModes::HeightControlMode);
+                motions(self, [*pitch, *roll, *yaw, *lift]);
+                self.set_full_gain(gain_u16_to_f32(*yaw_p2),
+                                  gain_u16_to_f32(*pitch_roll_p1),
+                                  gain_u16_to_f32(*pitch_roll_p2));
+                self.set_height_gain(gain_u16_to_f32(*height_p));
+                self.arguments = [*pitch, *roll, *yaw, *lift]
+            }
             _ => mode_switch(self, WorkingModes::SafeMode),//TODO: add new mode and change the 'new' argument
         }
     }
@@ -81,12 +96,21 @@ impl Getter for Drone {
             WorkingModes::YawControlMode => WorkingModes::YawControlMode,
             WorkingModes::CalibrationMode => WorkingModes::CalibrationMode,
             WorkingModes::FullControlMode => WorkingModes::FullControlMode,
+            WorkingModes::HeightControlMode => WorkingModes::HeightControlMode,
         }
     }
 
     fn get_current_attitude(&self) -> YawPitchRoll { self.current_attitude }
     fn get_last_attitude(&self) -> YawPitchRoll { self.last_attitude }
+
+    fn get_velocity(&self) -> f32 { self.velocity }
+
+    fn get_acceleration(&self) -> f32 { self.acceleration }
+
     fn get_height(&self) -> [u32; 2] { self.height }
+
+    fn get_height_cal(&self) -> f32 { self.height_cal }
+
     fn get_yaw_controller(&self) -> PID { self.yaw_controller }
     fn get_full_controller(&self) -> FullController { self.full_controller }
     fn get_height_controller(&self) -> PID { self.height_controller }
@@ -126,10 +150,14 @@ impl Setter for Drone {
         self.last_attitude.roll = angles[2];
     }
 
+    fn set_velocity(&mut self, current_velocity: f32) { self.velocity = current_velocity; }
+    fn set_acceleration(&mut self, current_acceleration: f32) { self.acceleration = current_acceleration }
     fn set_height(&mut self, current_height: u32, origin_height: u32) {
         self.height[0] = current_height;
         self.height[1] = origin_height;
     }
+
+    fn set_height_cal(&mut self, current_height: f32) { self.height_cal = current_height }
 
     fn set_yaw_controller(&mut self, errors: (f32, f32), pwm: f32) {
         self.yaw_controller.last_error = errors.0;

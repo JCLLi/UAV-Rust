@@ -64,6 +64,17 @@ pub fn motor_assign(drone: &Drone, pwm: [f32; 4]){
                 set_motors([m1, m2, m3, m4]);
             }else { set_motors([0, 0, 0, 0]) }
         }
+        WorkingModes::HeightControlMode => {
+            motor_resolution = MOTOR_RESOLUTION_CONTROL;
+            if pwm[3] > 0.0 {
+                let mut m1 = ((0.2 * (pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let mut m2 = ((0.2 * (- pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let mut m3 = ((0.2 * (- pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let mut m4 = ((0.2 * (pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+
+                set_motors([m1, m2, m3, m4]);
+            }else { set_motors([0, 0, 0, 0]) }
+        }
         _ => ()
     }
 
@@ -101,7 +112,6 @@ pub fn normalize_manual_yaw(drone: &mut Drone, argument: [u16; 4]) -> [f32; 4]{
     // Lift
     let mut target_lift = argument[3] as f32 * LIFT_RESOLUTION;
     if target_lift > 1.0 {target_lift = 1 as f32 }
-
     [target_yaw, target_pitch, target_roll, target_lift]
 }
 

@@ -51,7 +51,7 @@ pub fn yaw_rate(drone: &mut Drone) -> f32{
 pub fn full_rate(drone: &mut Drone, current_attitude: YawPitchRoll) -> [f32; 3] {
     let time_diff = drone.get_time_diff();
     drone.set_last_time(drone.get_sample_time());
-
+    drone.set_test([time_diff as f32,  1.0]);
     let last_attitude = drone.get_last_attitude();
 
     let yaw_rate = ((current_attitude.yaw - last_attitude.yaw) * 180 as f32 / 3.1415926) / (time_diff as f32 / 1000 as f32);
@@ -59,6 +59,7 @@ pub fn full_rate(drone: &mut Drone, current_attitude: YawPitchRoll) -> [f32; 3] 
     let roll_rate = ((current_attitude.roll - last_attitude.roll) * 180 as f32 / 3.1415926) / (time_diff as f32 / 1000 as f32);
 
     drone.set_last_attitude([current_attitude.yaw, current_attitude.pitch, current_attitude.roll]);
+
     return [yaw_rate, pitch_rate, roll_rate];
 }
 

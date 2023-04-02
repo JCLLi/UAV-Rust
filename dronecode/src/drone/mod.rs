@@ -12,7 +12,10 @@ pub struct Drone{
     mode: WorkingModes,
     current_attitude: YawPitchRoll,
     last_attitude: YawPitchRoll,
+    velocity: f32,
+    acceleration: f32,
     height: [u32; 2],
+    height_cal: f32,
     yaw_controller: PID,
     full_controller: FullController, // pitch p1, roll p1, yaw p1, pitch p2, roll p2
     height_controller: PID,
@@ -27,7 +30,10 @@ pub trait Getter{
     fn get_mode(&self) -> WorkingModes;
     fn get_current_attitude(&self) -> YawPitchRoll;
     fn get_last_attitude(&self) -> YawPitchRoll;
+    fn get_velocity(&self) -> f32;
+    fn get_acceleration(&self) -> f32;
     fn get_height(&self) -> [u32; 2];
+    fn get_height_cal(&self) -> f32;
     fn get_yaw_controller(&self) -> PID;
     fn get_full_controller(&self) -> FullController;
     fn get_height_controller(&self) -> PID;
@@ -46,7 +52,10 @@ pub trait Setter{
     fn set_mode(&mut self, mode: WorkingModes);
     fn set_current_attitude(&mut self, angles: [f32; 3]);
     fn set_last_attitude(&mut self, angles:[f32; 3]);
+    fn set_velocity(&mut self, current_velocity: f32);
+    fn set_acceleration(&mut self, current_acceleration: f32);
     fn set_height(&mut self, current_height: u32, origin_height: u32);
+    fn set_height_cal(&mut self, current_height: f32);
     fn set_yaw_controller(&mut self, errors: (f32, f32), pwm: f32);
     fn set_full_angle_controller(&mut self, pitch_p1: [f32; 2], roll_p1: [f32; 2], pwm: [f32; 2]);
     fn set_full_rate_controller(&mut self, yaw_p2: [f32; 2], pitch_p2: [f32; 2], roll_p2: [f32; 2], pwm: [f32; 3]);

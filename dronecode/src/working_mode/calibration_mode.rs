@@ -7,7 +7,7 @@ use tudelft_quadrupel::mpu::read_dmp_bytes;
 use protocol::WorkingModes;
 
 use crate::drone::{Drone, Getter, motors, Setter};
-use crate::working_mode::lift_control_mode::height_calibration;
+use crate::working_mode::height_control_mode::height_calibration;
 use crate::yaw_pitch_roll::YawPitchRoll;
 
 #[derive(Copy, Clone)]
