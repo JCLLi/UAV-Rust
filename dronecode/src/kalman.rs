@@ -23,7 +23,7 @@ pub struct KalmanFilter {
     p: [[f32; 2]; 2],       // State covariance matrix P
     h: [f32; 2],            // Measurement observation matrix H
     r: f32,                 // Measurement noise covariance matrix R
-    k_gain: [f32; 2],        // Kalman gain a 2x1 vector
+    k_gain: [f32; 2],       // Kalman gain a 2x1 vector
  }
 
  impl Default for AltitudeKalmanFilter {
@@ -35,7 +35,7 @@ pub struct KalmanFilter {
             q: [[0.0, 0.0], [0.0, 0.0]], 
             p: [[0.0, 0.0,], [0.0, 0.0]], 
             h: [1.0, 0.0], 
-            r: 30.0*30.0,                   //5 cm/s^2
+            r: 5.0*5.0,                   //5 cm/s^2
             k_gain: [0.0, 0.0] 
         }
      }
@@ -74,10 +74,10 @@ pub struct KalmanFilter {
 
     pub fn update(&mut self, new_altitude: f32, new_velocity: f32, dt: f32) -> (f32, f32) {
 
-        self.q[0][0] = 25.0 * dt * dt * dt *dt;
-        self.q[0][1] = 50.0 * dt * dt * dt;
-        self.q[1][0] = 50.0 * dt * dt * dt;
-        self.q[1][1] = 100.0 * dt * dt;
+        self.q[0][0] = 5.0 * dt * dt * dt *dt;
+        self.q[0][1] = 10.0 * dt * dt * dt;
+        self.q[1][0] = 10.0 * dt * dt * dt;
+        self.q[1][1] = 50.0 * dt * dt;
 
         // Prediction step: estimate the next state based on the current state and the control input
         self.altitude_state = self.altitude_state + self.velocity_state * dt + 0.5 * dt * dt * new_velocity;

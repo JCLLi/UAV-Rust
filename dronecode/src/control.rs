@@ -10,7 +10,7 @@ use tudelft_quadrupel::time::{set_tick_frequency, wait_for_next_tick, Instant};
 use tudelft_quadrupel::mpu::read_dmp_bytes;
 use crate::drone_transmission::{write_packet, read_message};
 use crate::log_storage_manager::LogStorageManager;
-use crate::working_mode::raw_sensor_mode::{measure_raw, filter, calculate_altitude, calculate_velocity};
+use crate::working_mode::raw_sensor_mode::{measure_raw, filter, calculate_altitude, measure_velocity};
 use crate::kalman::{KalmanFilter, AltitudeKalmanFilter};
 use crate::yaw_pitch_roll::YawPitchRoll;
 use crate::drone::{Drone, Getter, Setter};
@@ -181,13 +181,14 @@ pub fn control_loop() -> ! {
 
        let altitude = calculate_altitude(read_pressure(), read_temperature()) - absolute_altitude;
 
-       let (acc, _) = read_raw().unwrap();
-
-       let vel_z = calculate_velocity(acc.z);
-
        let dt = (control_loop_time as f32) / 1_000_000.0;
 
-       let (altitude_state, velocity_state) = altitude_kalman.update(altitude * 100.0, vel_z, dt);
+       measure_raw(&mut drone, control_loop_time);
+
+       let vel_z = measure_velocity(&mut drone);
+
+
+       let (altitude_state, velocity_state) = altitude_kalman.update(altitude * 100.0, vel_z - 70.0, dt);
 
         //Store the log files
         let log = Message::Datalogging(Datalog 

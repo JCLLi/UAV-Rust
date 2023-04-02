@@ -34,8 +34,12 @@ pub fn calculate_altitude(pressure: u32, temperature: i32) -> f32 {
     return h;
 }
 
-pub fn calculate_velocity(acceleration: i16) -> f32 {
-    acceleration as f32 / 16384.0 * 9.81 * 100.0 // Convert the acceleration to m
+pub fn measure_velocity(drone: &mut Drone) -> f32 {
+    let (acc, _) = read_raw().unwrap();
+    let acc_z = acc.z as f32 / 16384.0;
+
+    let vel_z = (acc_z - 1.0) * 9.81 * 100.0;
+    vel_z
 }
 
 pub fn filter(drone: &mut Drone, time: u128) {
