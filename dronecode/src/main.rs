@@ -25,7 +25,7 @@ mod drone;
 mod drone_transmission;
 mod log_storage_manager;
 mod controllers;
-
+mod kalman;
 
 /// The heap size of your drone code in bytes.
 /// Note: there are 8192 bytes of RAM available.
@@ -48,9 +48,6 @@ fn main() -> ! {
         
         initialize(unsafe { &mut HEAP_MEMORY }, false);
     }
-
-    let storage = LogStorageManager::new(0x1FFF);
-    storage.retrieve_loggings(0x1FFF);
 
     control_loop();
 }

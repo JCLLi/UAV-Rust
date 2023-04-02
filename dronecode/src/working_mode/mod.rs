@@ -9,10 +9,11 @@ pub mod calibration_mode;
 pub mod yaw_control_mode;
 pub mod full_control_mode;
 pub mod height_control_mode;
+pub mod raw_sensor_mode;
 
 pub fn mode_switch(drone: &mut Drone, new: WorkingModes) {
     match drone.get_mode() {
-        WorkingModes::SafeMode | WorkingModes::CalibrationMode => {
+        WorkingModes::SafeMode | WorkingModes::CalibrationMode | WorkingModes::RawSensorMode => {
             match new {
                 WorkingModes::FullControlMode | WorkingModes::YawControlMode => { drone.reset_all_controller(); }
                 _ => (),
@@ -23,6 +24,7 @@ pub fn mode_switch(drone: &mut Drone, new: WorkingModes) {
         WorkingModes::ManualMode => {
             match new {
                 WorkingModes::CalibrationMode
+                | WorkingModes::RawSensorMode
                 | WorkingModes::SafeMode
                 | WorkingModes::PanicMode => {let temp = panic_mode();}
                 WorkingModes::FullControlMode | WorkingModes::YawControlMode => { drone.reset_all_controller();}
@@ -33,6 +35,7 @@ pub fn mode_switch(drone: &mut Drone, new: WorkingModes) {
         WorkingModes::YawControlMode => {
             match new {
                 WorkingModes::CalibrationMode
+                | WorkingModes::RawSensorMode
                 | WorkingModes::SafeMode
                 | WorkingModes::PanicMode => {let temp = panic_mode();}
                 WorkingModes::FullControlMode => { drone.reset_all_controller();}
@@ -43,6 +46,7 @@ pub fn mode_switch(drone: &mut Drone, new: WorkingModes) {
         WorkingModes::FullControlMode => {
             match new {
                 WorkingModes::CalibrationMode
+                | WorkingModes::RawSensorMode
                 | WorkingModes::SafeMode
                 | WorkingModes::PanicMode => {let temp = panic_mode();}
                 WorkingModes::YawControlMode => { drone.reset_all_controller();}
@@ -72,6 +76,13 @@ pub fn motions(drone: &mut Drone, argument: [u16; 4]) {
         WorkingModes::FullControlMode => full_control_mode::motion(drone, argument),
         WorkingModes::CalibrationMode => calibration_mode::calibrate(drone),
         WorkingModes::HeightControlMode => height_control_mode::motion(drone, argument),
+        WorkingModes::RawSensorMode => {
+            if drone.get_raw_mode() == true {
+                drone.set_raw_mode(false);
+            } else {
+                drone.set_raw_mode(true)
+            }
+        },
         _ => (),//TODO:add new operation with new modes
     }
 }

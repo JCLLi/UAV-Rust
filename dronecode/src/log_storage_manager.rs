@@ -1,7 +1,5 @@
 use core::mem::size_of;
 
-
-
 use alloc::format;
 use postcard::{to_allocvec, from_bytes};
 
@@ -25,6 +23,8 @@ impl LogStorageManager {
             remaining_flash_size: max_size, 
             written_packets: 0
         };
+
+        flash_chip_erase().unwrap();
 
         managar
     }

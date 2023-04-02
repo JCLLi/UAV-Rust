@@ -11,7 +11,7 @@ pub fn setup_interface(serial: &SerialPort) -> Result<(), Box<dyn OtherError>> {
 
     // Setup terminal
     enable_raw_mode()?;
-    
+
     // Setup terminal interface
     execute!(
         stdout(),
@@ -38,7 +38,7 @@ pub fn setup_interface(serial: &SerialPort) -> Result<(), Box<dyn OtherError>> {
             Print("▀"),
         ).unwrap();
     }
-    
+
     for i in 0..146 {
         execute!(
             stdout(),
@@ -46,7 +46,7 @@ pub fn setup_interface(serial: &SerialPort) -> Result<(), Box<dyn OtherError>> {
         Print("▀"),
     ).unwrap();
     }
-    
+
     for i in 2..14 {
         execute!(
             stdout(),
@@ -54,7 +54,7 @@ pub fn setup_interface(serial: &SerialPort) -> Result<(), Box<dyn OtherError>> {
         Print("▌"),
     ).unwrap();
     }
-    
+
     for i in 2..14 {
         execute!(
             stdout(),
@@ -87,15 +87,15 @@ pub fn setup_interface(serial: &SerialPort) -> Result<(), Box<dyn OtherError>> {
     MoveTo(115,1),
     Print("▛"),
     MoveTo(145,1),
-    Print("▜"),       
+    Print("▜"),
     ).unwrap();
-    
+
     // Put drone in safemode
     write_packet(&serial, Message::SafeMode);
 
     // Run interface
     let res = run_interface(serial);
-    
+
     // Show cursor again in terminal
     execute!(
         stdout(),
@@ -104,11 +104,11 @@ pub fn setup_interface(serial: &SerialPort) -> Result<(), Box<dyn OtherError>> {
 
     // restore terminal
     disable_raw_mode()?;
-    
+
     if let Err(err) = res {
         println!("{:?}", err)
     }
-    
+
     Ok(())
 }
 
@@ -130,7 +130,7 @@ fn run_interface(serial: &SerialPort) -> io::Result<()> {
         tui(rx_tui1, rx_tui2);
     });
 
-    // Start a user input, write serial and read serial thread. 
+    // Start a user input, write serial and read serial thread.
     std::thread::scope(|s| {
 
         // Get user input thread. Input is sent to write_serial thread
@@ -142,7 +142,7 @@ fn run_interface(serial: &SerialPort) -> io::Result<()> {
         s.spawn(|| {
             write_serial(serial, tx_exit, tx_tui1, &mut rx_input);
         });
-        
+
         // Read serial thread
         s.spawn(|| {
             read_serial(serial, rx_exit, tx_tui2);
@@ -156,7 +156,7 @@ fn run_interface(serial: &SerialPort) -> io::Result<()> {
 fn get_user_input(tx_input: Updater<Option<SettingsBundle>>) {
     let mut device_listener = DeviceListener::new();
     let mut bundle_new = SettingsBundle::default();
-    
+
     // Send default message
     // tx_input.update(Some(bundle_new));
 
@@ -168,14 +168,14 @@ fn get_user_input(tx_input: Updater<Option<SettingsBundle>>) {
             Ok(bundle) => {
                 if bundle != bundle_new {
                     bundle_new = bundle;
-                
+
                     tx_input.update(Some(bundle));
 
                     // Exit program if exit command is given
                     if bundle.exit == true {
                         break;
                     }
-                    
+
                 }
             },
             Err(_) => (),
@@ -198,7 +198,7 @@ fn write_serial(serial: &SerialPort, tx_exit: Sender<bool>, tx_tui1: Sender<Sett
         match bundle {
             None => (),
             Some(mut bundle) => {
-                
+
                 // Check if panic mode command is given, command is changed to safe mode after one iteration,
                 // to not repeatedly send panic command
                 if bundle.mode == WorkingModes::PanicMode {
@@ -211,17 +211,17 @@ fn write_serial(serial: &SerialPort, tx_exit: Sender<bool>, tx_tui1: Sender<Sett
                     paniced_once = false;
                 }
 
-                
+
                 // Exit program if exit command is given
                 if bundle.exit == true {
                     write_packet(serial, Message::SafeMode);
                     tx_exit.send(true).unwrap();
                     break;
-                } 
+                }
 
                 // Send message to drone
                 write_message(serial, bundle);
-                
+
                 tx_tui1.send(bundle).unwrap();
             }
         }
@@ -256,13 +256,13 @@ fn read_serial(serial: &SerialPort, rx_exit: Receiver<bool>, tx_tui2: Sender<Pac
             // Check if packet is received correctly
             match packet_result {
                 None => (),
-                Some(packet) => { 
+                Some(packet) => {
                     match packet.message {
                         Message::Datalogging(_) => {
 
                             // Store datalog in json format
                             DatabaseManager::create_json(&packet);
-                            
+
                             // Send datalog to terminal interface
                             tx_tui2.send(packet).unwrap();
                         }
@@ -288,7 +288,10 @@ fn read_serial(serial: &SerialPort, rx_exit: Receiver<bool>, tx_tui2: Sender<Pac
 fn tui(rx_tui1: Receiver<SettingsBundle>, rx_tui2: Receiver<Packet>) {
     let default_bundle = SettingsBundle::default();
     print_command(default_bundle);
-    let default_datalog = Packet::new(Message::Datalogging(Datalog {motor1: 0, motor2: 0, motor3: 0, motor4: 0, rtc: 0, yaw: 0.0, pitch: 0.0, roll: 0.0, x: 0, y: 0, z: 0, bat: 0, bar: 0, workingmode: WorkingModes::SafeMode, arguments: [0, 0, 0, 0], control_loop_time: 0  }));
+    let default_datalog = Packet::new(Message::Datalogging(Datalog {motor1: 0, motor2: 0,
+        motor3: 0, motor4: 0, rtc: 0, yaw: 0.0, pitch: 0.0, roll: 0.0, yaw_f: 0.0, pitch_f: 0.0, roll_f: 0.0,
+        yaw_r: 0.0, pitch_r: 0.0, roll_r: 0.0, bat: 0, bar: 0.0, workingmode: WorkingModes::SafeMode,
+        arguments: [0, 0, 0, 0], control_loop_time: 0  }));
     print_datalog(default_datalog);
 
     let mut total_time = 0;
@@ -298,7 +301,7 @@ fn tui(rx_tui1: Receiver<SettingsBundle>, rx_tui2: Receiver<Packet>) {
     loop {
         // Try to receive command to drone from write_serial thread
         match rx_tui1.try_recv() {
-            Ok(bundle) => {                
+            Ok(bundle) => {
                 print_command(bundle);
 
                 // Exit if exit program command is given
@@ -327,7 +330,7 @@ fn tui(rx_tui1: Receiver<SettingsBundle>, rx_tui2: Receiver<Packet>) {
 
                     d.control_loop_time = avg_loop_time;
                     print_datalog(Packet::new(Message::Datalogging(d)));
-                
+
                 }
             },
             Err(_) => ()
@@ -346,13 +349,13 @@ fn print_command(bundle: SettingsBundle) {
         stdout(),
         MoveTo(2,3),
         Print("Mode:  "), Print(bundle.mode), Print("         "),
-        MoveTo(2,4), 
+        MoveTo(2,4),
         Print("Pitch: "), Print(bundle.pitch), Print("       "),
-        MoveTo(2,5), 
+        MoveTo(2,5),
         Print("Rol:   "), Print(bundle.roll), Print("       "),
-        MoveTo(2,6), 
+        MoveTo(2,6),
         Print("Yaw:   "), Print(bundle.yaw), Print("       "),
-        MoveTo(2,7), 
+        MoveTo(2,7),
         Print("Lift:  "), Print(bundle.lift), Print("       "),
         MoveTo(2,9),
         SetAttribute(Attribute::Bold),
@@ -367,7 +370,7 @@ fn print_command(bundle: SettingsBundle) {
         MoveTo(2,13),
         Print("P height:    "), Print(u16_to_f32(bundle.height_control_p)), Print("       "),
     ).unwrap();
-}   
+}
 
 /// Show values sent by drone in tui
 fn print_datalog(packet: Packet) {
@@ -382,14 +385,12 @@ fn print_datalog(packet: Packet) {
             Print("Time:      "), Print(d.rtc), Print("       "),
             MoveTo(50,5),
             Print("YPR:       "), Print(d.yaw), Print(", "), Print(d.pitch), Print(", "), Print(d.roll), Print("       "),
-            MoveTo(50,6),
-            Print("ACC:       "), Print(d.x), Print(", "), Print(d.y), Print(", "), Print(d.z), Print("       "),
             MoveTo(50,7),
             Print("Battery:   "), Print(d.bat), Print(" mV"), Print("       "),
             MoveTo(50,8),
             Print("Barometer: "), Print(d.bar), Print(" 10^-5 bar"), Print("       "),
             MoveTo(50,9),
-            Print("Mode:      "), Print(d.workingmode), Print("       "), 
+            Print("Mode:      "), Print(d.workingmode), Print("       "),
             MoveTo(50,10),
             Print("Arguments: "), Print(d.arguments[0]),Print(", "),  Print(d.arguments[1]),Print(", "),  Print(d.arguments[2]),Print(", "),  Print(d.arguments[3]), Print("          "),
             MoveTo(50,11),
@@ -418,7 +419,7 @@ fn print_datalog(packet: Packet) {
         ).unwrap();
     }
 }
-  
+
 #[cfg(test)]
 mod tests {
     use protocol::{Packet, Datalog, WorkingModes};
@@ -451,8 +452,8 @@ mod tests {
             Hide,
         ).unwrap();
 
-        
-        
+
+
         for i in 1..125 {
             execute!(
                 stdout(),
@@ -460,7 +461,7 @@ mod tests {
                 Print("▀"),
             ).unwrap();
         }
-        
+
         for i in 0..126 {
             execute!(
                 stdout(),
@@ -468,7 +469,7 @@ mod tests {
             Print("▀"),
         ).unwrap();
         }
-        
+
         for i in 2..14 {
             execute!(
                 stdout(),
@@ -476,7 +477,7 @@ mod tests {
             Print("▌"),
         ).unwrap();
         }
-        
+
         for i in 2..14 {
             execute!(
                 stdout(),
@@ -509,9 +510,9 @@ mod tests {
         MoveTo(95,1),
         Print("▛"),
         MoveTo(125,1),
-        Print("▜"),       
+        Print("▜"),
         ).unwrap();
-        
+
 
         let default_bundle = SettingsBundle::default();
         print_command(default_bundle);

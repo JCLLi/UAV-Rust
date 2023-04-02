@@ -47,6 +47,7 @@ pub struct SettingsBundle {
     pub yaw_offset: i16,
     pub lift_offset: i16,
     pub calibration: bool,
+    pub raw_test: bool,
 }
 
 impl Default for SettingsBundle {
@@ -72,6 +73,7 @@ impl Default for SettingsBundle {
             yaw_offset: 0,
             lift_offset: 0,
             calibration: false,
+            raw_test: false,
         }
     }
 }
@@ -174,6 +176,11 @@ impl DeviceListener {
                     Commands::RollPitchControlP2Down=> self.bundle.roll_pitch_control_p2 = self.bundle.roll_pitch_control_p2.saturating_sub(keyboardcommand.argument),
                     Commands::HeightControlPUp => self.bundle.height_control_p = self.bundle.height_control_p.saturating_add(keyboardcommand.argument),
                     Commands::HeightControlPDown => self.bundle.height_control_p = self.bundle.height_control_p.saturating_sub(keyboardcommand.argument),
+                    Commands::RawSensorMode         => {
+                        self.bundle.raw_test = false;
+                        self.bundle.mode = WorkingModes::RawSensorMode;
+                    }
+                    Commands::RawSensorModeTest     => self.bundle.raw_test = true,
                     _ => (),
                 }
             },

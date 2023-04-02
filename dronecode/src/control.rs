@@ -10,6 +10,8 @@ use tudelft_quadrupel::time::{set_tick_frequency, wait_for_next_tick, Instant};
 use tudelft_quadrupel::mpu::read_dmp_bytes;
 use crate::drone_transmission::{write_packet, read_message};
 use crate::log_storage_manager::LogStorageManager;
+use crate::working_mode::raw_sensor_mode::{measure_raw, filter, calculate_altitude, calculate_velocity};
+use crate::kalman::{KalmanFilter, AltitudeKalmanFilter};
 use crate::yaw_pitch_roll::YawPitchRoll;
 use crate::drone::{Drone, Getter, Setter};
 use crate::working_mode::panic_mode::{panic_mode, panic_check};
@@ -43,20 +45,15 @@ pub fn control_loop() -> ! {
 
     let mut angles = YawPitchRoll { yaw: 0.0, pitch: 0.0, roll: 0.0};
 
-    let _storage_manager = LogStorageManager::new(0x1FFF);
+    let mut absolute_altitude: f32 = 0.0;
+
+    for i in 0..2000 {
+        absolute_altitude = calculate_altitude(read_pressure(), read_temperature());
+    }
+
     
-    // Wait for first message from PC
-    // loop {
-    //     Red.on();
-    //     match read_message(&mut shared_buf) {
-    //         Some(first_packet) => {
-    //             new_message = true;
-    //             message = first_packet.message;
-    //             break;
-    //         }
-    //         None => (),
-    //     };
-    // }
+
+    let mut altitude_kalman = AltitudeKalmanFilter::default();
 
     for i in 0.. {
         // Measure time of loop iteration
@@ -97,6 +94,7 @@ pub fn control_loop() -> ! {
             }
         }
 
+<<<<<<< HEAD
         let sensor_data = block!(read_dmp_bytes()).unwrap();
         let (acc, gyro) = read_raw().unwrap();
         let sample_time = Instant::now();
@@ -108,6 +106,8 @@ pub fn control_loop() -> ! {
 
         drone.set_acceleration((acc.z - 17110) as f32 * ACC_PARAMETER);
 
+=======
+>>>>>>> kalman_test
         //First the control part
         match drone.get_mode() {
             WorkingModes::PanicMode => {
@@ -159,6 +159,7 @@ pub fn control_loop() -> ! {
                 Red.off();
                 Green.on();
             },
+<<<<<<< HEAD
             WorkingModes::HeightControlMode => {
                 if new_message {
                     drone.message_check(&message);
@@ -167,6 +168,15 @@ pub fn control_loop() -> ! {
                 Yellow.on();
                 Red.on();
                 Green.on();
+=======
+            WorkingModes::RawSensorMode => {
+                if new_message {
+                    drone.message_check(&message);
+                }
+                Yellow.on();
+                Red.off();
+                Green.off();
+>>>>>>> kalman_test
             },
             _ => {
                 if new_message {
@@ -177,10 +187,42 @@ pub fn control_loop() -> ! {
 
         // Read motor and sensor values
         let motors = get_motors();
+<<<<<<< HEAD
         let pressure = drone.get_height();
         // Measure time of loop iteration
         let end = Instant::now();
         let control_loop_time = end.duration_since(begin).as_micros();
+=======
+
+        let sensor_data = block!(read_dmp_bytes()).unwrap();
+        let sample_time = Instant::now();
+        drone.set_sample_time(sample_time);
+
+        angles = drone.get_calibration().full_compensation(YawPitchRoll::from(sensor_data));
+
+        // Measure time of loop iteration
+        let end = Instant::now();
+        let control_loop_time = end.duration_since(begin).as_micros();
+        
+        if drone.get_raw_mode() == false {
+           measure_raw(&mut drone, control_loop_time);
+           filter(&mut drone, control_loop_time);
+       } else {
+           drone.set_current_attitude([angles.yaw, angles.pitch, angles.roll]);
+       }
+
+
+       let altitude = calculate_altitude(read_pressure(), read_temperature()) - absolute_altitude;
+
+       let (acc, _) = read_raw().unwrap();
+
+       let vel_z = calculate_velocity(acc.z);
+
+       let dt = (control_loop_time as f32) / 1_000_000.0;
+
+       let (altitude_state, velocity_state) = altitude_kalman.update(altitude * 100.0, vel_z, dt);
+
+>>>>>>> kalman_test
         //Store the log files
         let log = Message::Datalogging(Datalog 
             { 
@@ -189,6 +231,7 @@ pub fn control_loop() -> ! {
                 motor3: motors[2], 
                 motor4: motors[3], 
                 rtc: time, 
+<<<<<<< HEAD
                 // yaw: angles.yaw,
                 // pitch: angles.pitch,
                 // roll: angles.roll,
@@ -200,9 +243,22 @@ pub fn control_loop() -> ! {
                 z: gyro.z,
                 bat: read_battery(),
                 bar: pressure[0],
+=======
+                yaw: angles.yaw,
+                pitch: angles.pitch,
+                roll: angles.roll, 
+                bat: read_battery(), 
+                bar: altitude,
+>>>>>>> kalman_test
                 workingmode: drone.get_mode(),
                 arguments: drone.get_arguments(),
                 control_loop_time,
+                yaw_f: vel_z,
+                pitch_f: altitude_state / 100.0,
+                roll_f: velocity_state / 100.0 , 
+                yaw_r: drone.angles_raw.yaw,
+                pitch_r: drone.angles_raw.pitch,
+                roll_r: drone.angles_raw.roll,
             });
             
             // Store log on drone flash
