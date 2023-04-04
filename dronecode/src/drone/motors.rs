@@ -53,7 +53,7 @@ pub fn motor_assign(drone: &Drone, pwm: [f32; 4]){
                 set_motors([m1, m2, m3, m4]);
             }else { set_motors([0, 0, 0, 0]) }
         }
-        WorkingModes::FullControlMode => {
+        WorkingModes::FullControlMode | WorkingModes::RawSensorMode => {
             motor_resolution = MOTOR_RESOLUTION_CONTROL;
             if pwm[3] > 0.0 {
                 let mut m1 = MOTOR_MIN + ((0.2 * (pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
@@ -68,9 +68,13 @@ pub fn motor_assign(drone: &Drone, pwm: [f32; 4]){
             motor_resolution = MOTOR_RESOLUTION_CONTROL;
             if pwm[3] > 0.0 {
                 let mut m1 = ((0.2 * (pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                if m1 < 200 { m1 = 200 }
                 let mut m2 = ((0.2 * (- pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                if m2 < 200 { m2 = 200 }
                 let mut m3 = ((0.2 * (- pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                if m3 < 200 { m3 = 200 }
                 let mut m4 = ((0.2 * (pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                if m4 < 200 { m4 = 200 }
 
                 set_motors([m1, m2, m3, m4]);
             }else { set_motors([0, 0, 0, 0]) }

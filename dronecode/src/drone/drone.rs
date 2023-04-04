@@ -1,3 +1,4 @@
+use tudelft_quadrupel::led::Red;
 use tudelft_quadrupel::motor::set_motor_max;
 use protocol::{Message, WorkingModes};
 use crate::controllers::PID;
@@ -23,8 +24,7 @@ impl Drone {
             mode: WorkingModes::SafeMode,
             current_attitude: YawPitchRoll{ yaw: 0.0, pitch: 0.0, roll: 0.0 },
             last_attitude:YawPitchRoll{ yaw: 0.0, pitch: 0.0, roll: 0.0 },
-            velocity: 0.0,
-            acceleration: 0.0,
+            acceleration_z: 0.0,
             height: 0.0,
             height_start_flag: 0,
             yaw_controller: PID::new(0.0,0.0,0.0),
@@ -92,6 +92,9 @@ impl Drone {
                                    , yaw_p2, pitch_roll_p1, pitch_roll_p2) => {
                 mode_switch(self, WorkingModes::RawSensorMode);
                 motions(self, [ *pitch, *roll, *yaw, *lift]);
+                self.set_full_gain(gain_u16_to_f32( *yaw_p2),
+                                   gain_u16_to_f32( *pitch_roll_p1),
+                                   gain_u16_to_f32( *pitch_roll_p2));
                 self.arguments = [*pitch, *roll, *yaw, *lift]
             }
             _ => mode_switch(self, WorkingModes::SafeMode),//TODO: add new mode and change the 'new' argument
@@ -116,9 +119,7 @@ impl Getter for Drone {
     fn get_current_attitude(&self) -> YawPitchRoll { self.current_attitude }
     fn get_last_attitude(&self) -> YawPitchRoll { self.last_attitude }
 
-    fn get_velocity(&self) -> f32 { self.velocity }
-
-    fn get_acceleration(&self) -> f32 { self.acceleration }
+    fn get_acceleration_z(&self) -> f32 { self.acceleration_z }
 
     fn get_height(&self) -> f32 { self.height }
 
@@ -146,7 +147,7 @@ impl Getter for Drone {
     fn get_raw_angles(&self) -> YawPitchRoll { self.angles_raw }
     fn get_raw_rates(&self) -> YawPitchRollRate { self.rates_raw }
     fn get_raw_flag(&self) -> u16 { self.raw_flag }
-    fn get_kalman(&self) -> Kalman { self.kalman }
+    fn get_kalman(&mut self) -> &mut Kalman { &mut self.kalman }
     fn get_height_flag(&self) -> u16 { self.height_start_flag }
 }
 
@@ -166,8 +167,7 @@ impl Setter for Drone {
         self.last_attitude.roll = angles[2];
     }
 
-    fn set_velocity(&mut self, current_velocity: f32) { self.velocity = current_velocity; }
-    fn set_acceleration(&mut self, current_acceleration: f32) { self.acceleration = current_acceleration }
+    fn set_acceleration_z(&mut self, current_acceleration: f32) { self.acceleration_z = current_acceleration }
     fn set_height(&mut self, current_height: f32) {
         self.height = current_height;
     }
@@ -241,10 +241,11 @@ impl Setter for Drone {
     }
 
     fn set_last_time(&mut self, time: Instant) { self.last_sample_time = time; }
-    fn set_calibration(&mut self, yaw: [f32; 2], pitch: [f32; 2], roll: [f32; 2]) {
+    fn set_calibration(&mut self, yaw: [f32; 2], pitch: [f32; 2], roll: [f32; 2], acc_z: f32) {
         self.calibration.yaw_dmp = yaw;
         self.calibration.pitch_dmp = pitch;
         self.calibration.roll_dmp = roll;
+        self.calibration.acceleration_z = acc_z;
     }
     fn set_test(&mut self, test_value: [f32; 4]) { self.test = test_value }
     fn set_raw_angles(&mut self, angles:[f32; 3]) {

@@ -19,7 +19,6 @@ use tudelft_quadrupel::time::assembly_delay;
 use crate::drone;
 
 const FIXED_SIZE:usize = 64;
-const MOTION_DELAY:u16 = 100;//Set a big value for debugging
 const NO_CONNECTION_PANIC:u16 = 10; // Counts how often messages are not received
 const FIXED_FREQUENCY:u64 = 100; //100 Hz
 const ACC_PARAMETER: f32 = 9.8 / 32768 as f32;
@@ -189,14 +188,11 @@ pub fn control_loop() -> ! {
 
         let angles_raw = drone.get_raw_angles();
         let angles_filtered = drone.get_current_attitude();
-        let altitude = calculate_altitude(read_pressure(), read_temperature()) - absolute_altitude;
 
-        let dt = (control_loop_time as f32) / 1_000_000.0;
-
-        measure_raw(&mut drone, control_loop_time);
+        let dt = (10000 as f32) / 1_000_000.0;
 
         let vel_z = measure_velocity(&mut drone);
-
+        let altitude = calculate_altitude(read_pressure(), read_temperature()) - absolute_altitude;
         let (altitude_state, velocity_state) = altitude_kalman.update(altitude * 100.0, vel_z - 70.0, dt);
 
         drone.set_height(altitude_state);

@@ -1,4 +1,3 @@
-
 use crate::drone::{Drone, Getter, Setter};
 use crate::working_mode::panic_mode::panic_mode;
 use protocol::WorkingModes;
@@ -76,7 +75,7 @@ pub fn mode_switch(drone: &mut Drone, new: WorkingModes) {
                     drone.set_height_calibration(0.0);
                 }
                 WorkingModes::HeightControlMode => {
-                    if drone.get_height_flag() != 3000{
+                    if drone.get_height_flag() != 500{
                         drone.set_height_flag(1);
                         let temp = drone.get_calibration().height;
                         drone.set_height_calibration(drone.get_height());
@@ -105,17 +104,21 @@ pub fn mode_switch(drone: &mut Drone, new: WorkingModes) {
                     drone.reset_all_controller();
                     drone.reset_raw_flag();
                 }
-                // WorkingModes::RawSensorMode => {
-                //     if drone.get_raw_flag() != 500{
-                //         drone.set_raw_flag(1);
-                //         //drone.set_kal_calibration(drone.get_current_attitude());
-                //     }
-                //     else {
-                //         drone.set_height_flag(0);
-                //     }
-                // }
+                WorkingModes::RawSensorMode => {
+                    if drone.get_raw_flag() != 501{
+                        drone.set_raw_flag(1);
+                        drone.set_kal_calibration(drone.get_current_attitude());
+                        //drone.set_test([drone.get_calibration().pitch_kal,drone.get_current_attitude().pitch,0.0,0.0]);
+
+                    }
+                    else {
+                        drone.set_raw_flag(0);
+                        //drone.set_test([drone.get_calibration().pitch_kal,drone.get_current_attitude().pitch,1.0,1.0]);
+                    }
+                }
                 _ => (),
             }
+            drone.set_mode(new);
         }
     }
 }
@@ -129,6 +132,7 @@ pub fn motions(drone: &mut Drone, argument: [u16; 4]) {
         WorkingModes::FullControlMode | WorkingModes::RawSensorMode => full_control_mode::motion(drone, argument),
         WorkingModes::CalibrationMode => calibration_mode::calibrate(drone),
         WorkingModes::HeightControlMode => height_control_mode::motion(drone, argument),
+        WorkingModes::RawSensorMode => full_control_mode::motion(drone, argument),
         _ => (),//TODO:add new operation with new modes
     }
 }

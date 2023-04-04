@@ -13,8 +13,7 @@ pub struct Drone{
     mode: WorkingModes,
     current_attitude: YawPitchRoll,
     last_attitude: YawPitchRoll,
-    velocity: f32,
-    acceleration: f32,
+    acceleration_z: f32,
     height: f32,
     height_start_flag: u16,
     angles_raw: YawPitchRoll,
@@ -35,8 +34,7 @@ pub trait Getter{
     fn get_mode(&self) -> WorkingModes;
     fn get_current_attitude(&self) -> YawPitchRoll;
     fn get_last_attitude(&self) -> YawPitchRoll;
-    fn get_velocity(&self) -> f32;
-    fn get_acceleration(&self) -> f32;
+    fn get_acceleration_z(&self) -> f32;
     fn get_height(&self) -> f32;
     fn get_yaw_controller(&self) -> PID;
     fn get_full_controller(&self) -> FullController;
@@ -53,7 +51,7 @@ pub trait Getter{
     fn get_raw_angles(&self) -> YawPitchRoll;
     fn get_raw_rates(&self) -> YawPitchRollRate;
     fn get_raw_flag(&self) -> u16;
-    fn get_kalman(&self) -> Kalman;
+    fn get_kalman(&mut self) -> &mut Kalman;
     fn get_height_flag(&self) -> u16;
 }
 
@@ -61,8 +59,7 @@ pub trait Setter{
     fn set_mode(&mut self, mode: WorkingModes);
     fn set_current_attitude(&mut self, angles: [f32; 3]);
     fn set_last_attitude(&mut self, angles:[f32; 3]);
-    fn set_velocity(&mut self, current_velocity: f32);
-    fn set_acceleration(&mut self, current_acceleration: f32);
+    fn set_acceleration_z(&mut self, current_acceleration_z: f32);
     fn set_height(&mut self, current_height: f32);
     fn set_yaw_controller(&mut self, errors: (f32, f32), pwm: f32);
     fn set_full_angle_controller(&mut self, pitch_p1: [f32; 2], roll_p1: [f32; 2], pwm: [f32; 2]);
@@ -73,7 +70,7 @@ pub trait Setter{
     fn set_full_gain(&mut self,  yaw_p2: f32, pitch_roll_p1: f32, pitch_roll_p2: f32);
     fn set_sample_time(&mut self, time: Instant);
     fn set_last_time(&mut self, time: Instant);
-    fn set_calibration(&mut self, yaw: [f32; 2], pitch: [f32; 2], roll: [f32; 2]);
+    fn set_calibration(&mut self, yaw: [f32; 2], pitch: [f32; 2], roll: [f32; 2], acc_z: f32);
     fn set_test(&mut self, test_value: [f32; 4]);
     fn set_raw_angles(&mut self, angles:[f32; 3]);
     fn set_raw_rates(&mut self, rate:[f32; 3]);

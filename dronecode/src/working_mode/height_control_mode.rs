@@ -4,7 +4,7 @@ use crate::drone::motors::{motor_assign, MOTOR_MAX_CONTROL, normalize_manual_yaw
 use crate::working_mode::full_control_mode::full_control;
 
 const LIFT_MOTOR_VARIATION: f32 = 200.0;
-const FLOATING_PARAMETER: f32 = 500.0 / MOTOR_MAX_CONTROL as f32;
+const FLOATING_PARAMETER: f32 = 315.0 / MOTOR_MAX_CONTROL as f32;
 const LIFT_VARIATION_PARAMETER: f32 = LIFT_MOTOR_VARIATION / MOTOR_MAX_CONTROL as f32;
 
 
@@ -32,7 +32,7 @@ pub fn height_control(drone: &mut Drone, argument: [u16; 4]) -> [f32; 4]{
     let pwm_change = drone.get_height_pwm_change();
 
     let lift = FLOATING_PARAMETER + pwm_change * LIFT_VARIATION_PARAMETER;
-    //drone.set_test([lift, current, pwm_change, 0.0]);
+    drone.set_test([lift, current, pwm_change, 0.0]);
     [pwm[0], pwm[1], pwm[2], lift]
 
 }

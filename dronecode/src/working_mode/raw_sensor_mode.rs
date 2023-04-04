@@ -37,9 +37,8 @@ pub fn calculate_altitude(pressure: u32, temperature: i32) -> f32 {
 pub fn measure_velocity(drone: &mut Drone) -> f32 {
     let (acc, _) = read_raw().unwrap();
     let acc_z = acc.z as f32 / 16384.0;
-
-    let vel_z = (acc_z - 1.0) * 9.81 * 100.0;
-    vel_z
+    drone.set_acceleration_z(acc_z);
+    (drone.get_calibration().acceleration_compensation(acc_z) - 1.0) * 9.81 * 100.0
 }
 
 
@@ -50,9 +49,9 @@ pub fn filter(drone: &mut Drone, time: u128) {
     let pitch= drone.get_kalman().pitch.update(angles_raw.pitch, rates_raw.pitch_rate, dt);
     let roll = drone.get_kalman().roll.update(angles_raw.roll, rates_raw.roll_rate, dt);
     let yaw = drone.get_kalman().yaw.update(angles_raw.yaw, rates_raw.yaw_rate, dt);
-    // let angles_cali = drone.get_calibration().full_compensation_kal([yaw, pitch, roll]);
-    // drone.set_current_attitude([angles_cali[0], angles_cali[1], angles_cali[2]]);
-    drone.set_current_attitude([yaw, pitch, roll]);
+    let angles_cali = drone.get_calibration().full_compensation_kal([yaw, pitch, roll]);
+    drone.set_current_attitude([angles_cali[0], angles_cali[1], angles_cali[2]]);
+    //drone.set_current_attitude([yaw, pitch, roll]);
 
 }
 

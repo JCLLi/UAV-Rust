@@ -95,7 +95,7 @@ pub fn full_control(drone: &mut Drone, argument: [u16; 4]) -> [f32; 4]{
     }
 
     let pwm_change = drone.get_rate_pwm_change();
-
+    drone.set_test([pwm_change[0], target_pitch - pwm_change[1], target_roll - pwm_change[2], 0.0]);
     [pwm_change[0], target_pitch - pwm_change[1], target_roll - pwm_change[2], target_lift]
 
 }
