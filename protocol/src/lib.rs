@@ -55,7 +55,7 @@ pub enum Message {
     FullControlMode(u16, u16, u16, u16, u16, u16, u16), // last three values are yaw control P, roll pitch control P1 and P2
     HeightControlMode(u16, u16, u16, u16, u16, u16, u16, u16),  // last three values are yaw control P, roll pitch control P1 and P2, height control P
     Datalogging(Datalog),
-    RawSensorMode(bool), // test raw mode for full control and save the loggings into the flash
+    RawSensorMode(u16, u16, u16, u16, u16, u16, u16), // test raw mode for full control and save the loggings into the flash
 }
 
 // Convert Message enum to string
@@ -70,7 +70,7 @@ impl fmt::Display for Message {
             Message::YawControlMode(a, b, c, d, e) => write!(f, "YawControlMode({}, {}, {}, {}, {})", a, b, c, d, e),
             Message::FullControlMode(_,_,_,_,_,_,_) => write!(f, "FullControllMode()"),
             Message::HeightControlMode(_,_,_,_,_,_,_,_) =>write!(f, "HeightControlMode()"),
-            Message::RawSensorMode(a) => write!(f, "RawSensorMode({})", a),
+            Message::RawSensorMode(_,_,_,_,_,_,_) => write!(f, "RawSensorMode()"),
             Message::Datalogging(_) => write!(f, "Datalogging()"),
         }
     }
@@ -97,7 +97,8 @@ pub struct Datalog {
     pub bar: f32,       
     pub workingmode: WorkingModes,
     pub arguments: [u16; 4],
-    pub control_loop_time: u128
+    pub control_loop_time: u128,
+    pub test:[f32; 4]
 }
 
 impl Datalog {
@@ -121,7 +122,8 @@ impl Datalog {
             bar: 0.0, 
             workingmode: WorkingModes::SafeMode, 
             arguments: [0, 0, 0, 0], 
-            control_loop_time: 0 
+            control_loop_time: 0,
+            test:[0.0, 0.0, 0.0, 0.0]
         }
     }
 }

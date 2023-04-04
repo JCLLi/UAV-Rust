@@ -82,7 +82,6 @@ pub fn full_control(drone: &mut Drone, argument: [u16; 4]) -> [f32; 4]{
 
     let velocities = map_velocity_to_f32(full_rate(drone, angles));
     let mut full_controllers = drone.get_full_controller();
-    //drone.set_test([full_controllers.roll_p1.kd as f32, 0.0]);
     // Calculate PID output
     let yaw_pwm = full_controllers.yaw_p2.step(target_yaw, velocities[0]);
     let pitch_pwm = full_controllers.pitch_p2.step2(target_pitch, velocities[1]);

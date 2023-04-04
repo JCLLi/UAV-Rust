@@ -25,21 +25,20 @@ impl Drone {
             last_attitude:YawPitchRoll{ yaw: 0.0, pitch: 0.0, roll: 0.0 },
             velocity: 0.0,
             acceleration: 0.0,
-            height: [0, 0],
-            height_cal: 0.0,
+            height: 0.0,
+            height_start_flag: 0,
             yaw_controller: PID::new(0.0,0.0,0.0),
             full_controller: FullController::new(),
-            height_controller: PID::new(0.0, 0.0, 0.0),
+            height_controller: PID::new(0.0, 0.5, 0.0),
             arguments: [0, 0, 0, 0],
             sample_time: Instant::now(),
             last_sample_time: Instant::now(),
             calibration: Calibration::new(),
-            test: [0.0, 0.0],
-            raw_test: false,
+            test: [0.0, 0.0, 0.0, 0.0],
             angles_raw: YawPitchRoll { yaw: 0.0, pitch: 0.0, roll: 0.0 },
-            rates: YawPitchRollRate {yaw_rate: 0.0, pitch_rate: 0.0, roll_rate: 0.0},
+            rates_raw: YawPitchRollRate { yaw_rate: 0.0, pitch_rate: 0.0, roll_rate: 0.0 },
             kalman: Kalman::new(),
-            raw_mode: false,
+            raw_flag: 0,
         }
     }
 
@@ -80,20 +79,20 @@ impl Drone {
             }
             Message::HeightControlMode(pitch, roll, yaw, lift, yaw_p2, pitch_roll_p1,
                                         pitch_roll_p2, height_p) =>{
-            set_motor_max(MOTOR_MAX_CONTROL);
-            mode_switch( self, WorkingModes::HeightControlMode);
-            motions( self, [ *pitch, * roll, * yaw, * lift]);
-            self.set_full_gain(gain_u16_to_f32( *yaw_p2),
-            gain_u16_to_f32( * pitch_roll_p1),
-            gain_u16_to_f32( * pitch_roll_p2));
-            self.set_height_gain(gain_u16_to_f32( * height_p));
-            self.arguments = [ * pitch, * roll, * yaw, * lift]
+                set_motor_max(MOTOR_MAX_CONTROL);
+                mode_switch( self, WorkingModes::HeightControlMode);
+                motions( self, [ *pitch, *roll, *yaw, *lift]);
+                self.set_full_gain(gain_u16_to_f32( *yaw_p2),
+                gain_u16_to_f32( *pitch_roll_p1),
+                gain_u16_to_f32( *pitch_roll_p2));
+                self.set_height_gain(gain_u16_to_f32( *height_p));
+                self.arguments = [*pitch, *roll, *yaw, *lift]
             }
-            Message::RawSensorMode(test) => {
+            Message::RawSensorMode(pitch, roll, yaw, lift
+                                   , yaw_p2, pitch_roll_p1, pitch_roll_p2) => {
                 mode_switch(self, WorkingModes::RawSensorMode);
-                motions(self, [0, 0, 0, 0]);
-                self.set_raw_mode_test(*test);
-                self.arguments = [0, 0, 0, 0]
+                motions(self, [ *pitch, *roll, *yaw, *lift]);
+                self.arguments = [*pitch, *roll, *yaw, *lift]
             }
             _ => mode_switch(self, WorkingModes::SafeMode),//TODO: add new mode and change the 'new' argument
         }
@@ -121,9 +120,7 @@ impl Getter for Drone {
 
     fn get_acceleration(&self) -> f32 { self.acceleration }
 
-    fn get_height(&self) -> [u32; 2] { self.height }
-
-    fn get_height_cal(&self) -> f32 { self.height_cal }
+    fn get_height(&self) -> f32 { self.height }
 
     fn get_yaw_controller(&self) -> PID { self.yaw_controller }
     fn get_full_controller(&self) -> FullController { self.full_controller }
@@ -132,7 +129,7 @@ impl Getter for Drone {
     fn get_sample_time(&self) -> Instant { self.sample_time }
     fn get_time_diff(&self) -> u128 { self.sample_time.duration_since(self.last_sample_time).as_millis() }
     fn get_calibration(&self) -> Calibration { self.calibration }
-    fn get_test(&self) -> [f32; 2] { self.test }
+    fn get_test(&self) -> [f32; 4] { self.test }
     fn get_yaw_pwm_change(&self) -> f32 { self.yaw_controller.pwm_change }
     fn get_angle_pwm_change(&self) -> [f32; 2] {
         [self.full_controller.pitch_p1.pwm_change,
@@ -146,10 +143,11 @@ impl Getter for Drone {
     fn get_height_pwm_change(&self) -> f32 {
         self.height_controller.pwm_change
     }
-    fn get_raw_mode_test(&self) -> bool { self.raw_test }
     fn get_raw_angles(&self) -> YawPitchRoll { self.angles_raw }
-    fn get_rate_angles(&self) -> YawPitchRollRate { self.rates }
-    fn get_raw_mode(&self) -> bool { self.raw_mode }
+    fn get_raw_rates(&self) -> YawPitchRollRate { self.rates_raw }
+    fn get_raw_flag(&self) -> u16 { self.raw_flag }
+    fn get_kalman(&self) -> Kalman { self.kalman }
+    fn get_height_flag(&self) -> u16 { self.height_start_flag }
 }
 
 impl Setter for Drone {
@@ -170,12 +168,9 @@ impl Setter for Drone {
 
     fn set_velocity(&mut self, current_velocity: f32) { self.velocity = current_velocity; }
     fn set_acceleration(&mut self, current_acceleration: f32) { self.acceleration = current_acceleration }
-    fn set_height(&mut self, current_height: u32, origin_height: u32) {
-        self.height[0] = current_height;
-        self.height[1] = origin_height;
+    fn set_height(&mut self, current_height: f32) {
+        self.height = current_height;
     }
-
-    fn set_height_cal(&mut self, current_height: f32) { self.height_cal = current_height }
 
     fn set_yaw_controller(&mut self, errors: (f32, f32), pwm: f32) {
         self.yaw_controller.last_error = errors.0;
@@ -247,30 +242,34 @@ impl Setter for Drone {
 
     fn set_last_time(&mut self, time: Instant) { self.last_sample_time = time; }
     fn set_calibration(&mut self, yaw: [f32; 2], pitch: [f32; 2], roll: [f32; 2]) {
-        self.calibration.yaw = yaw;
-        self.calibration.pitch = pitch;
-        self.calibration.roll = roll;
+        self.calibration.yaw_dmp = yaw;
+        self.calibration.pitch_dmp = pitch;
+        self.calibration.roll_dmp = roll;
     }
-    fn set_test(&mut self, test_value: [f32; 2]) { self.test = test_value }
-    fn set_raw_mode_test(&mut self, test: bool) { self.raw_test = test }
+    fn set_test(&mut self, test_value: [f32; 4]) { self.test = test_value }
     fn set_raw_angles(&mut self, angles:[f32; 3]) {
-        self.angles_raw.yaw = angles[0];
+        self.angles_raw.yaw -= angles[0];
         self.angles_raw.pitch = angles[1];
         self.angles_raw.roll = angles[2];
     }
-    fn set_rate_angles(&mut self, rate:[f32; 3]) {
-        self.rates.yaw_rate = rate[0];
-        self.rates.pitch_rate = rate[1];
-        self.rates.roll_rate = rate[2];
+    fn set_raw_rates(&mut self, rate:[f32; 3]) {
+        self.rates_raw.yaw_rate = rate[0];
+        self.rates_raw.pitch_rate = rate[1];
+        self.rates_raw.roll_rate = rate[2];
     }
-    fn set_raw_mode(&mut self, mode: bool) {
-        self.raw_mode = mode
+    fn set_raw_flag(&mut self, count: u16) {
+        self.raw_flag += count;
+    }
+
+    fn reset_raw_flag(&mut self) {
+        self.raw_flag = 0;
     }
     fn reset_all_controller(&mut self) {
         self.reset_yaw_controller();
         self.reset_fpr1_controller();
         self.reset_fpr2_controller();
         self.reset_fy2_controller();
+        self.reset_h_controller();
     }
     fn reset_yaw_controller(&mut self) {
         self.yaw_controller.pwm_change = 0.0;
@@ -299,5 +298,29 @@ impl Setter for Drone {
         self.full_controller.yaw_p2.pwm_change = 0.0;
         self.full_controller.yaw_p2.last_error = 0.0;
         self.full_controller.yaw_p2.previous_error = 0.0;
+    }
+
+    fn reset_h_controller(&mut self) {
+        self.height_controller.pwm_change = 0.0;
+        self.height_controller.last_error = 0.0;
+        self.height_controller.previous_error = 0.0;
+    }
+
+    fn reset_height_flag(&mut self) {
+        self.height_start_flag = 0;
+    }
+
+    fn set_height_flag(&mut self, count: u16) {
+        self.height_start_flag += count;
+    }
+
+    fn set_height_calibration(&mut self, cali: f32) {
+        self.calibration.height = cali;
+    }
+
+    fn set_kal_calibration(&mut self, cali: YawPitchRoll) {
+        self.calibration.yaw_kal = cali.yaw;
+        self.calibration.pitch_kal = cali.pitch;
+        self.calibration.roll_kal = cali.roll;
     }
 }

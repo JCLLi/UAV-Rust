@@ -291,7 +291,7 @@ fn tui(rx_tui1: Receiver<SettingsBundle>, rx_tui2: Receiver<Packet>) {
     let default_datalog = Packet::new(Message::Datalogging(Datalog {motor1: 0, motor2: 0,
         motor3: 0, motor4: 0, rtc: 0, yaw: 0.0, pitch: 0.0, roll: 0.0, yaw_f: 0.0, pitch_f: 0.0, roll_f: 0.0,
         yaw_r: 0.0, pitch_r: 0.0, roll_r: 0.0, bat: 0, bar: 0.0, workingmode: WorkingModes::SafeMode,
-        arguments: [0, 0, 0, 0], control_loop_time: 0  }));
+        arguments: [0, 0, 0, 0], control_loop_time: 0, test: [0.0, 0.0, 0.0, 0.0] }));
     print_datalog(default_datalog);
 
     let mut total_time = 0;
@@ -384,17 +384,25 @@ fn print_datalog(packet: Packet) {
             MoveTo(50,4),
             Print("Time:      "), Print(d.rtc), Print("       "),
             MoveTo(50,5),
-            Print("YPR:       "), Print(d.yaw), Print(", "), Print(d.pitch), Print(", "), Print(d.roll), Print("       "),
+            Print("YPR_dmp:       "), Print(d.yaw), Print(", "), Print(d.pitch), Print(", "), Print(d.roll), Print("       "),
+            MoveTo(50,6),
+            Print("YPR_filtered:  "), Print(d.yaw_f), Print(", "), Print(d.pitch_f), Print(", "), Print(d.roll_f), Print("       "),
             MoveTo(50,7),
-            Print("Battery:   "), Print(d.bat), Print(" mV"), Print("       "),
+            Print("YPR_raw:       "), Print(d.yaw_r), Print(", "), Print(d.pitch_r), Print(", "), Print(d.roll_r), Print("       "),
             MoveTo(50,8),
-            Print("Barometer: "), Print(d.bar), Print(" 10^-5 bar"), Print("       "),
+            Print("Battery:   "), Print(d.bat), Print(" mV"), Print("       "),
             MoveTo(50,9),
-            Print("Mode:      "), Print(d.workingmode), Print("       "),
+            Print("Barometer: "), Print(d.bar), Print(" m"), Print("       "),
             MoveTo(50,10),
-            Print("Arguments: "), Print(d.arguments[0]),Print(", "),  Print(d.arguments[1]),Print(", "),  Print(d.arguments[2]),Print(", "),  Print(d.arguments[3]), Print("          "),
+            Print("Mode:      "), Print(d.workingmode), Print("       "),
             MoveTo(50,11),
+            Print("Arguments: "), Print(d.arguments[0]),Print(", "),  Print(d.arguments[1]),Print(", "),  Print(d.arguments[2]),Print(", "),  Print(d.arguments[3]), Print("          "),
+            MoveTo(50,12),
             Print("Loop time: "), Print(d.control_loop_time), Print(" us                      "),
+            MoveTo(50,13),
+            Print("Test: "), Print(d.test[0]), Print(", "), Print(d.test[1]),
+            MoveTo(50,14),
+            Print("Test: "), Print(d.test[2]), Print(", "), Print(d.test[3]),
 
             // Print motor display
             MoveTo(110+offset,3), Print(d.motor1), Print("  "),
@@ -516,7 +524,15 @@ mod tests {
 
         let default_bundle = SettingsBundle::default();
         print_command(default_bundle);
-        let default_datalog = Packet::new(Message::Datalogging(Datalog {motor1: 0, motor2: 0, motor3: 0, motor4: 0, rtc: 0, yaw: 0.0, pitch: 0.0, roll: 0.0, x: 0, y: 0, z: 0, bat: 0, bar: 0, workingmode: WorkingModes::SafeMode, arguments: [0, 0, 0, 0], control_loop_time: 0  }));
+        let default_datalog = Packet::new(Message::Datalogging(Datalog {
+            motor1: 0, motor2: 0, motor3: 0, motor4: 0, rtc: 0,
+            yaw: 0.0, pitch: 0.0, roll: 0.0,
+            yaw_r: 0.0, pitch_r: 0.0, roll_r: 0.0,
+            yaw_f: 0.0, pitch_f: 0.0, roll_f: 0.0,
+            bat: 0, bar: 0.0,
+            workingmode: WorkingModes::SafeMode, arguments: [0, 0, 0, 0], control_loop_time: 0,
+            test: [0.0, 0.0]
+        }));
         print_datalog(default_datalog);
 
         loop{}
