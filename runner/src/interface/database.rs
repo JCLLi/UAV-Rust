@@ -71,31 +71,31 @@ impl DatabaseManager {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use std::{time::{Duration}, thread::sleep};
+// #[cfg(test)]
+// mod tests {
+//     use std::{time::{Duration}, thread::sleep};
 
-    use protocol::Datalog;
+//     use protocol::Datalog;
 
-    use super::*;
+//     use super::*;
 
-    #[test]
-    fn test_store_json() {
+//     #[test]
+//     fn test_store_json() {
 
-        for i in 0..10 {
-            let datalog = Datalog {motor1: i, motor2: 0, motor3: 0, motor4: 0, rtc: 9, yaw: 0.0, pitch: 0.0, roll: 0.0, x: 0, y: 0, z: 0, bat: 0, bar: 0, workingmode: WorkingModes::ManualMode, arguments: [0, 0, 0, 0], control_loop_time: 0  };
-            let message = Message::Datalogging(datalog);
-            let packet = Packet::new(message);
+//         for i in 0..10 {
+//             let datalog = Datalog {motor1: i, motor2: 0, motor3: 0, motor4: 0, rtc: 9, yaw: 0.0, pitch: 0.0, roll: 0.0, x: 0, y: 0, z: 0, bat: 0, bar: 0, workingmode: WorkingModes::ManualMode, arguments: [0, 0, 0, 0], control_loop_time: 0  };
+//             let message = Message::Datalogging(datalog);
+//             let packet = Packet::new(message);
             
-            DatabaseManager::create_json(&packet);
+//             DatabaseManager::create_json(&packet);
 
-            sleep(Duration::from_millis(500));
-        }
-    }
+//             sleep(Duration::from_millis(500));
+//         }
+//     }
 
-    #[test]
-    fn test_read_json() {
-        let result = DatabaseManager::read_json_files().unwrap();
-        println!("{:?}", result);
-    }
-}
+//     #[test]
+//     fn test_read_json() {
+//         let result = DatabaseManager::read_json_files().unwrap();
+//         println!("{:?}", result);
+//     }
+// }

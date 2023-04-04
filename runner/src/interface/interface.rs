@@ -236,7 +236,7 @@ fn write_serial(serial: &SerialPort, tx_exit: Sender<bool>, tx_tui1: Sender<Sett
 fn read_serial(serial: &SerialPort, rx_exit: Receiver<bool>, tx_tui2: Sender<Packet>) {
     let mut shared_buf = Vec::new();
     let mut buf = [0u8; 255];
-    let debug = false;
+    let debug = true;
 
     // Read data, place packets in packetmanager
     let mut packetmanager = PacketManager::new();
@@ -288,7 +288,7 @@ fn read_serial(serial: &SerialPort, rx_exit: Receiver<bool>, tx_tui2: Sender<Pac
 fn tui(rx_tui1: Receiver<SettingsBundle>, rx_tui2: Receiver<Packet>) {
     let default_bundle = SettingsBundle::default();
     print_command(default_bundle);
-    let default_datalog = Packet::new(Message::Datalogging(Datalog {motor1: 0, motor2: 0, motor3: 0, motor4: 0, rtc: 0, yaw: 0.0, pitch: 0.0, roll: 0.0, x: 0, y: 0, z: 0, bat: 0, bar: 0, workingmode: WorkingModes::SafeMode, arguments: [0, 0, 0, 0], control_loop_time: 0  }));
+    let default_datalog = Packet::new(Message::Datalogging(Datalog {motor1: 0, motor2: 0, motor3: 0, motor4: 0, rtc: 0, yaw: 0.0, pitch: 0.0, roll: 0.0, x: 0, y: 0, z: 0, bat: 0, bar: 0, workingmode: WorkingModes::SafeMode, arguments: [0, 0, 0, 0], control_loop_time: 0, pwm: [0.0,0.0,0.0,0.0]  }));
     print_datalog(default_datalog);
 
     let mut total_time = 0;
@@ -393,6 +393,8 @@ fn print_datalog(packet: Packet) {
             Print("Arguments: "), Print(d.arguments[0]),Print(", "),  Print(d.arguments[1]),Print(", "),  Print(d.arguments[2]),Print(", "),  Print(d.arguments[3]), Print("          "),
             MoveTo(50,11),
             Print("Loop time: "), Print(d.control_loop_time), Print(" us                      "),
+            MoveTo(50,12),
+            Print("PWM:       "), Print(d.pwm[0]),Print(", "),  Print(d.pwm[1]),Print(", "),  Print(d.pwm[2]),Print(", "),  Print(d.pwm[3]), Print("          "),
 
             // Print motor display
             MoveTo(110+offset,3), Print(d.motor1), Print("  "),
@@ -514,7 +516,7 @@ mod tests {
 
         let default_bundle = SettingsBundle::default();
         print_command(default_bundle);
-        let default_datalog = Packet::new(Message::Datalogging(Datalog {motor1: 0, motor2: 0, motor3: 0, motor4: 0, rtc: 0, yaw: 0.0, pitch: 0.0, roll: 0.0, x: 0, y: 0, z: 0, bat: 0, bar: 0, workingmode: WorkingModes::SafeMode, arguments: [0, 0, 0, 0], control_loop_time: 0  }));
+        let default_datalog = Packet::new(Message::Datalogging(Datalog {motor1: 0, motor2: 0, motor3: 0, motor4: 0, rtc: 0, yaw: 0.0, pitch: 0.0, roll: 0.0, x: 0, y: 0, z: 0, bat: 0, bar: 0, workingmode: WorkingModes::SafeMode, arguments: [0, 0, 0, 0], control_loop_time: 0, pwm: [0.0,0.0,0.0,0.0]  }));
         print_datalog(default_datalog);
 
         loop{}

@@ -24,7 +24,7 @@ mod drone;
 mod drone_transmission;
 mod log_storage_manager;
 mod controllers;
-
+mod kalman;
 
 /// The heap size of your drone code in bytes.
 /// Note: there are 8192 bytes of RAM available.

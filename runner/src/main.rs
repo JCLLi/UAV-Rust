@@ -28,3 +28,23 @@ fn open_serial() -> SerialPort {
     
     serial
 }
+
+#[cfg(test)]
+mod tests {
+    use fixed::types::I18F14;
+    const PI: I18F14 = I18F14::lit("3.14159265358979");
+
+    #[test]
+    fn map_velocity_to_f32() {
+        let data = I18F14::from_num(2);
+        let min_i16 = I18F14::from_num(-560);
+        let max_i16 = I18F14::from_num(560);
+        let min_f32 = I18F14::from_num(-1);
+        let max_f32 = I18F14::from_num(1);
+        
+        let output = (data - min_i16) / (max_i16 - min_i16) * (max_f32 - min_f32) + min_f32;
+        
+        let out = max_f32 - min_f32;
+        println!("{}", out);
+    }
+}

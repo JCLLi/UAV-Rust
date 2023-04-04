@@ -52,13 +52,20 @@ impl PID {
         let current_err = target - current;
         let output = self.kp * (current_err - self.last_error)
             //+ self.ki * current_err
+            + self.kd * (current_err - 2 * self.last_error + self.previous_error);
+        self.previous_error = self.last_error;
+        self.last_error = current_err;
+        (output, current_err, self.last_error)
+    }
+
+    pub fn step2(&mut self, target: I18F14, current: I18F14) -> (I18F14, I18F14, I18F14){
+        let current_err = current;
+        let output = self.kp * (current_err - self.last_error)
+            //+ self.ki * current_err
             + self.kd * (current_err - I18F14::from_num(2) * self.last_error + self.previous_error);
         self.previous_error = self.last_error;
         self.last_error = current_err;
         (output, current_err, self.last_error)
-    
     }
-
-    
 }
  

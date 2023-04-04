@@ -6,6 +6,7 @@ extern crate alloc;
 use core::ops::Deref;
 use alloc::{vec::Vec, fmt};
 use crc;
+use fixed::types::I18F14;
 use postcard::{to_allocvec, to_allocvec_cobs, take_from_bytes_cobs};
 use serde::{Deserialize, Serialize};
 
@@ -19,7 +20,9 @@ pub enum WorkingModes {
     ManualMode,
     CalibrationMode,
     YawControlMode,
-    FullControlMode
+    FullControlMode,
+    RawSensorMode,
+    HeightControlMode,
 }
 
 // Convert WorkingModes enum to string
@@ -32,6 +35,8 @@ impl fmt::Display for WorkingModes {
             WorkingModes::CalibrationMode => write!(f, "CalibrationMode"),
             WorkingModes::YawControlMode => write!(f, "YawControlMode"),
             WorkingModes::FullControlMode => write!(f, "FullControllMode"),
+            WorkingModes::HeightControlMode => write!(f, "HeightControlMode"),
+            WorkingModes::RawSensorMode => write!(f, "RawSensorMode"),
         }
     }
 }
@@ -49,7 +54,9 @@ pub enum Message {
     CalibrationMode,
     YawControlMode(u16, u16, u16, u16, u16), // last value is yaw control P
     FullControlMode(u16, u16, u16, u16, u16, u16, u16), // last three values are yaw control P, roll pitch control P1 and P2
+    HeightControlMode(u16, u16, u16, u16, u16, u16, u16, u16),  // last three values are yaw control P, roll pitch control P1 and P2, height control P
     Datalogging(Datalog),
+    RawSensorMode(u16, u16, u16, u16, u16, u16, u16), // test raw mode for full control and save the loggings into the flash
 }
 
 // Convert Message enum to string
@@ -63,6 +70,8 @@ impl fmt::Display for Message {
             Message::CalibrationMode => write!(f, "CalibrationMode"),
             Message::YawControlMode(a, b, c, d, e) => write!(f, "YawControlMode({}, {}, {}, {}, {})", a, b, c, d, e),
             Message::FullControlMode(_,_,_,_,_,_,_) => write!(f, "FullControllMode()"),
+            Message::HeightControlMode(_,_,_,_,_,_,_,_) =>write!(f, "HeightControlMode()"),
+            Message::RawSensorMode(_,_,_,_,_,_,_) => write!(f, "RawSensorMode()"),
             Message::Datalogging(_) => write!(f, "Datalogging()"),
         }
     }
@@ -86,7 +95,8 @@ pub struct Datalog {
     pub bar: u32,
     pub workingmode: WorkingModes,
     pub arguments: [u16; 4],
-    pub control_loop_time: u128
+    pub control_loop_time: u128,
+    pub pwm: [f32; 4]
 }
 
 /// A Packet is the message format that contains a command, an argument and a checksum.

@@ -1,13 +1,14 @@
+use tudelft_quadrupel::block;
+use crate::working_mode::WorkingModes;
+use crate::working_mode::WorkingModes::{ManualMode, PanicMode, YawControlMode};
+use tudelft_quadrupel::mpu::structs::Gyro;
+use tudelft_quadrupel::mpu::{read_dmp_bytes, read_raw};
+use tudelft_quadrupel::time::Instant;
 use crate::controllers::PID;
 use crate::drone::{Drone, Getter, Setter};
-use crate::yaw_pitch_roll::{full_rate};
+use crate::yaw_pitch_roll::{full_rate, YawPitchRoll};
 use crate::drone::motors::{motor_assign, normalize_full};
 use fixed::types::I18F14;
-
-// const ZERO_POINT: u16 = 32767;
-// //const ZERO_POINT_YAW: u16 = 8520;
-// const ZERO_POINT_YAW: u16 = 8000;
-// const RESOLUTION: f32 = 1 as f32 / 65535 as f32; //Convert from 0-65535 to -1-1
 
 // Fixed point constants
 const MOTOR_MIN: I18F14 = I18F14::lit("200");
@@ -76,7 +77,6 @@ pub fn full_control(drone: &mut Drone, argument: [u16; 4]) -> [I18F14; 4]{
     target_pitch = pwm_change[0] * temp;
     target_roll = pwm_change[1] * temp;
 
-
     let velocities = map_velocity_to_f32(full_rate(drone, angles));
     let mut full_controllers = drone.get_full_controller();
     // Calculate PID output
@@ -84,7 +84,7 @@ pub fn full_control(drone: &mut Drone, argument: [u16; 4]) -> [I18F14; 4]{
     let pitch_pwm = full_controllers.pitch_p2.step(target_pitch, velocities[1]);
     let roll_pwm = full_controllers.roll_p2.step(target_roll, velocities[2]);
 
-    if pitch_pwm.0 > -10000.0 || pitch_pwm.0 < 10000.0 || roll_pwm.0 > -10000.0 || roll_pwm.0 < 10000.0{
+    if pitch_pwm.0 > -10000 || pitch_pwm.0 < 10000 || roll_pwm.0 > -10000 || roll_pwm.0 < 10000 {
         drone.set_full_rate_controller([yaw_pwm.1, yaw_pwm.2],
                                        [pitch_pwm.1, pitch_pwm.2],
                                        [roll_pwm.1, roll_pwm.2],
@@ -94,5 +94,4 @@ pub fn full_control(drone: &mut Drone, argument: [u16; 4]) -> [I18F14; 4]{
     let pwm_change = drone.get_rate_pwm_change();
 
     [pwm_change[0], pwm_change[1], pwm_change[2], target_lift]
-
 }

@@ -747,6 +747,7 @@ dependencies = [
  "crc",
  "crossterm",
  "device_query",
+ "fixed",
  "pasts",
  "postcard",
  "protocol",

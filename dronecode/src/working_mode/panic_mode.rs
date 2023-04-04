@@ -6,10 +6,6 @@ use protocol::WorkingModes;
 
 //Mode switch function for panic mode
 pub fn panic_mode() -> WorkingModes{
-    // for i in 10..1 {
-    //     set_motors([i*20,i*20,i*20,i*20]);
-    //     assembly_delay(1_000_000);
-    // }
     let motors = get_motors();
     set_motors([motors[0]*3/4,motors[1]*3/4,motors[2]*3/4,motors[3]*3/4]);
     assembly_delay(5_000_000);  
