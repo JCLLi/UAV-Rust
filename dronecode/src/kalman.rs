@@ -1,5 +1,7 @@
 use micromath::F32Ext;
 use fixed::types::I18F14;
+// use fixed::types::I18F14;
+use tudelft_quadrupel::led::{Blue, Green, Red, Yellow};
 
 // Kalman filter variables
 #[derive(Copy, Clone)]
@@ -47,7 +49,7 @@ pub struct KalmanFilter {
          KalmanFilter{
              q_angle: I18F14::from_num(0.004),
              q_bias: I18F14::from_num(0.003),
-             r_measure: I18F14::from_num(0.00001),
+             r_measure: I18F14::from_num(0.00007),
              angle: I18F14::from_num(0),
              bias: I18F14::from_num(0),
              rate: I18F14::from_num(0),
@@ -140,10 +142,13 @@ pub struct KalmanFilter {
          self.p_error[1][1] += dt * self.q_bias;
  
          // Compute the Kalman gain
+         Green.on();
+         
          self.s = self.p_error[0][0] + self.r_measure;
+        //  panic!("{}, {}, {}", self.p_error[0][0], self.r_measure, self.s);
          self.k_gain[0] = self.p_error[0][0] / self.s;
          self.k_gain[1] = self.p_error[1][0] / self.s;
- 
+
          // Compute the angle and bias and update them with measurement zk
          self.y = new_angle - self.angle;
          self.angle += self.k_gain[0] * self.y;

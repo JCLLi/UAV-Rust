@@ -23,6 +23,8 @@ pasts = "0.8"
 serde_json = "1.0"
 single_value_channel = "1.2.2"
 fixed = "1.23.0"
+cordic = "0.1.5"
+fixed-sqrt = "0.2.5"
 
 [package.metadata.docs.rs]
 all-features = true

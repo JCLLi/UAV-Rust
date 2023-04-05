@@ -5,6 +5,8 @@ use protocol::{self, Message, PacketManager, Packet, WorkingModes, Datalog};
 use crate::interface::{pc_transmission::{write_packet, write_message}, settings_logic::{DeviceListener, SettingsBundle}};
 use single_value_channel::{Updater};
 use super::{pc_transmission::read_message, database::DatabaseManager};
+use std::fs::OpenOptions;
+use std::io::Write;
 
 /// Setup PC terminal interface for PC-drone communication
 pub fn setup_interface(serial: &SerialPort) -> Result<(), Box<dyn OtherError>> {
@@ -236,7 +238,7 @@ fn write_serial(serial: &SerialPort, tx_exit: Sender<bool>, tx_tui1: Sender<Sett
 fn read_serial(serial: &SerialPort, rx_exit: Receiver<bool>, tx_tui2: Sender<Packet>) {
     let mut shared_buf = Vec::new();
     let mut buf = [0u8; 255];
-    let debug = true;
+    let debug = false;
 
     // Read data, place packets in packetmanager
     let mut packetmanager = PacketManager::new();
@@ -246,7 +248,11 @@ fn read_serial(serial: &SerialPort, rx_exit: Receiver<bool>, tx_tui2: Sender<Pac
         // Either print panic messages or show TUI
         if debug == true {
             if let Ok(num) = serial.read(&mut buf) {
-                println!("\r{:?}", String::from_utf8_lossy(&buf[0..num]));
+                let output = String::from_utf8_lossy(&buf[0..num]);
+                println!("\r{:?}", output);
+                let mut fileRef = OpenOptions::new().append(true).open("sample.txt").expect("Unable to open file");   
+    
+                fileRef.write_all(output.as_bytes()).expect("write failed");
             }
 
         } else {

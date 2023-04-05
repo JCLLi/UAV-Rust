@@ -7,7 +7,10 @@ use crate::drone::{Drone, Getter, Setter};
 use tudelft_quadrupel::time::Instant;
 use micromath::F32Ext;
 use fixed::types::I18F14;
-use cordic::{atan2, sqrt};
+use fixed::FixedI32;
+use cordic::{atan2};
+use fixed_sqrt::FixedSqrt;
+use tudelft_quadrupel::led::{Blue, Green, Red, Yellow};
 
 // static LSB_SENSITIVITY: I18F14 = 1.0 / 16.4;
 const LSB_SENSITIVITY: I18F14 = I18F14::lit("0.06097560976");
@@ -37,6 +40,7 @@ pub fn calculate_altitude(pressure: u32, temperature: i32) -> I18F14 {
         p = 0.1;
     }
     let h = ((I18F14::from_num((pressure_sea_level/p).powf(1.0/5.257)) - I18F14::from_num(1)) * (temperature_celsius + I18F14::from_num(273.15))) / lapse_rate;
+    // Red.on();
 
     return h;
 }
@@ -54,6 +58,7 @@ pub fn filter(drone: &mut Drone, time: u128) {
     let dt = I18F14::from_num(time) / 1_000_000;
     let angles_raw = drone.get_raw_angles();
     let rates_raw = drone.get_raw_rates();
+    // panic!("{}, {}, {}", dt, angles_raw.pitch, rates_raw.pitch_rate);
     let pitch= drone.get_kalman().pitch.update(angles_raw.pitch, rates_raw.pitch_rate, dt);
     let roll = drone.get_kalman().roll.update(angles_raw.roll, rates_raw.roll_rate, dt);
     let yaw = drone.get_kalman().yaw.update(angles_raw.yaw, rates_raw.yaw_rate, dt);
@@ -74,15 +79,22 @@ pub fn measure_raw(drone: &mut Drone, time: u128) {
 
     let raw_to_dps = |raw: i16| -> I18F14 { I18F14::from_num(raw) * LSB_SENSITIVITY };
     let dps_to_rads = |dps: I18F14| -> I18F14 { dps * (PI / 180) };
-
     drone.set_raw_rates([dps_to_rads(raw_to_dps(gyro.z)),
-        dps_to_rads(raw_to_dps(gyro.x)),
+    dps_to_rads(raw_to_dps(gyro.x)),
         dps_to_rads(raw_to_dps(gyro.y))]);
-
-    drone.set_raw_angles([dps_to_rads(raw_to_dps(gyro.z)) * dt * 5,
-        atan2(pitch_acc, sqrt(roll_acc * roll_acc + yaw_acc * yaw_acc)),
+        
+        Yellow.on();
+        let angle1 = dps_to_rads(raw_to_dps(gyro.z)) * dt * 5;
+        // panic!("{}, {}, {}", (roll_acc * roll_acc).abs(), (yaw_acc * yaw_acc).abs(), (roll_acc * roll_acc).abs().saturating_add((yaw_acc * yaw_acc).abs()));
+        // panic!("{}, {}", pitch_acc, (roll_acc.saturating_mul(roll_acc)).abs().saturating_add((yaw_acc.saturating_mul(yaw_acc)).abs()).sqrt());
+        let atan12 = atan2(pitch_acc, ((roll_acc * roll_acc).abs().saturating_add((yaw_acc * yaw_acc).abs())).sqrt());
+        // panic!("{}", atan2(pitch_acc, ((roll_acc * roll_acc).abs().saturating_add((yaw_acc * yaw_acc).abs())).sqrt()));
+        let angle2 = atan2(pitch_acc, ((roll_acc * roll_acc).abs().saturating_add((yaw_acc * yaw_acc).abs())).sqrt());
+        let angle3 = atan2(roll_acc, yaw_acc);
+        drone.set_raw_angles([dps_to_rads(raw_to_dps(gyro.z)) * dt * 5,
+        atan2(pitch_acc, ((roll_acc * roll_acc).abs().saturating_add((yaw_acc * yaw_acc).abs())).sqrt()),
         atan2(roll_acc, yaw_acc)]);
-}
+    }
 
 impl Kalman {
     pub fn new() -> Self {

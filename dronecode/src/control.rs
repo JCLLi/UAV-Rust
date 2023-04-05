@@ -197,38 +197,38 @@ pub fn control_loop() -> ! {
         
         measure_raw(&mut drone, control_loop_time);
         
-        let vel_z = measure_velocity(&mut drone);
+        // let vel_z = measure_velocity(&mut drone);
 
-        let (altitude_state, velocity_state) = altitude_kalman.update(altitude * 100, vel_z - I18F14::from_num(70), dt);
+        // let (altitude_state, velocity_state) = altitude_kalman.update(altitude * 100, vel_z - I18F14::from_num(70), dt);
         
-        drone.set_height(altitude_state);
-                        Red.on();
+        // drone.set_height(altitude_state);
+        //                 Red.on();
 
-        // //Store the log files
-        // let log = Message::Datalogging(Datalog 
-        //     { 
-        //         motor1: motors[0], 
-        //         motor2: motors[1], 
-        //         motor3: motors[2], 
-        //         motor4: motors[3], 
-        //         rtc: time, 
-        //         yaw: angles.yaw.to_num(),
-        //         pitch: angles.pitch.to_num(),
-        //         roll: angles.roll.to_num(),
-        //         x: 0, 
-        //         y: 0, 
-        //         z: 0, 
-        //         bat: read_battery(), 
-        //         bar: read_pressure(), 
-        //         workingmode: drone.get_mode(),
-        //         arguments: drone.get_arguments(),
-        //         control_loop_time,
-        //         pwm: [drone.pwm[0].to_num(), drone.pwm[1].to_num(), drone.pwm[2].to_num(), drone.pwm[3].to_num()]
-        //     });
+        // Send datalog
+        let log = Message::Datalogging(Datalog 
+            { 
+                motor1: motors[0], 
+                motor2: motors[1], 
+                motor3: motors[2], 
+                motor4: motors[3], 
+                rtc: time, 
+                yaw: angles.yaw.to_num(),
+                pitch: angles.pitch.to_num(),
+                roll: angles.roll.to_num(),
+                x: 0, 
+                y: 0, 
+                z: 0, 
+                bat: read_battery(), 
+                bar: read_pressure(), 
+                workingmode: drone.get_mode(),
+                arguments: drone.get_arguments(),
+                control_loop_time,
+                pwm: [drone.pwm[0].to_num(), drone.pwm[1].to_num(), drone.pwm[2].to_num(), drone.pwm[3].to_num()]
+            });
             
-        //     if i % 5 == 0 {
-        //         write_packet(log);
-        //     }
+            if i % 5 == 0 {
+                write_packet(log);
+            }
             
         // wait until the timer interrupt goes off again
         // based on the frequency set above

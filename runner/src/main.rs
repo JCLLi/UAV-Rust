@@ -29,22 +29,29 @@ fn open_serial() -> SerialPort {
     serial
 }
 
-#[cfg(test)]
-mod tests {
-    use fixed::types::I18F14;
-    const PI: I18F14 = I18F14::lit("3.14159265358979");
+// #[cfg(test)]
+// mod tests {
+//     use cordic::{ atan2};
+//     use fixed::types::I18F14;
+//     use fixed::types::I17F15;
+//     const PI: I18F14 = I18F14::lit("3.14159265358979");
+//     use fixed_sqrt::FixedSqrt;
 
-    #[test]
-    fn map_velocity_to_f32() {
-        let data = I18F14::from_num(2);
-        let min_i16 = I18F14::from_num(-560);
-        let max_i16 = I18F14::from_num(560);
-        let min_f32 = I18F14::from_num(-1);
-        let max_f32 = I18F14::from_num(1);
+//     #[test]
+//     fn map_velocity_to_f32() {
+//         let data = I18F14::from_num(2);
+//         let min_i16 = I18F14::from_num(-560);
+//         let max_i16 = I18F14::from_num(512);
+//         let min_f32 = I18F14::from_num(-1);
+//         let max_f32 = I18F14::from_num(1);
         
-        let output = (data - min_i16) / (max_i16 - min_i16) * (max_f32 - min_f32) + min_f32;
+//         let output = (data - min_i16) / (max_i16 - min_i16) * (max_f32 - min_f32) + min_f32;
         
-        let out = max_f32 - min_f32;
-        println!("{}", out);
-    }
-}
+//         let out = max_f32 - min_f32;
+//         let num = I17F15::from_num(5);
+//         // println!("{}", max_i16.saturating_mul(max_i16));
+//         println!("{}", max_i16*num);
+
+//         // println!("{}", atan2(I18F14::from_num(524287), sqrt((max_i16.saturating_mul(max_i16)).abs())));
+//     }
+// }

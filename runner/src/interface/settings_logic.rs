@@ -47,6 +47,7 @@ pub struct SettingsBundle {
     pub yaw_offset: i16,
     pub lift_offset: i16,
     pub calibration: bool,
+    pub raw_test: bool,
 }
 
 impl Default for SettingsBundle {
@@ -58,10 +59,10 @@ impl Default for SettingsBundle {
             lift: 0,
             exit: false, 
             mode: WorkingModes::SafeMode, 
-            yaw_control_p: 0,
-            roll_pitch_control_p1: 0,
-            roll_pitch_control_p2: 0,
-            height_control_p: 0,
+            yaw_control_p: 5000,
+            roll_pitch_control_p1: 5000,
+            roll_pitch_control_p2: 5000,
+            height_control_p: 5000,
             ui_options: UIOptions::Default,
             pitch_joystick: 32767,
             roll_joystick: 32767,
@@ -72,6 +73,7 @@ impl Default for SettingsBundle {
             yaw_offset: 0,
             lift_offset: 0,
             calibration: false,
+            raw_test: false,
         }
     }
 }
@@ -149,6 +151,14 @@ impl DeviceListener {
                             self.bundle.mode
                         }
                     },
+                    Commands::HeightControlMode       => self.bundle.mode = {
+                        // If joystick is at zeropoint, drone is in safe mode and calibration is done, go to fullcontrol mode, otherwise stay in old mode
+                        if (self.bundle.pitch == 32767) && (self.bundle.roll == 32767) && (self.bundle.yaw >= 8000 && self.bundle.yaw <= 8800) && (self.bundle.lift == 0) && (self.bundle.mode == WorkingModes::SafeMode || self.bundle.mode == WorkingModes::PanicMode) && (self.bundle.calibration == true){
+                            WorkingModes::HeightControlMode
+                        } else {
+                            self.bundle.mode
+                        }
+                    },
                     Commands::ResetToZeroPoint      => self.bundle = SettingsBundle::default(),
                     Commands::LiftUp                => self.bundle.lift_offset = self.bundle.lift_offset.saturating_add(keyboardcommand.argument as i16),
                     Commands::LiftDown              => self.bundle.lift_offset = self.bundle.lift_offset.saturating_sub(keyboardcommand.argument as i16),
@@ -164,7 +174,13 @@ impl DeviceListener {
                     Commands::RollPitchControlP1Down=> self.bundle.roll_pitch_control_p1 = self.bundle.roll_pitch_control_p1.saturating_sub(keyboardcommand.argument),
                     Commands::RollPitchControlP2Up  => self.bundle.roll_pitch_control_p2 = self.bundle.roll_pitch_control_p2.saturating_add(keyboardcommand.argument),
                     Commands::RollPitchControlP2Down=> self.bundle.roll_pitch_control_p2 = self.bundle.roll_pitch_control_p2.saturating_sub(keyboardcommand.argument),
-
+                    Commands::HeightControlPUp => self.bundle.height_control_p = self.bundle.height_control_p.saturating_add(keyboardcommand.argument),
+                    Commands::HeightControlPDown => self.bundle.height_control_p = self.bundle.height_control_p.saturating_sub(keyboardcommand.argument),
+                    Commands::RawSensorMode         => {
+                        self.bundle.raw_test = false;
+                        self.bundle.mode = WorkingModes::RawSensorMode;
+                    }
+                    Commands::RawSensorModeTest     => self.bundle.raw_test = true,
                     _ => (),
                 }
             },
@@ -191,15 +207,23 @@ impl DeviceListener {
                 self.bundle.roll = self.bundle.roll_joystick.saturating_sub(-self.bundle.roll_offset as u16);
             }
         }
-        if self.bundle.yaw_offset > 0 {
-            self.bundle.yaw = self.bundle.yaw_joystick.saturating_add(self.bundle.yaw_offset as u16);
+        if self.bundle.yaw_offset == -32768 {
+            self.bundle.yaw = self.bundle.yaw_joystick.saturating_sub(32767);
         } else {
-            self.bundle.yaw = self.bundle.yaw_joystick.saturating_sub(-self.bundle.yaw_offset as u16);
+            if self.bundle.yaw_offset > 0 {
+                self.bundle.yaw = self.bundle.yaw_joystick.saturating_add(self.bundle.yaw_offset as u16);
+            } else {
+                self.bundle.yaw = self.bundle.yaw_joystick.saturating_sub(-self.bundle.yaw_offset as u16);
+            }
         }
-        if self.bundle.lift_offset > 0 {
-            self.bundle.lift = self.bundle.lift_joystick.saturating_add(self.bundle.lift_offset as u16);
+        if self.bundle.lift_offset == -32768 {
+            self.bundle.lift = self.bundle.lift_joystick.saturating_sub(32767);
         } else {
-            self.bundle.lift = self.bundle.lift_joystick.saturating_sub(-self.bundle.lift_offset as u16);
+            if self.bundle.lift_offset > 0 {
+                self.bundle.lift = self.bundle.lift_joystick.saturating_add(self.bundle.lift_offset as u16);
+            } else {
+                self.bundle.lift = self.bundle.lift_joystick.saturating_sub(-self.bundle.lift_offset as u16);
+            }
         }
 
         Ok(self.bundle.clone())
