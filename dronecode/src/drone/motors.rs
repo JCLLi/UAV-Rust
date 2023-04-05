@@ -1,7 +1,7 @@
 
 use tudelft_quadrupel::motor::set_motors;
 use protocol::WorkingModes;
-use crate::drone::{Drone, Getter, Setter};
+use crate::drone::{Drone, Getter};
 
 pub(crate) const MOTOR_MAX_CONTROL: u16 = 600;
 pub(crate) const MOTOR_MAX_MANUAL: u16 = 400;
@@ -13,11 +13,8 @@ const ANGLE_RESOLUTION: f32 = 0.52359877 / ZERO_POINT as f32;
 const LIFT_RESOLUTION: f32 = 1 as f32 / 65535 as f32;
 const MOTOR_RESOLUTION_CONTROL: f32 = 1 as f32 / MOTOR_MAX_CONTROL as f32; //Convert from 0-1 to 0-MOTORMAX
 const MOTOR_RESOLUTION_MANUAL: f32 = 1 as f32 / MOTOR_MAX_MANUAL as f32; //Convert from 0-1 to 0-MOTORMAX
-const MOTOR_MIN_PWM_CONTROL: f32 = 250.0 * MOTOR_RESOLUTION_CONTROL;
-const MOTOR_MIN_PWM_MANUAL: f32 = 250.0 * MOTOR_RESOLUTION_MANUAL;
-const PI: f32 = 3.1415926 as f32;
 
-///
+/// Assign the motors based on given pwm values
 pub fn motor_assign(drone: &Drone, pwm: [f32; 4]){
     //        m1
     //        |
@@ -26,55 +23,49 @@ pub fn motor_assign(drone: &Drone, pwm: [f32; 4]){
     //        |
     //        |
     //        m3
-    let mut motor_max = 0;
-    let mut motor_resolution = 0.0;
     let working_mode = drone.get_mode();
 
     match working_mode {
         WorkingModes::ManualMode => {
-            motor_resolution = MOTOR_RESOLUTION_MANUAL;
+            let motor_resolution = MOTOR_RESOLUTION_MANUAL;
             if pwm[3] > 0.0 {
-                let mut m1 = MOTOR_MIN + ((0.2 * (- pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
-                let mut m2 = MOTOR_MIN + ((0.2 * (- pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
-                let mut m3 = MOTOR_MIN + ((0.2 * (pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
-                let mut m4 = MOTOR_MIN + ((0.2 * (pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let m1 = MOTOR_MIN + ((0.2 * (- pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let m2 = MOTOR_MIN + ((0.2 * (- pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let m3 = MOTOR_MIN + ((0.2 * (pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let m4 = MOTOR_MIN + ((0.2 * (pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
 
                 set_motors([m1, m2, m3, m4]);
             }else { set_motors([0, 0, 0, 0]) }
         }
         WorkingModes::YawControlMode => {
-            motor_resolution = MOTOR_RESOLUTION_CONTROL;
+            let motor_resolution = MOTOR_RESOLUTION_CONTROL;
             if pwm[3] > 0.0 {
-                let mut m1 = MOTOR_MIN + ((0.2 * (- pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
-                let mut m2 = MOTOR_MIN + ((0.2 * (- pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
-                let mut m3 = MOTOR_MIN + ((0.2 * (pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
-                let mut m4 = MOTOR_MIN + ((0.2 * (pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let m1 = MOTOR_MIN + ((0.2 * (- pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let m2 = MOTOR_MIN + ((0.2 * (- pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let m3 = MOTOR_MIN + ((0.2 * (pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let m4 = MOTOR_MIN + ((0.2 * (pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
 
                 set_motors([m1, m2, m3, m4]);
             }else { set_motors([0, 0, 0, 0]) }
         }
         WorkingModes::FullControlMode | WorkingModes::RawSensorMode => {
-            motor_resolution = MOTOR_RESOLUTION_CONTROL;
+            let motor_resolution = MOTOR_RESOLUTION_CONTROL;
             if pwm[3] > 0.0 {
-                let mut m1 = MOTOR_MIN + ((0.2 * (pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
-                let mut m2 = MOTOR_MIN + ((0.2 * (- pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
-                let mut m3 = MOTOR_MIN + ((0.2 * (- pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
-                let mut m4 = MOTOR_MIN + ((0.2 * (pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let m1 = MOTOR_MIN + ((0.2 * (pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let m2 = MOTOR_MIN + ((0.2 * (- pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let m3 = MOTOR_MIN + ((0.2 * (- pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let m4 = MOTOR_MIN + ((0.2 * (pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
 
                 set_motors([m1, m2, m3, m4]);
             }else { set_motors([0, 0, 0, 0]) }
         }
         WorkingModes::HeightControlMode => {
-            motor_resolution = MOTOR_RESOLUTION_CONTROL;
+            let motor_resolution = MOTOR_RESOLUTION_CONTROL;
             if pwm[3] > 0.0 {
-                let mut m1 = ((0.2 * (pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
-                if m1 < 200 { m1 = 200 }
-                let mut m2 = ((0.2 * (- pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
-                if m2 < 200 { m2 = 200 }
-                let mut m3 = ((0.2 * (- pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
-                if m3 < 200 { m3 = 200 }
-                let mut m4 = ((0.2 * (pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
-                if m4 < 200 { m4 = 200 }
+                let m1 = MOTOR_MIN + ((0.2 * (pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let m2 = MOTOR_MIN + ((0.2 * (- pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let m3 = MOTOR_MIN + ((0.2 * (- pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
+                let m4 = MOTOR_MIN + ((0.2 * (pwm[2] - pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
 
                 set_motors([m1, m2, m3, m4]);
             }else { set_motors([0, 0, 0, 0]) }
@@ -133,7 +124,7 @@ pub fn normalize_full(yaw_u16: u16, pitch_u16: u16, roll_u16: u16, lift_u16: u16
     if roll_u16 > ZERO_POINT {
         target_roll = (roll_u16 - ZERO_POINT) as f32 * ANGLE_RESOLUTION;
     }else if roll_u16 < ZERO_POINT {
-        target_roll = (0.0 - (ZERO_POINT - roll_u16) as f32 * ANGLE_RESOLUTION);
+        target_roll = 0.0 - (ZERO_POINT - roll_u16) as f32 * ANGLE_RESOLUTION;
     }
 
     if yaw_u16 > ZERO_POINT_YAW {

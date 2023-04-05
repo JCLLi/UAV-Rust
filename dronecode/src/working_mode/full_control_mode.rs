@@ -1,19 +1,8 @@
-use tudelft_quadrupel::block;
-use crate::working_mode::WorkingModes;
-use crate::working_mode::WorkingModes::{ManualMode, PanicMode, YawControlMode};
-use tudelft_quadrupel::mpu::structs::Gyro;
-use tudelft_quadrupel::mpu::{read_dmp_bytes, read_raw};
 use tudelft_quadrupel::time::Instant;
 use crate::controllers::PID;
 use crate::drone::{Drone, Getter, Setter};
-use crate::yaw_pitch_roll::{full_rate, YawPitchRoll};
+use crate::yaw_pitch_roll::full_rate;
 use crate::drone::motors::{motor_assign, normalize_full};
-
-const ZERO_POINT: u16 = 32767;
-//const ZERO_POINT_YAW: u16 = 8520;
-const ZERO_POINT_YAW: u16 = 8000;
-const RESOLUTION: f32 = 1 as f32 / 65535 as f32; //Convert from 0-65535 to -1-1
-
 
 #[derive(Copy, Clone)]
 pub struct FullController{
@@ -62,7 +51,7 @@ pub fn motion(drone: &mut Drone, argument: [u16; 4]){
 //P1: 0.84 P2: 0.96
 pub fn full_control(drone: &mut Drone, argument: [u16; 4]) -> [f32; 4]{
 
-    let [mut target_yaw, mut target_pitch, mut target_roll, mut target_lift]
+    let [target_yaw, mut target_pitch, mut target_roll, target_lift]
         = normalize_full(argument[2], argument[0], argument[1], argument[3]);
 
     let angles = drone.get_current_attitude();

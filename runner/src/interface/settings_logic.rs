@@ -184,10 +184,6 @@ impl DeviceListener {
                     Commands::RollPitchControlP2Down=> self.bundle.roll_pitch_control_p2 = self.bundle.roll_pitch_control_p2.saturating_sub(keyboardcommand.argument),
                     Commands::HeightControlPUp => self.bundle.height_control_p = self.bundle.height_control_p.saturating_add(keyboardcommand.argument),
                     Commands::HeightControlPDown => self.bundle.height_control_p = self.bundle.height_control_p.saturating_sub(keyboardcommand.argument),
-                    Commands::RawSensorMode         => {
-                        self.bundle.raw_test = false;
-                        self.bundle.mode = WorkingModes::RawSensorMode;
-                    }
                     Commands::RawSensorModeTest     => self.bundle.raw_test = true,
                     _ => (),
                 }

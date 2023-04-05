@@ -5,23 +5,16 @@ use tudelft_quadrupel::battery::read_battery;
 use tudelft_quadrupel::block;
 use tudelft_quadrupel::led::{Blue, Green, Red, Yellow};
 use tudelft_quadrupel::motor::{get_motors, set_motor_max};
-use tudelft_quadrupel::mpu::read_raw;
 use tudelft_quadrupel::time::{set_tick_frequency, wait_for_next_tick, Instant};
 use tudelft_quadrupel::mpu::read_dmp_bytes;
 use crate::drone_transmission::{write_packet, read_message};
-use crate::log_storage_manager::LogStorageManager;
 use crate::working_mode::raw_sensor_mode::{measure_raw, filter, calculate_altitude, measure_velocity};
-use crate::kalman::{KalmanFilter, AltitudeKalmanFilter};
+use crate::kalman::AltitudeKalmanFilter;
 use crate::yaw_pitch_roll::YawPitchRoll;
 use crate::drone::{Drone, Getter, Setter};
 use crate::working_mode::panic_mode::{panic_mode, panic_check};
-use tudelft_quadrupel::time::assembly_delay;
-use crate::drone;
 
-const FIXED_SIZE:usize = 64;
-const NO_CONNECTION_PANIC:u16 = 10; // Counts how often messages are not received
 const FIXED_FREQUENCY:u64 = 100; //100 Hz
-const ACC_PARAMETER: f32 = 9.8 / 32768 as f32;
 
 pub fn control_loop() -> ! {
     set_motor_max(600);
@@ -36,16 +29,14 @@ pub fn control_loop() -> ! {
     let mut no_message = 0;
 
     //flag for detecting if there is new message
-    let mut new_message = false;
+    let mut new_message;
 
     // Buffer to store received bytes
     let mut shared_buf = Vec::new();
 
-    let mut angles = YawPitchRoll { yaw: 0.0, pitch: 0.0, roll: 0.0};
-
     let mut absolute_altitude: f32 = 0.0;
 
-    for i in 0..2000 {
+    for _ in 0..2000 {
         absolute_altitude = calculate_altitude(read_pressure(), read_temperature());
     }
 
@@ -158,11 +149,6 @@ pub fn control_loop() -> ! {
                 Red.off();
                 Green.off();
             },
-            _ => {
-                if new_message {
-                    drone.message_check(&message);
-                }
-            }
         };
 
         // Read motor and sensor values
@@ -172,7 +158,7 @@ pub fn control_loop() -> ! {
         let sample_time = Instant::now();
         drone.set_sample_time(sample_time);
 
-        angles = drone.get_calibration().full_compensation_dmp(YawPitchRoll::from(sensor_data));
+        let angles = drone.get_calibration().full_compensation_dmp(YawPitchRoll::from(sensor_data));
 
         // Measure time of loop iteration
         let end = Instant::now();

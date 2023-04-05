@@ -1,7 +1,4 @@
 use crate::kalman::KalmanFilter;
-use crate::working_mode::WorkingModes;
-use crate::working_mode::WorkingModes::{PanicMode};
-use tudelft_quadrupel::mpu::structs::Gyro;
 use tudelft_quadrupel::mpu::read_raw;
 use crate::drone::{Drone, Getter, Setter};
 use tudelft_quadrupel::time::Instant;

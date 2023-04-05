@@ -77,7 +77,6 @@ pub fn mode_switch(drone: &mut Drone, new: WorkingModes) {
                 WorkingModes::HeightControlMode => {
                     if drone.get_height_flag() != 500{
                         drone.set_height_flag(1);
-                        let temp = drone.get_calibration().height;
                         drone.set_height_calibration(drone.get_height());
                     }
                     else {
@@ -96,7 +95,6 @@ pub fn mode_switch(drone: &mut Drone, new: WorkingModes) {
                 | WorkingModes::SafeMode
                 | WorkingModes::PanicMode => {
                     drone.reset_raw_flag();
-                    let temp = panic_mode();
                 }
                 WorkingModes::YawControlMode
                 | WorkingModes::FullControlMode
@@ -126,14 +124,12 @@ pub fn mode_switch(drone: &mut Drone, new: WorkingModes) {
 //Function used to set the motion of the drone according to the arguments from commands
 pub fn motions(drone: &mut Drone, argument: [u16; 4]) {
     match drone.get_mode() {
-        //WorkingModes::ManualMode => manual_mode::motion(drone, argument),
         WorkingModes::ManualMode => manual_mode::motion(drone, argument),
         WorkingModes::YawControlMode => yaw_control_mode::motion(drone, argument),
         WorkingModes::FullControlMode | WorkingModes::RawSensorMode => full_control_mode::motion(drone, argument),
         WorkingModes::CalibrationMode => calibration_mode::calibrate(drone),
         WorkingModes::HeightControlMode => height_control_mode::motion(drone, argument),
-        WorkingModes::RawSensorMode => full_control_mode::motion(drone, argument),
-        _ => (),//TODO:add new operation with new modes
+        _ => (),
     }
 }
 

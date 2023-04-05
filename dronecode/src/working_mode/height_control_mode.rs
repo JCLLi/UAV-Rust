@@ -1,6 +1,5 @@
-use tudelft_quadrupel::barometer::read_pressure;
 use crate::drone::{Drone, Getter, Setter};
-use crate::drone::motors::{motor_assign, MOTOR_MAX_CONTROL, normalize_manual_yaw};
+use crate::drone::motors::{motor_assign, MOTOR_MAX_CONTROL};
 use crate::working_mode::full_control_mode::full_control;
 
 const LIFT_MOTOR_VARIATION: f32 = 200.0;

@@ -25,8 +25,6 @@ pub fn setup_interface(serial: &SerialPort) -> Result<(), Box<dyn OtherError>> {
         Show
     ).unwrap();
 
-    println!("Program stopped");
-
     // restore terminal
     disable_raw_mode()?;
 
@@ -103,7 +101,6 @@ fn get_user_input(tx_input: Updater<Option<SettingsBundle>>) {
 
                     // Exit program if exit command is given
                     if bundle.exit == true {
-                        println!("\rGet user input stopped");
                         break;
                     }
 
@@ -148,7 +145,6 @@ fn write_serial(serial: &SerialPort, tx_exit: Sender<bool>, tx_tui1: Updater<Opt
                 if bundle.exit == true {
                     write_packet(serial, Message::SafeMode);
                     tx_exit.send(true).unwrap();
-                    println!("\rWrite serial stopped");
                     break;
                 }
 
