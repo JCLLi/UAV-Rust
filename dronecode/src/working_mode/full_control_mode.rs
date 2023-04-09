@@ -30,8 +30,8 @@ impl FullController {
             pitch_p1: PID::new(0.0, 0.0, 0.0),
             roll_p1: PID::new(0.0, 0.0, 0.0),
             yaw_p2: PID::new(0.0, 0.0, 0.0),
-            pitch_p2: PID::new(0.0, 0.0, 0.3),
-            roll_p2: PID::new(0.0, 0.0, 0.3),
+            pitch_p2: PID::new(0.0, 0.1, 0.3),
+            roll_p2: PID::new(0.0, 0.1, 0.3),
         }
     }
 }
@@ -95,7 +95,7 @@ pub fn full_control(drone: &mut Drone, argument: [u16; 4]) -> [f32; 4]{
     }
 
     let pwm_change = drone.get_rate_pwm_change();
-    drone.set_test([pwm_change[0], target_pitch - pwm_change[1], target_roll - pwm_change[2], 0.0]);
+    //drone.set_test([pwm_change[0], target_pitch - pwm_change[1], target_roll - pwm_change[2], 0.0]);
     [pwm_change[0], target_pitch - pwm_change[1], target_roll - pwm_change[2], target_lift]
 
 }

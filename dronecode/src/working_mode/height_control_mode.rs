@@ -31,8 +31,12 @@ pub fn height_control(drone: &mut Drone, argument: [u16; 4]) -> [f32; 4]{
 
     let pwm_change = drone.get_height_pwm_change();
 
-    let lift = FLOATING_PARAMETER + pwm_change * LIFT_VARIATION_PARAMETER;
+    let mut lift = FLOATING_PARAMETER + pwm_change * LIFT_VARIATION_PARAMETER;
     drone.set_test([lift, current, pwm_change, 0.0]);
+
+    if pwm[3] == 0.0 {
+        lift = 0.0;
+    }
     [pwm[0], pwm[1], pwm[2], lift]
 
 }

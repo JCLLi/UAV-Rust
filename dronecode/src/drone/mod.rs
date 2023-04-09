@@ -16,6 +16,8 @@ pub struct Drone{
     acceleration_z: f32,
     height: f32,
     height_start_flag: u16,
+    angles_dmp: YawPitchRoll,
+    angles_filtered: YawPitchRoll,
     angles_raw: YawPitchRoll,
     rates_raw: YawPitchRollRate,
     yaw_controller: PID,
@@ -48,6 +50,8 @@ pub trait Getter{
     fn get_angle_pwm_change(&self) -> [f32; 2];
     fn get_rate_pwm_change(&self) -> [f32; 3];
     fn get_height_pwm_change(&self) -> f32;
+    fn get_filtered_angles(&self) -> YawPitchRoll;
+    fn get_dmp_angles(&self) -> YawPitchRoll;
     fn get_raw_angles(&self) -> YawPitchRoll;
     fn get_raw_rates(&self) -> YawPitchRollRate;
     fn get_raw_flag(&self) -> u16;
@@ -72,6 +76,8 @@ pub trait Setter{
     fn set_last_time(&mut self, time: Instant);
     fn set_calibration(&mut self, yaw: [f32; 2], pitch: [f32; 2], roll: [f32; 2], acc_z: f32);
     fn set_test(&mut self, test_value: [f32; 4]);
+    fn set_filtered_angles(&mut self, angles: YawPitchRoll);
+    fn set_dmp_angles(&mut self, angles:[f32; 3]);
     fn set_raw_angles(&mut self, angles:[f32; 3]);
     fn set_raw_rates(&mut self, rate:[f32; 3]);
     fn set_raw_flag(&mut self, count: u16);

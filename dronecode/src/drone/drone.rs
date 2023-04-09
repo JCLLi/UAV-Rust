@@ -25,6 +25,8 @@ impl Drone {
             current_attitude: YawPitchRoll{ yaw: 0.0, pitch: 0.0, roll: 0.0 },
             last_attitude:YawPitchRoll{ yaw: 0.0, pitch: 0.0, roll: 0.0 },
             acceleration_z: 0.0,
+            angles_dmp: YawPitchRoll{yaw: 0.0, pitch: 0.0, roll: 0.0},
+            angles_filtered: YawPitchRoll{yaw: 0.0, pitch: 0.0, roll: 0.0},
             height: 0.0,
             height_start_flag: 0,
             yaw_controller: PID::new(0.0,0.0,0.0),
@@ -144,6 +146,8 @@ impl Getter for Drone {
     fn get_height_pwm_change(&self) -> f32 {
         self.height_controller.pwm_change
     }
+    fn get_filtered_angles(&self) -> YawPitchRoll { self.angles_filtered }
+    fn get_dmp_angles(&self) -> YawPitchRoll { self.angles_dmp }
     fn get_raw_angles(&self) -> YawPitchRoll { self.angles_raw }
     fn get_raw_rates(&self) -> YawPitchRollRate { self.rates_raw }
     fn get_raw_flag(&self) -> u16 { self.raw_flag }
@@ -248,6 +252,11 @@ impl Setter for Drone {
         self.calibration.acceleration_z = acc_z;
     }
     fn set_test(&mut self, test_value: [f32; 4]) { self.test = test_value }
+    fn set_dmp_angles(&mut self, angles: [f32; 3]) {
+        self.angles_dmp.yaw = angles[0];
+        self.angles_dmp.pitch = angles[1];
+        self.angles_dmp.roll = angles[2];
+    }
     fn set_raw_angles(&mut self, angles:[f32; 3]) {
         self.angles_raw.yaw -= angles[0];
         self.angles_raw.pitch = angles[1];
@@ -323,5 +332,8 @@ impl Setter for Drone {
         self.calibration.yaw_kal = cali.yaw;
         self.calibration.pitch_kal = cali.pitch;
         self.calibration.roll_kal = cali.roll;
+    }
+    fn set_filtered_angles(&mut self, angles: YawPitchRoll) {
+        self.angles_filtered = angles;
     }
 }

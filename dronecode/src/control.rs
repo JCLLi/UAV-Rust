@@ -168,26 +168,32 @@ pub fn control_loop() -> ! {
         // Read motor and sensor values
         let motors = get_motors();
 
-        let sensor_data = block!(read_dmp_bytes()).unwrap();
+        // Measure time of loop iteration
+
+
+        let mut angles_filtered = drone.get_current_attitude();
+        match drone.get_mode(){
+            WorkingModes::RawSensorMode => {
+                measure_raw(&mut drone, 10000);
+                filter(&mut drone, 10000);
+                drone.set_dmp_angles([0.0, 0.0, 0.0]);
+            }
+            _ => {
+                let sensor_data = block!(read_dmp_bytes()).unwrap();
+                angles = drone.get_calibration().full_compensation_dmp(YawPitchRoll::from(sensor_data));
+                drone.set_dmp_angles([angles.yaw, angles.pitch, angles.roll]);
+                angles_filtered = YawPitchRoll{yaw: 0.0, pitch: 0.0, roll: 0.0};
+                drone.set_current_attitude([angles.yaw, angles.pitch, angles.roll])
+            }
+        }
+        let end = Instant::now();
+        let control_loop_time = end.duration_since(begin).as_micros();
         let sample_time = Instant::now();
         drone.set_sample_time(sample_time);
 
-        angles = drone.get_calibration().full_compensation_dmp(YawPitchRoll::from(sensor_data));
-
-        // Measure time of loop iteration
-        let end = Instant::now();
-        let control_loop_time = end.duration_since(begin).as_micros();
-
-        match drone.get_mode(){
-            WorkingModes::RawSensorMode => {
-                measure_raw(&mut drone, control_loop_time);
-                filter(&mut drone, control_loop_time);
-            }
-            _ => drone.set_current_attitude([angles.yaw, angles.pitch, angles.roll])
-        }
-
         let angles_raw = drone.get_raw_angles();
-        let angles_filtered = drone.get_current_attitude();
+
+        let angles_dmp = drone.get_dmp_angles();
 
         let dt = (10000 as f32) / 1_000_000.0;
 
@@ -206,9 +212,9 @@ pub fn control_loop() -> ! {
                 motor4: motors[3], 
                 rtc: time,
                 //dmp
-                yaw: angles.yaw,
-                pitch: angles.pitch,
-                roll: angles.roll,
+                yaw: angles_dmp.yaw,
+                pitch: angles_dmp.pitch,
+                roll: angles_dmp.roll,
                 //filtered
                 yaw_f: angles_filtered.yaw,
                 pitch_f: angles_filtered.pitch,

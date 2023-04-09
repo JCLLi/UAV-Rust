@@ -107,12 +107,13 @@ pub fn mode_switch(drone: &mut Drone, new: WorkingModes) {
                 WorkingModes::RawSensorMode => {
                     if drone.get_raw_flag() != 501{
                         drone.set_raw_flag(1);
-                        drone.set_kal_calibration(drone.get_current_attitude());
+                        drone.set_filtered_angles(drone.get_current_attitude());
                         //drone.set_test([drone.get_calibration().pitch_kal,drone.get_current_attitude().pitch,0.0,0.0]);
 
                     }
                     else {
                         drone.set_raw_flag(0);
+                        drone.set_kal_calibration(drone.get_filtered_angles());
                         //drone.set_test([drone.get_calibration().pitch_kal,drone.get_current_attitude().pitch,1.0,1.0]);
                     }
                 }
