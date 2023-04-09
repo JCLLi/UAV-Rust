@@ -1,6 +1,5 @@
-use crate::drone::{Drone, Setter};
+use crate::drone::Drone;
 use crate::drone::motors::{motor_assign, normalize_manual_yaw};
-use crate::working_mode::WorkingModes::{PanicMode};
 
 ///Do the motion according to the argument from command by changing motor speed
 pub fn motion(drone: &mut Drone, argument: [u16; 4]){

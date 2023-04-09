@@ -159,6 +159,14 @@ impl DeviceListener {
                             self.bundle.mode
                         }
                     },
+                    Commands::RawSensorMode           => self.bundle.mode = {
+                        // If joystick is at zeropoint, drone is in safe mode and calibration is done, go to fullcontrol mode, otherwise stay in old mode
+                        if (self.bundle.pitch == 32767) && (self.bundle.roll == 32767) && (self.bundle.yaw >= 8000 && self.bundle.yaw <= 8800) && (self.bundle.lift == 0) && (self.bundle.mode == WorkingModes::SafeMode || self.bundle.mode == WorkingModes::PanicMode) && (self.bundle.calibration == true){
+                            WorkingModes::RawSensorMode
+                        } else {
+                            self.bundle.mode
+                        }
+                    },
                     Commands::ResetToZeroPoint      => self.bundle = SettingsBundle::default(),
                     Commands::LiftUp                => self.bundle.lift_offset = self.bundle.lift_offset.saturating_add(keyboardcommand.argument as i16),
                     Commands::LiftDown              => self.bundle.lift_offset = self.bundle.lift_offset.saturating_sub(keyboardcommand.argument as i16),
@@ -176,10 +184,6 @@ impl DeviceListener {
                     Commands::RollPitchControlP2Down=> self.bundle.roll_pitch_control_p2 = self.bundle.roll_pitch_control_p2.saturating_sub(keyboardcommand.argument),
                     Commands::HeightControlPUp => self.bundle.height_control_p = self.bundle.height_control_p.saturating_add(keyboardcommand.argument),
                     Commands::HeightControlPDown => self.bundle.height_control_p = self.bundle.height_control_p.saturating_sub(keyboardcommand.argument),
-                    Commands::RawSensorMode         => {
-                        self.bundle.raw_test = false;
-                        self.bundle.mode = WorkingModes::RawSensorMode;
-                    }
                     Commands::RawSensorModeTest     => self.bundle.raw_test = true,
                     _ => (),
                 }

@@ -1,9 +1,7 @@
-use tudelft_quadrupel::led::Red;
 use tudelft_quadrupel::motor::set_motor_max;
 use protocol::{Message, WorkingModes};
 use crate::controllers::PID;
-use crate::drone::{Drone, Getter, motors, Setter};
-use crate::kalman::KalmanFilter;
+use crate::drone::{Drone, Getter, Setter};
 use crate::working_mode::raw_sensor_mode::{YawPitchRollRate, Kalman};
 use crate::yaw_pitch_roll::YawPitchRoll;
 use tudelft_quadrupel::time::Instant;

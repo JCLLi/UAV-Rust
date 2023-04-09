@@ -1,12 +1,6 @@
-use tudelft_quadrupel::barometer::read_pressure;
 use tudelft_quadrupel::block;
-use tudelft_quadrupel::motor::set_motors;
-use tudelft_quadrupel::mpu::read_raw;
-use tudelft_quadrupel::mpu::structs::Accel;
 use tudelft_quadrupel::mpu::read_dmp_bytes;
-use protocol::WorkingModes;
-
-use crate::drone::{Drone, Getter, motors, Setter};
+use crate::drone::{Drone, Getter, Setter};
 use crate::yaw_pitch_roll::YawPitchRoll;
 
 #[derive(Copy, Clone)]

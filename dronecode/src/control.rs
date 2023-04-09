@@ -5,23 +5,16 @@ use tudelft_quadrupel::battery::read_battery;
 use tudelft_quadrupel::block;
 use tudelft_quadrupel::led::{Blue, Green, Red, Yellow};
 use tudelft_quadrupel::motor::{get_motors, set_motor_max};
-use tudelft_quadrupel::mpu::read_raw;
 use tudelft_quadrupel::time::{set_tick_frequency, wait_for_next_tick, Instant};
 use tudelft_quadrupel::mpu::read_dmp_bytes;
 use crate::drone_transmission::{write_packet, read_message};
-use crate::log_storage_manager::LogStorageManager;
 use crate::working_mode::raw_sensor_mode::{measure_raw, filter, calculate_altitude, measure_velocity};
-use crate::kalman::{KalmanFilter, AltitudeKalmanFilter};
+use crate::kalman::AltitudeKalmanFilter;
 use crate::yaw_pitch_roll::YawPitchRoll;
 use crate::drone::{Drone, Getter, Setter};
 use crate::working_mode::panic_mode::{panic_mode, panic_check};
-use tudelft_quadrupel::time::assembly_delay;
-use crate::drone;
 
-const FIXED_SIZE:usize = 64;
-const NO_CONNECTION_PANIC:u16 = 10; // Counts how often messages are not received
 const FIXED_FREQUENCY:u64 = 100; //100 Hz
-const ACC_PARAMETER: f32 = 9.8 / 32768 as f32;
 
 pub fn control_loop() -> ! {
     set_motor_max(600);
@@ -45,7 +38,7 @@ pub fn control_loop() -> ! {
 
     let mut absolute_altitude: f32 = 0.0;
 
-    for i in 0..2000 {
+    for _ in 0..2000 {
         absolute_altitude = calculate_altitude(read_pressure(), read_temperature());
     }
 
@@ -71,7 +64,7 @@ pub fn control_loop() -> ! {
 
         match packet_result {
             None => {
-                no_message += 1; 
+                no_message += 1;
                 new_message = false
             },
             Some(packet) => {
@@ -204,36 +197,36 @@ pub fn control_loop() -> ! {
         drone.set_height(altitude_state);
 
         //Store the log files
-        let log = Message::Datalogging(Datalog 
-            { 
-                motor1: motors[0], 
-                motor2: motors[1], 
-                motor3: motors[2], 
-                motor4: motors[3], 
-                rtc: time,
-                //dmp
-                yaw: angles_dmp.yaw,
-                pitch: angles_dmp.pitch,
-                roll: angles_dmp.roll,
-                //filtered
-                yaw_f: angles_filtered.yaw,
-                pitch_f: angles_filtered.pitch,
-                roll_f: angles_filtered.roll,
-                //raw
-                yaw_r: angles_raw.yaw,
-                pitch_r: angles_raw.pitch,
-                roll_r: angles_raw.roll,
-                bat: read_battery(),
-                bar: drone.get_calibration().height_compensation(drone.get_height()) / 100.0,
-                workingmode: drone.get_mode(),
-                arguments: drone.get_arguments(),
-                control_loop_time,
-                test: [drone.get_test()[0], drone.get_test()[1], drone.get_test()[2], drone.get_test()[3]]
-            });
-            
-            // Store log on drone flash
-            // storage_manager.store_logging(log).unwrap();
-            
+        let log = Message::Datalogging(Datalog
+        {
+            motor1: motors[0],
+            motor2: motors[1],
+            motor3: motors[2],
+            motor4: motors[3],
+            rtc: time,
+            //dmp
+            yaw: angles_dmp.yaw,
+            pitch: angles_dmp.pitch,
+            roll: angles_dmp.roll,
+            //filtered
+            yaw_f: angles_filtered.yaw,
+            pitch_f: angles_filtered.pitch,
+            roll_f: angles_filtered.roll,
+            //raw
+            yaw_r: angles_raw.yaw,
+            pitch_r: angles_raw.pitch,
+            roll_r: angles_raw.roll,
+            bat: read_battery(),
+            bar: drone.get_calibration().height_compensation(drone.get_height()) / 100.0,
+            workingmode: drone.get_mode(),
+            arguments: drone.get_arguments(),
+            control_loop_time,
+            test: [drone.get_test()[0], drone.get_test()[1], drone.get_test()[2], drone.get_test()[3]]
+        });
+
+        // Store log on drone flash
+        // storage_manager.store_logging(log).unwrap();
+
         if i % 5 == 0 {
             write_packet(log);
         }

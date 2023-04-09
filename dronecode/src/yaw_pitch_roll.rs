@@ -1,5 +1,4 @@
 use tudelft_quadrupel::mpu::structs::Quaternion;
-use tudelft_quadrupel::time::Instant;
 use crate::drone::{Drone, Getter, Setter};
 
 /// This struct holds the yaw, pitch, and roll that the drone things it is in.

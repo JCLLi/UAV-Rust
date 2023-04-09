@@ -27,16 +27,9 @@ pub fn panic_check() -> bool{
     // Panic when battery is low
     let volt = read_battery();
 
-    // if volt < 900 && volt > 50 {
-    //     return false;
-    // }
-
-    //Panic when motors shut down
-    // for i in get_motors(){
-    //     if i == 0{
-    //         return false;
-    //     }
-    // }
+    if volt < 900 && volt > 50 {
+        return false;
+    }
 
     true
 }
