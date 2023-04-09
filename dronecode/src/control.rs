@@ -106,14 +106,15 @@ pub fn control_loop() -> ! {
                     drone.message_check(&message);
                 }
 
-                Yellow.off();
+                Yellow.on();
+                Red.off();
                 Green.on();
             },
             WorkingModes::CalibrationMode => {
                 if new_message {
                     drone.message_check(&message);
                 }
-                Yellow.on();
+                Yellow.off();
                 Red.off();
                 Green.off();
             },
@@ -131,7 +132,7 @@ pub fn control_loop() -> ! {
                 }
 
                 Yellow.off();
-                Red.off();
+                Red.on();
                 Green.on();
             },
             WorkingModes::HeightControlMode => {
@@ -148,7 +149,7 @@ pub fn control_loop() -> ! {
                     drone.message_check(&message);
                 }
                 Yellow.on();
-                Red.off();
+                Red.on();
                 Green.off();
             },
             _ => {
@@ -161,24 +162,41 @@ pub fn control_loop() -> ! {
         // Read motor and sensor values
         let motors = get_motors();
 
-        // Measure time of loop iteration
+        //CODE FOR BETTER PERFORMANCE WITHOUT WAVEFORM COMPARISON
+        // let mut angles_filtered = drone.get_current_attitude();
+        // match drone.get_mode(){
+        //     WorkingModes::RawSensorMode => {
+        //         measure_raw(&mut drone, 10000);
+        //         filter(&mut drone, 10000);
+        //         drone.set_dmp_angles([0.0, 0.0, 0.0]);
+        //     }
+        //     _ => {
+        //         let sensor_data = block!(read_dmp_bytes()).unwrap();
+        //         angles = drone.get_calibration().full_compensation_dmp(YawPitchRoll::from(sensor_data));
+        //         drone.set_dmp_angles([angles.yaw, angles.pitch, angles.roll]);
+        //         angles_filtered = YawPitchRoll{yaw: 0.0, pitch: 0.0, roll: 0.0};
+        //         drone.set_current_attitude([angles.yaw, angles.pitch, angles.roll])
+        //     }
+        // }
 
+        //CODE FOR WAVEFORM COMPARISON
+        let sensor_data = block!(read_dmp_bytes()).unwrap();
+        angles = drone.get_calibration().full_compensation_dmp(YawPitchRoll::from(sensor_data));
+        drone.set_dmp_angles([angles.yaw, angles.pitch, angles.roll]);
 
         let mut angles_filtered = drone.get_current_attitude();
         match drone.get_mode(){
             WorkingModes::RawSensorMode => {
                 measure_raw(&mut drone, 10000);
                 filter(&mut drone, 10000);
-                drone.set_dmp_angles([0.0, 0.0, 0.0]);
+                //drone.set_dmp_angles([0.0, 0.0, 0.0]);
             }
             _ => {
-                let sensor_data = block!(read_dmp_bytes()).unwrap();
-                angles = drone.get_calibration().full_compensation_dmp(YawPitchRoll::from(sensor_data));
-                drone.set_dmp_angles([angles.yaw, angles.pitch, angles.roll]);
+                drone.set_current_attitude([angles.yaw, angles.pitch, angles.roll]);
                 angles_filtered = YawPitchRoll{yaw: 0.0, pitch: 0.0, roll: 0.0};
-                drone.set_current_attitude([angles.yaw, angles.pitch, angles.roll])
             }
         }
+
         let end = Instant::now();
         let control_loop_time = end.duration_since(begin).as_micros();
         let sample_time = Instant::now();

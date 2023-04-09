@@ -50,7 +50,6 @@ impl Drone {
             Message::ManualMode(pitch, roll, yaw, lift)
             => {
                 set_motor_max(MOTOR_MAX_MANUAL);
-                set_motor_max(MOTOR_MAX_CONTROL);
                 mode_switch(self, WorkingModes::ManualMode);
                 motions(self, [*pitch, *roll, *yaw, *lift]);
                 self.arguments = [*pitch, *roll, *yaw, *lift]

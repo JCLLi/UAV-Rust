@@ -95,6 +95,7 @@ pub fn mode_switch(drone: &mut Drone, new: WorkingModes) {
                 | WorkingModes::SafeMode
                 | WorkingModes::PanicMode => {
                     drone.reset_raw_flag();
+                    let temp = panic_mode();
                 }
                 WorkingModes::YawControlMode
                 | WorkingModes::FullControlMode
