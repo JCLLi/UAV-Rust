@@ -101,7 +101,7 @@ impl eframe::App for QuadrupelGUI {
                      // Battery and pressure graphs
                      ui.allocate_ui_with_layout(eframe::egui::vec2(8000.0, 8000.0), egui::Layout::left_to_right(egui::Align::LEFT), |ui| {
                          ui.allocate_ui_with_layout(eframe::egui::vec2(8000.0, 8000.0), egui::Layout::top_down(egui::Align::LEFT), |ui| {
-                             ui.heading("Battery graph");
+                             ui.heading("Battery voltage");
                              self.battery_vec.rotate_left(1);
                              self.battery_vec[99] = self.datalog.bat as f64;
                              let points: PlotPoints = self.battery_vec.iter().enumerate().map(|(i, &y)| [i as f64, y]).collect();
@@ -109,7 +109,7 @@ impl eframe::App for QuadrupelGUI {
                              Plot::new("battery2")
                              .allow_drag(false)
                              .view_aspect(2.0)
-                             .width(200.0)
+                             .width(300.0)
                              .show_x(false)
                              .show_y(false)
                              .show_background(false)
@@ -119,7 +119,7 @@ impl eframe::App for QuadrupelGUI {
                          ui.heading("    ");
  
                          ui.allocate_ui_with_layout(eframe::egui::vec2(8000.0, 8000.0), egui::Layout::top_down(egui::Align::LEFT), |ui| {
-                             ui.heading("Pressure graph");
+                             ui.heading("Pressure level");
                              self.pressure_vec.rotate_left(1);
                              self.pressure_vec[99] = self.datalog.bar as f64;
                              let points: PlotPoints = self.pressure_vec.iter().enumerate().map(|(i, &y)| [i as f64, y]).collect();
@@ -127,7 +127,7 @@ impl eframe::App for QuadrupelGUI {
                              Plot::new("pressure2")
                                  .allow_drag(false)
                                  .view_aspect(2.0)
-                                 .width(200.0)
+                                 .width(300.0)
                                  .show_x(false)
                                  .show_y(false)
                                  .show_background(false)
@@ -139,43 +139,30 @@ impl eframe::App for QuadrupelGUI {
                      // DMP, raw and filtered angles graphs
                      ui.allocate_ui_with_layout(eframe::egui::vec2(8000.0, 8000.0), egui::Layout::left_to_right(egui::Align::LEFT), |ui| {
                          ui.allocate_ui_with_layout(eframe::egui::vec2(8000.0, 8000.0), egui::Layout::top_down(egui::Align::LEFT), |ui| {
-                             ui.heading("DMP pitch graph");
+                             ui.heading("DMP and filtered pitch");
                              self.dmp_vec.rotate_left(1);
                              self.dmp_vec[99] = self.datalog.pitch as f64;
                              let points: PlotPoints = self.dmp_vec.iter().enumerate().map(|(i, &y)| [i as f64, y]).collect();
                              let line = Line::new(points);
-                             Plot::new("dmp")
-                             .allow_drag(false)
-                             .view_aspect(2.0)
-                             .width(200.0)
-                             .show_x(false)
-                             .show_y(false)
-                             .show_background(false)
-                             .allow_scroll(false)
-                             .show(ui, |plot_ui| plot_ui.line(line));
-                         });
-                         ui.heading("    ");
- 
-                         ui.allocate_ui_with_layout(eframe::egui::vec2(8000.0, 8000.0), egui::Layout::top_down(egui::Align::LEFT), |ui| {
-                             ui.heading("Filtered pitch graph");
-                             self.filtered_vec.rotate_left(1);
+   
+                            self.filtered_vec.rotate_left(1);
                              self.filtered_vec[99] = self.datalog.pitch_f as f64;
                              let points: PlotPoints = self.filtered_vec.iter().enumerate().map(|(i, &y)| [i as f64, y]).collect();
-                             let line = Line::new(points);
+                             let line2 = Line::new(points);
                              Plot::new("filtered")
                                  .allow_drag(false)
                                  .view_aspect(2.0)
-                                 .width(200.0)
+                                 .width(300.0)
                                  .show_x(false)
                                  .show_y(false)
                                  .show_background(false)
                                  .allow_scroll(false)
-                                 .show(ui, |plot_ui| plot_ui.line(line));
+                                 .show(ui, |plot_ui| {plot_ui.line(line); plot_ui.line(line2);});
                          });
                          ui.heading("    ");
  
                          ui.allocate_ui_with_layout(eframe::egui::vec2(8000.0, 8000.0), egui::Layout::top_down(egui::Align::LEFT), |ui| {
-                             ui.heading("Raw pitch graph");
+                             ui.heading("Raw pitch");
                              self.raw_vec.rotate_left(1);
                              self.raw_vec[99] = self.datalog.pitch_r as f64;
                              let points: PlotPoints = self.raw_vec.iter().enumerate().map(|(i, &y)| [i as f64, y]).collect();
@@ -183,7 +170,7 @@ impl eframe::App for QuadrupelGUI {
                              Plot::new("raw")
                                  .allow_drag(false)
                                  .view_aspect(2.0)
-                                 .width(200.0)
+                                 .width(300.0)
                                  .show_x(false)
                                  .show_y(false)
                                  .show_background(false)
