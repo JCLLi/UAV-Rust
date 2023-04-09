@@ -60,7 +60,7 @@ pub fn motor_assign(drone: &Drone, pwm: [f32; 4]){
             }else { set_motors([0, 0, 0, 0]) }
         }
         WorkingModes::HeightControlMode => {
-            motor_resolution = MOTOR_RESOLUTION_CONTROL;
+            let motor_resolution = MOTOR_RESOLUTION_CONTROL;
             if pwm[3] > 0.0 {
                 let mut m1 = ((0.2 * (pwm[1] + pwm[0]) + 0.8 * pwm[3]) / motor_resolution) as u16;
                 if m1 < 200 { m1 = 200 }
