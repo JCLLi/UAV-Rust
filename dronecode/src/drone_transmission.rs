@@ -1,6 +1,7 @@
 use protocol::{self, Packet, Message, PacketManager};
 use tudelft_quadrupel::uart::{send_bytes, receive_bytes};
-use tudelft_quadrupel::led::{Green, Yellow};
+use tudelft_quadrupel::led::{Blue, Green, Red, Yellow};
+
 use alloc::{vec::Vec};
 
 /// Write message to the PC
@@ -17,8 +18,9 @@ pub fn write_packet(message: Message) {
 }
 
 /// Read message from the data
-pub fn read_packet(mut buf: Vec<u8>) -> Result<Packet, ()> {      
-    if let Ok(packet) = Packet::from_bytes(&mut buf) {                       
+pub fn read_packet(buf: &mut [u8]) -> Result<Packet, ()> {      
+    if let Ok(packet) = Packet::from_bytes(buf) {    
+        // write_packet(packet.message);                   
         Ok(packet)
     } else {
         Err(())
@@ -26,50 +28,25 @@ pub fn read_packet(mut buf: Vec<u8>) -> Result<Packet, ()> {
 }
 
 /// Read message from the drone, if available
-pub fn read_message(mut shared_buf: Vec<u8>) -> (PacketManager, Vec<u8>) {
-    let mut read_buf = [1u8; 255];
-    let mut end_byte_vec = Vec::new();
-    let mut packetmanager = PacketManager::new();
-
-    let num = receive_bytes(&mut read_buf);
-    if num > 0 {
-        // Place received data into shared buffer
-        shared_buf.extend_from_slice(&read_buf[0..num]);
-
-        // Check if packet is received by checking end byte
-        for i in 0..shared_buf.len() {
-            if shared_buf[i] == 0 {
-                end_byte_vec.push(i);
-            }
-        }
-
-        // If packets have been received, deserialize them
-        if end_byte_vec.len() > 0 {
-            for i in 0..end_byte_vec.len() {
-                let packet_result = read_packet(shared_buf.clone());
-
-                match packet_result {
-                    Err(_) => {
-                    },
-                    Ok(_) => {
-                        let packet = packet_result.unwrap();
-                        packetmanager.add_packet(packet);
-                        Green.on();
-                    }
-                }
-
-                // Remove deserialized packet from shared buffer
-                if i == 0 {
-                    for _ in 0..(end_byte_vec[i]+1) {
-                        shared_buf.remove(0);
-                    }
-                } else {
-                    for _ in 0..(end_byte_vec[i]-end_byte_vec[i-1]) {
-                        shared_buf.remove(0);
-                    }
-                }
-            }
+pub fn read_message(shared_buf: &mut Vec<u8>) -> Option<Packet> {
+    let mut end_byte_idx = shared_buf.iter().position(|&byte| byte == 0);
+    if end_byte_idx.is_none() {
+        let mut read_buf = [1u8; 255];
+        let num = receive_bytes(&mut read_buf);
+        if num > 0 {
+            shared_buf.extend_from_slice(&read_buf[0..num]);
+            end_byte_idx = shared_buf.iter().position(|&byte| byte == 0);
         }
     }
-    (packetmanager, shared_buf)
+
+    if let Some(end_byte_idx) = end_byte_idx {
+        let packet_result = read_packet(&mut shared_buf[..=end_byte_idx].to_vec());
+        if let Ok(packet) = packet_result {
+            shared_buf.drain(..=end_byte_idx);
+            return Some(packet);
+        } else {
+            shared_buf.drain(..(end_byte_idx + 1));
+        }
+    }
+    None
 }

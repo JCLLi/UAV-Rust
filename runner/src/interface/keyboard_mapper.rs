@@ -17,6 +17,9 @@ pub enum Commands {
     CalibrationMode,
     YawControlledMode,
     FullControlMode,
+    HeightControlMode,
+    RawSensorMode,
+    RawSensorModeTest,
     LiftUp,
     LiftDown,
     RollUp,
@@ -31,6 +34,8 @@ pub enum Commands {
     RollPitchControlP1Down,
     RollPitchControlP2Up,
     RollPitchControlP2Down,
+    HeightControlPUp,
+    HeightControlPDown,
     ResetToZeroPoint
 }
 
@@ -52,12 +57,15 @@ impl fmt::Display for Commands {
             Commands::CalibrationMode => write!(f, "CalibrationMode"),
             Commands::YawControlledMode => write!(f, "YawControlledMode"),
             Commands::FullControlMode => write!(f, "FullControlMode"),
+            Commands::HeightControlMode => write!(f, "HeightControlMode()"),
             Commands::YawControlPUp => write!(f, "YawControlPUp"),
             Commands::YawControlPDown => write!(f, "YawControlPDown"),
             Commands::RollPitchControlP1Up => write!(f, "RollPitchControlP1Up"),
             Commands::RollPitchControlP1Down => write!(f, "RollPitchControlP1Down"),
             Commands::RollPitchControlP2Up => write!(f, "RollPitchControlP2Up"),
             Commands::RollPitchControlP2Down => write!(f, "RollPitchControlP2Down"),
+            Commands::HeightControlPUp => write!(f, "HeightControlPUp"),
+            Commands::HeightControlPDown => write!(f, "HeightControlPDown"),
             Commands::ResetToZeroPoint => write!(f, "ResetToZeroPoint"),
             _ => write!(f, "InvalidCommand")
         }
@@ -86,6 +94,8 @@ pub fn keymapper(sender: mpsc::Sender<KeyboardCommand>) -> crossterm::Result<()>
                     KeyCode::Char('3') => KeyboardCommand {command: Commands::CalibrationMode, argument: 0},
                     KeyCode::Char('4') => KeyboardCommand {command: Commands::YawControlledMode, argument: 0},
                     KeyCode::Char('5') => KeyboardCommand {command: Commands::FullControlMode, argument: 0},
+                    KeyCode::Char('6') => KeyboardCommand {command: Commands::RawSensorMode, argument: 0},
+                    KeyCode::Char('7') => KeyboardCommand {command: Commands::HeightControlMode, argument: 0},
                     KeyCode::Char('8') => KeyboardCommand {command: Commands::ResetToZeroPoint, argument: 0},
                     KeyCode::Char('a') => KeyboardCommand {command: Commands::LiftUp, argument: STATIC_OFFSET_UP},
                     KeyCode::Char('z') => KeyboardCommand {command: Commands::LiftDown, argument: STATIC_OFFSET_DOWN},
@@ -101,6 +111,9 @@ pub fn keymapper(sender: mpsc::Sender<KeyboardCommand>) -> crossterm::Result<()>
                     KeyCode::Char('k') => KeyboardCommand {command: Commands::RollPitchControlP1Down, argument: CONTROL_STATIC_OFFSET_DOWN},
                     KeyCode::Char('o') => KeyboardCommand {command: Commands::RollPitchControlP2Up, argument: CONTROL_STATIC_OFFSET_UP},
                     KeyCode::Char('l') => KeyboardCommand {command: Commands::RollPitchControlP2Down, argument: CONTROL_STATIC_OFFSET_DOWN},
+                    KeyCode::Char('p') => KeyboardCommand {command: Commands::HeightControlPUp, argument: CONTROL_STATIC_OFFSET_UP},
+                    KeyCode::Char(';') => KeyboardCommand {command: Commands::HeightControlPDown, argument: CONTROL_STATIC_OFFSET_DOWN},
+                    KeyCode::Char('t') => KeyboardCommand {command: Commands::RawSensorModeTest, argument: 1 },
                     KeyCode::Delete    => KeyboardCommand {command: Commands::Exit, argument: 0},
                     _                  => KeyboardCommand {command: Commands::None, argument: 0},
                 };
@@ -129,11 +142,11 @@ use super::*;
             keymapper(tx).unwrap();
         });
 
-        while let Ok(KeyboardCommand) = rx.recv(){
-            println!("\rKeyboardCommand: {:?}", KeyboardCommand);
-            println!("\rCommands.to_string(): {}", KeyboardCommand.command.to_string());
+        while let Ok(keyboarcommand) = rx.recv(){
+            println!("\rKeyboardCommand: {:?}", keyboarcommand);
+            println!("\rCommands.to_string(): {}", keyboarcommand.command.to_string());
     
-            if KeyboardCommand.command == Commands::Exit {
+            if keyboarcommand.command == Commands::Exit {
                 break;
             }
         }

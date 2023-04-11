@@ -1,34 +1,29 @@
-
 use alloc::vec::Vec;
-use alloc::{format, string::String};
-use protocol::{self, Packet, PacketManager, Message, Datalog, WorkingModes};
-use tudelft_quadrupel::barometer::read_pressure;
+use tudelft_quadrupel::barometer::{read_pressure, read_temperature};
+use protocol::{self, Message, Datalog, WorkingModes};
 use tudelft_quadrupel::battery::read_battery;
-use tudelft_quadrupel::led::{Blue, Green, Red, Yellow};
-use tudelft_quadrupel::motor::get_motors;
-use tudelft_quadrupel::mpu::read_dmp_bytes;
-use tudelft_quadrupel::mpu::read_raw;
-use tudelft_quadrupel::time::{set_tick_frequency, wait_for_next_tick, Instant};
-use tudelft_quadrupel::uart::receive_bytes;
 use tudelft_quadrupel::block;
-use crate::drone_transmission::{write_packet, read_packet, read_message};
-use postcard::{take_from_bytes_cobs, from_bytes_cobs, to_allocvec, to_allocvec_cobs};
-
-use crate::log_storage_manager::LogStorageManager;
+use tudelft_quadrupel::led::{Blue, Green, Red, Yellow};
+use tudelft_quadrupel::motor::{get_motors, set_motor_max};
+use tudelft_quadrupel::time::{set_tick_frequency, wait_for_next_tick, Instant};
+use tudelft_quadrupel::mpu::read_dmp_bytes;
+use crate::drone_transmission::{write_packet, read_message};
+use crate::working_mode::raw_sensor_mode::{measure_raw, filter, calculate_altitude, measure_velocity};
+use crate::kalman::AltitudeKalmanFilter;
 use crate::yaw_pitch_roll::YawPitchRoll;
 use crate::drone::{Drone, Getter, Setter};
-use crate::working_mode::panic_mode::{panic_mode};
+use crate::working_mode::panic_mode::{panic_mode, panic_check};
 
-const FIXED_SIZE:usize = 64;
-const MOTION_DELAY:u16 = 100;//Set a big value for debugging
-const NO_CONNECTION_PANIC:u16 = 100; // Counts how often heartbeats are not detected
 const FIXED_FREQUENCY:u64 = 100; //100 Hz
 
 pub fn control_loop() -> ! {
+    set_motor_max(600);
     set_tick_frequency(FIXED_FREQUENCY);
-    let mut last = Instant::now();
+    let begin_loop = Instant::now();
     let mut drone = Drone::initialize();
     let mut message = Message::SafeMode;
+
+    let mut connection = true;
 
     //flag for recording the duration of no new message
     let mut no_message = 0;
@@ -41,37 +36,51 @@ pub fn control_loop() -> ! {
 
     let mut angles = YawPitchRoll { yaw: 0.0, pitch: 0.0, roll: 0.0};
 
-    let mut storage_manager = LogStorageManager::new(0x1FFF);
+    let mut absolute_altitude: f32 = 0.0;
+
+    for _ in 0..2000 {
+        absolute_altitude = calculate_altitude(read_pressure(), read_temperature());
+    }
+
+    let mut altitude_kalman = AltitudeKalmanFilter::default();
 
     for i in 0.. {
+        // Measure time of loop iteration
+        let begin = Instant::now();
+
         if i % 50 == 0 {
             Blue.toggle();
         }
 
-        let now = Instant::now();
-        let _dt = now.duration_since(last);
-        last = now;
+        let time = begin_loop.ns_since_start() / 1_000_000;
 
-        let time = last.ns_since_start() / 1_000_000;
+        // Check battery voltage
+        if !panic_check() {
+            drone.set_mode(panic_mode());
+        }
 
-        Green.off();
+        // Read data
+        let packet_result = read_message(&mut shared_buf);
 
-        // Read data, place packets in packetmanager, message in first packet is used
-        let mut packetmanager;
-        (packetmanager, shared_buf) = read_message(shared_buf);
-        
-        if packetmanager.packets.len() > 0 {
-            message = packetmanager.read_packet().unwrap().message;
-            new_message = true;
-            no_message = 0;
-        }else {
-            no_message += 1;
+        match packet_result {
+            None => {
+                no_message += 1;
+                new_message = false
+            },
+            Some(packet) => {
+                message = packet.message;
+                new_message = true;
+                no_message = 0;
+                connection = true;
+            }
         }
 
         // Check usb connection with PC
-        if no_message == NO_CONNECTION_PANIC {
-            drone.set_mode(WorkingModes::SafeMode);
-            no_message = 0;
+        if connection == true {
+            if no_message >= 3 {
+                drone.set_mode(panic_mode());
+                connection = false;
+            }
         }
 
         //First the control part
@@ -81,6 +90,7 @@ pub fn control_loop() -> ! {
 
                 Yellow.off();
                 Red.on();
+                Green.off();
             },
             WorkingModes::SafeMode => {
                 if new_message {
@@ -89,22 +99,58 @@ pub fn control_loop() -> ! {
 
                 Yellow.on();
                 Red.off();
+                Green.off();
             },
             WorkingModes::ManualMode => {
                 if new_message {
                     drone.message_check(&message);
                 }
 
-                Yellow.off();
+                Yellow.on();
+                Red.off();
+                Green.on();
             },
             WorkingModes::CalibrationMode => {
-                ()
+                if new_message {
+                    drone.message_check(&message);
+                }
+                Yellow.off();
+                Red.off();
+                Green.off();
             },
             WorkingModes::FullControlMode => {
-                ()
+                if new_message {
+                    drone.message_check(&message);
+                }
+                Yellow.off();
+                Red.off();
+                Green.on();
             },
             WorkingModes::YawControlMode => {
-                ()
+                if new_message {
+                    drone.message_check(&message);
+                }
+
+                Yellow.off();
+                Red.on();
+                Green.on();
+            },
+            WorkingModes::HeightControlMode => {
+                if new_message {
+                    drone.message_check(&message);
+                }
+
+                Yellow.on();
+                Red.on();
+                Green.on();
+            }
+            WorkingModes::RawSensorMode => {
+                if new_message {
+                    drone.message_check(&message);
+                }
+                Yellow.on();
+                Red.on();
+                Green.off();
             },
             _ => {
                 if new_message {
@@ -115,49 +161,94 @@ pub fn control_loop() -> ! {
 
         // Read motor and sensor values
         let motors = get_motors();
-        // let sensor_data = block!(read_dmp_bytes());
-        // match sensor_data {
-        //     Ok(data) => {
-        //         angles = YawPitchRoll::from(data);
 
-        //     },
-        //     Err(_) => {
+        //CODE FOR BETTER PERFORMANCE WITHOUT WAVEFORM COMPARISON
+        // let mut angles_filtered = drone.get_current_attitude();
+        // match drone.get_mode(){
+        //     WorkingModes::RawSensorMode => {
+        //         measure_raw(&mut drone, 10000);
+        //         filter(&mut drone, 10000);
+        //         drone.set_dmp_angles([0.0, 0.0, 0.0]);
+        //     }
+        //     _ => {
+        //         let sensor_data = block!(read_dmp_bytes()).unwrap();
+        //         angles = drone.get_calibration().full_compensation_dmp(YawPitchRoll::from(sensor_data));
+        //         drone.set_dmp_angles([angles.yaw, angles.pitch, angles.roll]);
+        //         angles_filtered = YawPitchRoll{yaw: 0.0, pitch: 0.0, roll: 0.0};
+        //         drone.set_current_attitude([angles.yaw, angles.pitch, angles.roll])
         //     }
         // }
-        let (accel, _) = read_raw().unwrap();
-        
+
+        //CODE FOR WAVEFORM COMPARISON
+        let sensor_data = block!(read_dmp_bytes()).unwrap();
+        angles = drone.get_calibration().full_compensation_dmp(YawPitchRoll::from(sensor_data));
+        drone.set_dmp_angles([angles.yaw, angles.pitch, angles.roll]);
+
+        let mut angles_filtered = drone.get_current_attitude();
+        match drone.get_mode(){
+            WorkingModes::RawSensorMode => {
+                measure_raw(&mut drone, 10000);
+                filter(&mut drone, 10000);
+                //drone.set_dmp_angles([0.0, 0.0, 0.0]);
+            }
+            _ => {
+                drone.set_current_attitude([angles.yaw, angles.pitch, angles.roll]);
+                angles_filtered = YawPitchRoll{yaw: 0.0, pitch: 0.0, roll: 0.0};
+            }
+        }
+
+        let end = Instant::now();
+        let control_loop_time = end.duration_since(begin).as_micros();
+        let sample_time = Instant::now();
+        drone.set_sample_time(sample_time);
+
+        let angles_raw = drone.get_raw_angles();
+
+        let angles_dmp = drone.get_dmp_angles();
+
+        let dt = (10000 as f32) / 1_000_000.0;
+
+        let vel_z = measure_velocity(&mut drone);
+        let altitude = calculate_altitude(read_pressure(), read_temperature()) - absolute_altitude;
+        let (altitude_state, velocity_state) = altitude_kalman.update(altitude * 100.0, vel_z - 70.0, dt);
+
+        drone.set_height(altitude_state);
+
         //Store the log files
-        let log = Message::Datalogging(Datalog 
-            { 
-                motor1: motors[0], 
-                motor2: motors[1], 
-                motor3: motors[2], 
-                motor4: motors[3], 
-                rtc: time, 
-                // yaw: angles.yaw, 
-                // pitch: angles.pitch, 
-                // roll: angles.roll, 
-                yaw: 0.0, 
-                pitch: 0.0, 
-                roll: 0.0, 
-                x: accel.x, 
-                y: accel.y, 
-                z: accel.z, 
-                // x: 0, 
-                // y: 0, 
-                // z: 0, 
-                bat: read_battery(), 
-                bar: 100, 
-                workingmode: drone.get_mode(),
-                arguments: [0,0,0,0]
-            });
-            
-            // Store log on drone flash
-            // storage_manager.store_logging(log).unwrap();
-            
+        let log = Message::Datalogging(Datalog
+        {
+            motor1: motors[0],
+            motor2: motors[1],
+            motor3: motors[2],
+            motor4: motors[3],
+            rtc: time,
+            //dmp
+            yaw: angles_dmp.yaw,
+            pitch: angles_dmp.pitch,
+            roll: angles_dmp.roll,
+            //filtered
+            yaw_f: angles_filtered.yaw,
+            pitch_f: angles_filtered.pitch,
+            roll_f: angles_filtered.roll,
+            //raw
+            yaw_r: angles_raw.yaw,
+            pitch_r: angles_raw.pitch,
+            roll_r: angles_raw.roll,
+            bat: read_battery(),
+            bar: drone.get_calibration().height_compensation(drone.get_height()) / 100.0,
+            workingmode: drone.get_mode(),
+            arguments: drone.get_arguments(),
+            control_loop_time,
+            test: [drone.get_test()[0], drone.get_test()[1], drone.get_test()[2], drone.get_test()[3]]
+        });
+
+        // Store log on drone flash
+        // storage_manager.store_logging(log).unwrap();
+
         if i % 5 == 0 {
             write_packet(log);
         }
+
         // wait until the timer interrupt goes off again
         // based on the frequency set above
         wait_for_next_tick();

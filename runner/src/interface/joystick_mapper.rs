@@ -1,8 +1,5 @@
-
 use pasts::Loop;
 use std::{sync::mpsc, task::Poll::{self, Pending, Ready}};
-use std::thread::sleep;
-use std::time::Duration;
 use stick::{Controller, Event, Listener};
 
 type Exit = usize;
@@ -124,7 +121,7 @@ pub async fn event_loop(sender: mpsc::Sender<Mappedcoordinates>) {
         listener: Listener::default(),
         controllers: Vec::new(),
         rumble: (0.0, 0.0),
-        mapped: Mappedcoordinates { pitch: 0, roll: 0, yaw: 0, lift: 0, abort: false },
+        mapped: Mappedcoordinates { pitch: 32767, roll: 32767, yaw: 8520, lift: 0, abort: false },
         sender: sender,
     };
 

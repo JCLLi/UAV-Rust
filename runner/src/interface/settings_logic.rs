@@ -1,35 +1,9 @@
-use core::fmt;
 use std::sync::mpsc::TryRecvError;
-
 use std::{thread, sync::mpsc};
 use crossterm::terminal::enable_raw_mode;
-
 use crate::interface::joystick_mapper::{event_loop, Mappedcoordinates};
 use crate::interface::keyboard_mapper::{keymapper, KeyboardCommand, Commands};
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Modes {
-    SafeMode,
-    PanicMode,
-    ManualMode,
-    CalibrationMode,
-    YawControlledMode,
-    FullControlMode,
-}
-
-// Convert Modes enum to string
-impl fmt::Display for Modes {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Modes::SafeMode => write!(f, "SafeMode"),
-            Modes::PanicMode => write!(f, "PanicMode"),
-            Modes::ManualMode => write!(f, "ManualMode"),
-            Modes::CalibrationMode => write!(f, "CalibrationMode"),
-            Modes::YawControlledMode => write!(f, "YawControlledMode"),
-            Modes::FullControlMode => write!(f, "FullControllMode"),
-        }
-    }
-}
+use protocol::WorkingModes;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum UIOptions{
@@ -51,7 +25,6 @@ pub enum DeviceError {
     DisconnectedJoystickRunner,
 }
 
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct SettingsBundle {
     pub pitch: u16,
@@ -59,11 +32,22 @@ pub struct SettingsBundle {
     pub yaw: u16,
     pub lift: u16,
     pub exit: bool,
-    pub mode: Modes,
+    pub mode: WorkingModes,
     pub yaw_control_p: u16,
     pub roll_pitch_control_p1: u16,
     pub roll_pitch_control_p2: u16,
+    pub height_control_p: u16,
     pub ui_options: UIOptions,
+    pub pitch_joystick: u16,
+    pub roll_joystick: u16,
+    pub yaw_joystick: u16,
+    pub lift_joystick: u16,
+    pub pitch_offset: i16,
+    pub roll_offset: i16,
+    pub yaw_offset: i16,
+    pub lift_offset: i16,
+    pub calibration: bool,
+    pub raw_test: bool,
 }
 
 impl Default for SettingsBundle {
@@ -71,14 +55,25 @@ impl Default for SettingsBundle {
         SettingsBundle { 
             pitch: 32767, 
             roll: 32767, 
-            yaw: 8263,
+            yaw: 8520,
             lift: 0,
             exit: false, 
-            mode: Modes::SafeMode, 
-            yaw_control_p: 0, 
-            roll_pitch_control_p1: 0, 
-            roll_pitch_control_p2: 0, 
+            mode: WorkingModes::SafeMode, 
+            yaw_control_p: 0,
+            roll_pitch_control_p1: 0,
+            roll_pitch_control_p2: 0,
+            height_control_p: 0,
             ui_options: UIOptions::Default,
+            pitch_joystick: 32767,
+            roll_joystick: 32767,
+            yaw_joystick: 8520,
+            lift_joystick: 0,
+            pitch_offset: 0,
+            roll_offset: 0,
+            yaw_offset: 0,
+            lift_offset: 0,
+            calibration: false,
+            raw_test: false,
         }
     }
 }
@@ -106,13 +101,13 @@ impl DeviceListener {
         // Try to receive a value from the joystick channel without blocking
         match self.receiver_joystick_channel.try_recv() {
             Ok(mapped_coordinates) => {
-                self.bundle.lift   = mapped_coordinates.lift;
-                self.bundle.pitch  = mapped_coordinates.pitch;
-                self.bundle.roll   = mapped_coordinates.roll;
-                self.bundle.yaw    = mapped_coordinates.yaw;
+                self.bundle.lift_joystick   = mapped_coordinates.lift;
+                self.bundle.pitch_joystick  = mapped_coordinates.pitch;
+                self.bundle.roll_joystick   = mapped_coordinates.roll;
+                self.bundle.yaw_joystick    = mapped_coordinates.yaw;
 
                 if mapped_coordinates.abort == true {
-                    self.bundle.mode = Modes::SafeMode;
+                    self.bundle.mode = WorkingModes::SafeMode;
                 }
             },
             Err(TryRecvError::Disconnected) => {
@@ -126,28 +121,70 @@ impl DeviceListener {
             Ok(keyboardcommand) => {
                 match keyboardcommand.command {
                     Commands::Exit                  => self.bundle.exit = true,
-                    Commands::SafeMode              => self.bundle.mode = Modes::SafeMode,
-                    Commands::PanicMode             => self.bundle.mode = Modes::PanicMode,
-                    Commands::ManualMode            => self.bundle.mode = Modes::ManualMode,
-                    Commands::CalibrationMode       => self.bundle.mode = Modes::CalibrationMode,
-                    Commands::YawControlledMode     => self.bundle.mode = Modes::YawControlledMode,
-                    Commands::FullControlMode       => self.bundle.mode = Modes::FullControlMode,
+                    Commands::SafeMode              => self.bundle.mode = WorkingModes::SafeMode,
+                    Commands::PanicMode             => self.bundle.mode = WorkingModes::PanicMode,
+                    Commands::ManualMode            => self.bundle.mode = {
+                        // If joystick is at zeropoint, drone is in safe mode and calibration is done, go to manual mode, otherwise stay in old mode
+                        if (self.bundle.pitch == 32767) && (self.bundle.roll == 32767) && (self.bundle.yaw >= 8000 && self.bundle.yaw <= 8800) && (self.bundle.lift == 0) && (self.bundle.mode == WorkingModes::SafeMode || self.bundle.mode == WorkingModes::PanicMode) && (self.bundle.calibration == true){
+                            WorkingModes::ManualMode
+                        } else {
+                            self.bundle.mode
+                        }
+                    },
+                    Commands::CalibrationMode       => {
+                        self.bundle.mode = WorkingModes::CalibrationMode; 
+                        self.bundle.calibration = true
+                    },
+                    Commands::YawControlledMode     => self.bundle.mode = {
+                        // If joystick is at zeropoint, drone is in safe mode and calibration is done, go to yawcontrolled mode, otherwise stay in old mode
+                        if (self.bundle.pitch == 32767) && (self.bundle.roll == 32767) && (self.bundle.yaw >= 8000 && self.bundle.yaw <= 8800) && (self.bundle.lift == 0) && (self.bundle.mode == WorkingModes::SafeMode || self.bundle.mode == WorkingModes::PanicMode) && (self.bundle.calibration == true){
+                            WorkingModes::YawControlMode
+                        } else {
+                            self.bundle.mode
+                        }
+                    },
+                    Commands::FullControlMode       => self.bundle.mode = {
+                        // If joystick is at zeropoint, drone is in safe mode and calibration is done, go to fullcontrol mode, otherwise stay in old mode
+                        if (self.bundle.pitch == 32767) && (self.bundle.roll == 32767) && (self.bundle.yaw >= 8000 && self.bundle.yaw <= 8800) && (self.bundle.lift == 0) && (self.bundle.mode == WorkingModes::SafeMode || self.bundle.mode == WorkingModes::PanicMode) && (self.bundle.calibration == true){
+                            WorkingModes::FullControlMode
+                        } else {
+                            self.bundle.mode
+                        }
+                    },
+                    Commands::HeightControlMode       => self.bundle.mode = {
+                        // If joystick is at zeropoint, drone is in safe mode and calibration is done, go to fullcontrol mode, otherwise stay in old mode
+                        if (self.bundle.pitch == 32767) && (self.bundle.roll == 32767) && (self.bundle.yaw >= 8000 && self.bundle.yaw <= 8800) && (self.bundle.lift == 0) && (self.bundle.mode == WorkingModes::SafeMode || self.bundle.mode == WorkingModes::PanicMode) && (self.bundle.calibration == true){
+                            WorkingModes::HeightControlMode
+                        } else {
+                            self.bundle.mode
+                        }
+                    },
+                    Commands::RawSensorMode           => self.bundle.mode = {
+                        // If joystick is at zeropoint, drone is in safe mode and calibration is done, go to fullcontrol mode, otherwise stay in old mode
+                        if (self.bundle.pitch == 32767) && (self.bundle.roll == 32767) && (self.bundle.yaw >= 8000 && self.bundle.yaw <= 8800) && (self.bundle.lift == 0) && (self.bundle.mode == WorkingModes::SafeMode || self.bundle.mode == WorkingModes::PanicMode) && (self.bundle.calibration == true){
+                            WorkingModes::RawSensorMode
+                        } else {
+                            self.bundle.mode
+                        }
+                    },
                     Commands::ResetToZeroPoint      => self.bundle = SettingsBundle::default(),
-                    Commands::LiftUp                => self.bundle.lift = self.bundle.lift.saturating_add(keyboardcommand.argument),
-                    Commands::LiftDown              => self.bundle.lift = self.bundle.lift.saturating_sub(keyboardcommand.argument),
-                    Commands::RollUp                => self.bundle.roll = self.bundle.roll.saturating_add(keyboardcommand.argument),
-                    Commands::RollDown              => self.bundle.roll = self.bundle.roll.saturating_sub(keyboardcommand.argument),
-                    Commands::YawUp                 => self.bundle.yaw = self.bundle.yaw.saturating_add(keyboardcommand.argument),
-                    Commands::YawDown               => self.bundle.yaw = self.bundle.yaw.saturating_sub(keyboardcommand.argument),
-                    Commands::PitchUp               => self.bundle.pitch = self.bundle.pitch.saturating_add(keyboardcommand.argument),
-                    Commands::PitchDown             => self.bundle.pitch = self.bundle.pitch.saturating_sub(keyboardcommand.argument),
+                    Commands::LiftUp                => self.bundle.lift_offset = self.bundle.lift_offset.saturating_add(keyboardcommand.argument as i16),
+                    Commands::LiftDown              => self.bundle.lift_offset = self.bundle.lift_offset.saturating_sub(keyboardcommand.argument as i16),
+                    Commands::RollUp                => self.bundle.roll_offset = self.bundle.roll_offset.saturating_add(keyboardcommand.argument as i16),
+                    Commands::RollDown              => self.bundle.roll_offset = self.bundle.roll_offset.saturating_sub(keyboardcommand.argument as i16),
+                    Commands::YawUp                 => self.bundle.yaw_offset = self.bundle.yaw_offset.saturating_add(keyboardcommand.argument as i16),
+                    Commands::YawDown               => self.bundle.yaw_offset = self.bundle.yaw_offset.saturating_sub(keyboardcommand.argument as i16),
+                    Commands::PitchUp               => self.bundle.pitch_offset = self.bundle.pitch_offset.saturating_add(keyboardcommand.argument as i16),
+                    Commands::PitchDown             => self.bundle.pitch_offset = self.bundle.pitch_offset.saturating_sub(keyboardcommand.argument as i16),
                     Commands::YawControlPUp         => self.bundle.yaw_control_p = self.bundle.yaw_control_p.saturating_add(keyboardcommand.argument),
                     Commands::YawControlPDown       => self.bundle.yaw_control_p = self.bundle.yaw_control_p.saturating_sub(keyboardcommand.argument),
                     Commands::RollPitchControlP1Up  => self.bundle.roll_pitch_control_p1 = self.bundle.roll_pitch_control_p1.saturating_add(keyboardcommand.argument),
                     Commands::RollPitchControlP1Down=> self.bundle.roll_pitch_control_p1 = self.bundle.roll_pitch_control_p1.saturating_sub(keyboardcommand.argument),
                     Commands::RollPitchControlP2Up  => self.bundle.roll_pitch_control_p2 = self.bundle.roll_pitch_control_p2.saturating_add(keyboardcommand.argument),
                     Commands::RollPitchControlP2Down=> self.bundle.roll_pitch_control_p2 = self.bundle.roll_pitch_control_p2.saturating_sub(keyboardcommand.argument),
-
+                    Commands::HeightControlPUp => self.bundle.height_control_p = self.bundle.height_control_p.saturating_add(keyboardcommand.argument),
+                    Commands::HeightControlPDown => self.bundle.height_control_p = self.bundle.height_control_p.saturating_sub(keyboardcommand.argument),
+                    Commands::RawSensorModeTest     => self.bundle.raw_test = true,
                     _ => (),
                 }
             },
@@ -155,6 +192,28 @@ impl DeviceListener {
             _ => (),
         }
         
+        // Add static keyboard offset to roll, pitch, yaw and lift
+        if self.bundle.pitch_offset > 0 {
+            self.bundle.pitch = self.bundle.pitch_joystick.saturating_add(self.bundle.pitch_offset as u16);
+        } else {
+            self.bundle.pitch = self.bundle.pitch_joystick.saturating_sub(-self.bundle.pitch_offset as u16);
+        }
+        if self.bundle.roll_offset > 0 {
+            self.bundle.roll = self.bundle.roll_joystick.saturating_add(self.bundle.roll_offset as u16);
+        } else {
+            self.bundle.roll = self.bundle.roll_joystick.saturating_sub(-self.bundle.roll_offset as u16);
+        }
+        if self.bundle.yaw_offset > 0 {
+            self.bundle.yaw = self.bundle.yaw_joystick.saturating_add(self.bundle.yaw_offset as u16);
+        } else {
+            self.bundle.yaw = self.bundle.yaw_joystick.saturating_sub(-self.bundle.yaw_offset as u16);
+        }
+        if self.bundle.lift_offset > 0 {
+            self.bundle.lift = self.bundle.lift_joystick.saturating_add(self.bundle.lift_offset as u16);
+        } else {
+            self.bundle.lift = self.bundle.lift_joystick.saturating_sub(-self.bundle.lift_offset as u16);
+        }
+
         Ok(self.bundle.clone())
     }
 }
